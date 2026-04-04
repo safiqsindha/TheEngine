@@ -1,0 +1,26 @@
+{
+  "fileName": "yagsl-2026.3.14.json",
+  "name": "YAGSL",
+  "version": "2026.3.14",
+  "frcYear": "2026",
+  "uuid": "1ccce5a4-acd2-4d18-bca3-4b8047188400",
+  "mavenUrls": [
+    "https://yet-another-software-suite.github.io/YAGSL/releases/",
+    "https://repo1.maven.org/maven2"
+  ],
+  "jsonUrl": "https://yet-another-software-suite.github.io/YAGSL/yagsl.json",
+  "javaDependencies": [
+    {
+      "groupId": "swervelib",
+      "artifactId": "YAGSL-java",
+      "version": "2026.3.14"
+    },
+    {
+      "groupId": "org.dyn4j",
+      "artifactId": "dyn4j",
+      "version": "5.0.2"
+    }
+  ],
+  "jniDependencies": [],
+  "cppDependencies": []
+}

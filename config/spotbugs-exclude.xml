@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+  <!-- Exclude vendor dependency wrappers and auto-generated code -->
+  <Match>
+    <Package name="~edu\.wpi\..*" />
+  </Match>
+  <Match>
+    <Package name="~com\.ctre\..*" />
+  </Match>
+  <Match>
+    <Package name="~com\.revrobotics\..*" />
+  </Match>
+  <Match>
+    <Package name="~swervelib\..*" />
+  </Match>
+  <!-- Exclude Main.java (auto-generated entry point) -->
+  <Match>
+    <Class name="frc.robot.Main" />
+  </Match>
+  <!--
+    EI_EXPOSE_REP2: WPILib Command-Based pattern requires storing subsystem references in
+    commands. Defensive copying is impossible — subsystems are shared stateful hardware objects.
+    This is intentional architecture throughout frc.robot.
+  -->
+  <Match>
+    <Bug pattern="EI_EXPOSE_REP2" />
+  </Match>
+  <!--
+    EI_EXPOSE_REP: getSwerveDrive() intentionally exposes SwerveDrive for YAGSL advanced ops.
+  -->
+  <Match>
+    <Bug pattern="EI_EXPOSE_REP" />
+  </Match>
+</FindBugsFilter>

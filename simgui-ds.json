@@ -1,0 +1,28 @@
+{
+  "keyboardJoysticks": [
+    {
+      "axisCount": 6,
+      "buttonCount": 4,
+      "povCount": 0
+    },
+    {
+      "axisCount": 0,
+      "buttonCount": 0,
+      "povCount": 0
+    },
+    {
+      "axisCount": 0,
+      "buttonCount": 0,
+      "povCount": 0
+    },
+    {
+      "axisCount": 0,
+      "buttonCount": 0,
+      "povCount": 0
+    }
+  ],
+  "robotJoysticks": [
+    {},
+    {}
+  ]
+}

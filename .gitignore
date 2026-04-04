@@ -1,0 +1,24 @@
+# Java build artifacts
+build/
+.gradle/
+bin/
+
+# IDE files
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+
+# WPILib generated
+simgui.json
+networktables.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+*.wpilog
+*.hoot
