@@ -1,14 +1,17 @@
 # THE ENGINE — Master Roadmap
 # Prioritized Execution Plan
+# Deadline: Everything complete by December 2026
 # Updated: April 2026
 # Team 2950 — The Devastators
 # ═══════════════════════════════════════════════════════════════════
 
 ## Guiding Principle
 
-Build what compounds first. Every system that feeds other systems gets
-built before systems that stand alone. Every system that can be tested
-in simulation gets built before systems that need hardware or events.
+The Blueprint is the backbone — a parametric CAD pipeline that gives
+the team a complete robot assembly on kickoff day. Build it first,
+build it fully, and build everything else around it.
+
+**Hard deadline: all 10 systems operational by December 2026.**
 
 ---
 
@@ -16,80 +19,79 @@ in simulation gets built before systems that need hardware or events.
 
 | # | Codename | System | Hours | Hardware Cost |
 |---|----------|--------|-------|---------------|
-| 1 | The Vault | Parts Inventory | 12h | $0 |
-| 2 | The Grid | Electrical Standards | 18h | $0 |
-| 3 | The Antenna | Chief Delphi Watcher | 32h | $0 |
-| 4 | The Clock | Build Management | 30h | $0 |
-| 5 | The Cockpit | Driver Station | 39h | $0 |
-| 6 | The Scout | Scouting System | 54h | $0 |
+| 1 | The Blueprint | CAD Pipeline (Full) | 120-150h | $0 |
+| 2 | The Antenna | Chief Delphi Watcher | 32h | $0 |
+| 3 | The Cockpit | Driver Station | 39h | $0 |
+| 4 | The Scout | Scouting System | 54h | $0 |
+| 5 | The Whisper | Coach AI | 38h | ~$390 |
+| 6 | The Eye | AI Match Analysis (Lite) | 60-80h | $0 |
 | 7 | The Pit Crew | Pit Operations | 60h | $0 |
-| 8 | The Whisper | Coach AI | 38h | ~$390 |
-| 9 | The Eye | AI Match Analysis (Lite) | 60-80h | $0 |
-| 10 | The Blueprint | CAD Pipeline (Lite) | 55-70h | $0 |
-| | | **TOTAL** | **398-433h** | **~$390** |
+| 8 | The Vault | Parts Inventory | 12h | $0 |
+| 9 | The Grid | Electrical Standards | 18h | $0 |
+| 10 | The Clock | Build Management | 30h | $0 |
+| | | **TOTAL** | **463-513h** | **~$390** |
 
 ---
 
 ## Priority Tiers
 
-### TIER 1: Build Before Kickoff (Summer-December 2026)
-*These create the foundation everything else depends on.*
+### TIER 1: The Foundation (April-July 2026)
+*The Blueprint is the centerpiece. The Antenna starts compounding immediately.*
 
-| Priority | System | Why First | Blocks | Target |
-|----------|--------|-----------|--------|--------|
-| **1** | **The Vault** (12h) | Every other system references inventory. The Clock needs it for parts tracking. The Blueprint needs it for BOM cross-referencing. Without it, kickoff day ordering is guesswork. | V.1-V.3 | **Summer 2026** |
-| **2** | **The Grid** (18h) | Pre-built wiring harnesses save 20+ hours during build season. Must be done before you need them. Inspection checklist prevents competition failures. | E.1-E.6 | **Summer 2026** |
-| **3** | **The Antenna** (32h) | Starts feeding intelligence into The Engine immediately. By kickoff, you'll have 6 months of Chief Delphi intelligence accumulated. The longer it runs, the more valuable it gets. | AN.1-AN.7 | **Summer 2026** |
-| **4** | **The Clock** (30h) | Auto-generates the 6-week build plan on kickoff day. If this isn't ready, the plan is manual. Needs The Vault for parts cross-referencing. | CL.1-CL.3 | **December 2026** |
-| **5** | **The Cockpit D.1-D.3** (11h) | Controller mapping, dashboard layout, and console hardware standard. Documentation + physical setup — no code. Must be locked before driver practice starts. | D.1-D.3 | **December 2026** |
+| Priority | System | Why First | Target |
+|----------|--------|-----------|--------|
+| **1** | **The Blueprint B.1-B.3** (56h) | API foundation + frame generator + Priority A templates (swerve frame, elevator, OB intake). These 3 templates cover 80%+ of FRC robots. Must be rock-solid before anything else layers on top. | **April-July 2026** |
+| **2** | **The Antenna** (32h) | Starts feeding intelligence into The Engine immediately. Every week it runs, the knowledge base grows. By December you'll have 8 months of community intelligence. Start it in parallel with Blueprint work. | **April-June 2026** |
+| **3** | **The Cockpit D.1-D.3** (11h) | Controller mapping, dashboard layout, console hardware standard. Documentation + physical setup — no code. Lock these early so driver practice is standardized from day one. | **May-June 2026** |
 
-**Tier 1 total: 103 hours, $0 cost**
-**Result: On kickoff day, you have inventory, wiring harnesses, 6 months of CD intelligence, auto-generated build plan, and standardized driver station.**
+**Tier 1 total: ~99 hours, $0 cost**
+**Result: Core CAD templates generating, CD intelligence accumulating, driver station standardized.**
 
 ---
 
-### TIER 2: Build During Early Build Season (January-February 2027)
-*These make the team faster during build season.*
+### TIER 2: Full CAD + Intelligence (July-September 2026)
+*Complete all 12 Blueprint templates. Build the scouting and coaching systems.*
 
-| Priority | System | Why Now | Blocks | Target |
-|----------|--------|---------|--------|--------|
-| **6** | **The Scout S.1-S.3** (28h) | Pre-event report generator + pit question generator + stand scouting form. Must be ready before first event. Layer 1 (automated) is the highest ROI — replaces 80% of pit scouting. | S.1-S.3 | **January 2027** |
-| **7** | **The Cockpit D.4** (12h) | Driver practice analytics. The earlier this runs, the more practice data you accumulate. Every session from week 2 onward is tracked. | D.4 | **January 2027** |
-| **8** | **The Pit Crew P.1-P.3** (12.2h) | Robot Reports channel (10 min), pre-match checklist (4h), post-match diagnostics (8h). P.1 is literally 10 minutes. Start it immediately. P.2-P.3 needed before first event. | P.1-P.3 | **February 2027** |
-| **9** | **The Blueprint B.1-B.2** (26h) | API setup + swerve frame generator. The swerve frame is the same every year — build this template once and reuse forever. Run it on kickoff day 2027 even if B.3-B.5 aren't ready. | B.1-B.2 | **February 2027** |
+| Priority | System | Why Now | Target |
+|----------|--------|---------|--------|
+| **4** | **The Blueprint B.4-B.5** (62h) | Priority B templates (under-bumper intake, full-width intake, hook climber, wrist) + Priority C templates (telescope climber, shooter, turret, cascade elevator). Complete the full template library so any game architecture can be generated. | **July-September 2026** |
+| **5** | **The Scout** (54h) | Full scouting system: pre-event reports, targeted pit visits, stand scouting forms, alliance selection advisor, Monte Carlo simulation. Ready to deploy at any offseason event for testing. | **July-September 2026** |
+| **6** | **The Whisper** (38h) | Order Jetson hardware in July ($390). Build the NT bridge, coach dashboard, and LLM inference pipeline. Test with 20+ simulated matches. This is the most novel system — give it time to iterate. | **August-September 2026** |
+| **7** | **The Eye E.1-E.2** (50h) | Proof of concept + event-scale batch processing. Process offseason event footage to validate the pipeline before competition season. If Roboflow has a good FRC dataset, E.1 drops to ~12 hours. | **August-September 2026** |
 
-**Tier 2 total: 78 hours, $0 cost**
-**Result: Scouting operational, driver improving with data, pit crew running diagnostics, swerve CAD auto-generating.**
-
----
-
-### TIER 3: Build Before First Competition (March 2027)
-*These give you a competitive edge at events.*
-
-| Priority | System | Why Now | Blocks | Target |
-|----------|--------|---------|--------|--------|
-| **10** | **The Scout S.4-S.6** (26h) | Alliance selection advisor + Monte Carlo sim + Whisper integration. The alliance pick is the single highest-leverage decision at an event. Data-informed picks win championships. | S.4-S.6 | **Before first event** |
-| **11** | **The Whisper** (38h) | Coach AI on driver station. Needs Jetson Orin Nano ($249) + monitor ($55). Order hardware in January, build in February, test in March. Nobody in FRC has this. | W.1-W.7 | **March 2027** |
-| **12** | **The Cockpit D.5** (16h) | Drive coach information system. If The Whisper isn't ready, this is the fallback — phone/tablet showing strategy recommendations from existing AutonomousStrategy code. | D.5 | **March 2027** |
-| **13** | **The Pit Crew P.4** (12h) | Wear tracking. By your first event, you want to be counting mechanism cycles. The data compounds — by event 3, you have real failure predictions. | P.4 | **March 2027** |
-
-**Tier 3 total: 92 hours, ~$390 cost**
-**Result: Data-driven alliance selection, AI coach on driver station, wear tracking active, full pit diagnostics.**
+**Tier 2 total: ~204 hours, ~$390 cost**
+**Result: Full 12-template CAD pipeline, scouting system tested, AI coach built, video analysis processing offseason events.**
 
 ---
 
-### TIER 4: Build During/After Competition Season (April-September 2027)
-*These refine your competitive edge and prepare for next year.*
+### TIER 3: Operations + Integration (September-November 2026)
+*Build the team operations infrastructure. Wire everything together.*
 
-| Priority | System | Why Now | Blocks | Target |
-|----------|--------|---------|--------|--------|
-| **14** | **The Eye E.1-E.2** (50h) | Proof of concept + event-scale processing. Process your own events first. If Roboflow has a good FRC dataset, E.1 drops to ~12 hours. | E.1-E.2 | **April-May 2027** |
-| **15** | **The Pit Crew P.5-P.6** (36h) | Pit display dashboard + digital twin. Judge wow factor. Build after first event when you know what data matters. | P.5-P.6 | **Before second event** |
-| **16** | **The Blueprint B.3-B.5** (44h) | Elevator + intake templates + BOM export. Build during offseason when there's time to iterate. Ready for kickoff 2028. | B.3-B.5 | **Summer 2027** |
-| **17** | **The Eye E.3-E.4** (30h) | Scout integration + dashboard. Process opponents' previous events before your later events. | E.3-E.4 | **Summer 2027** |
+| Priority | System | Why Now | Target |
+|----------|--------|---------|--------|
+| **8** | **The Blueprint B.6-B.7** (32h) | Assembly Composer + BOM generator + dry runs. This is the integration layer — subsystems snap onto the frame, BOM exports, and the full kickoff workflow is validated end-to-end. | **September-October 2026** |
+| **9** | **The Vault** (12h) | Full shop audit + inventory Google Sheet. Needs to be done before The Blueprint's BOM cross-referencing works. 12 hours of walking the shop and counting parts. | **September 2026** |
+| **10** | **The Grid** (18h) | Wiring standards card, CAN topology map, pre-built swerve harnesses, inspection checklist, brownout kit. Build harnesses during fall meetings when the shop is available. | **September-October 2026** |
+| **11** | **The Clock** (30h) | Task generator + standup bot + parts tracker. Needs The Vault for inventory cross-referencing. Needs The Blueprint for BOM import. Both are now ready. | **October-November 2026** |
+| **12** | **The Pit Crew P.1-P.4** (24.2h) | Robot Reports channel, pre-match checklist, post-match diagnostics, wear tracking. P.1 takes 10 minutes — do it immediately. P.2-P.4 are software that can be tested against AdvantageKit logs from the current robot. | **October-November 2026** |
+| **13** | **The Cockpit D.4-D.5** (28h) | Driver practice analytics + coach information system. D.5 is The Whisper's lightweight fallback — build both and the coach always has strategic data regardless of which system is running. | **October-November 2026** |
 
-**Tier 4 total: 160 hours, $0 cost**
-**Result: Full system operational. AI video analysis, complete CAD pipeline, pit display with digital twin.**
+**Tier 3 total: ~144 hours, $0 cost**
+**Result: Complete CAD pipeline validated end-to-end, inventory done, harnesses built, build management ready, pit operations running, driver analytics live.**
+
+---
+
+### TIER 4: Polish + Future-Proofing (November-December 2026)
+*Final integration, testing, and preparation for kickoff.*
+
+| Priority | System | Why Now | Target |
+|----------|--------|---------|--------|
+| **14** | **The Eye E.3-E.4** (30h) | Scout integration + dashboard visualization. Wire The Eye's heat maps and cycle times into The Scout's pre-event reports. Build the team comparison dashboard for alliance selection. | **November 2026** |
+| **15** | **The Pit Crew P.5-P.6** (36h) | Pit display dashboard + digital twin. Judge wow factor + real debugging value. Build after all data systems are running so the display has real data to show. | **November-December 2026** |
+| **16** | **Full system dry run** (0h) | Run the entire kickoff workflow end-to-end using a past game (REBUILT or Reefscape). Prediction engine → Blueprint → Clock → Vault cross-ref → Scout pre-event. Fix any integration gaps. | **December 2026** |
+
+**Tier 4 total: ~66 hours, $0 cost**
+**Result: All 10 systems operational, tested, and ready for January 2027 kickoff.**
 
 ---
 
@@ -98,47 +100,93 @@ in simulation gets built before systems that need hardware or events.
 ```
 ═══════════════════════════════════════════════════════════════════
 
-SUMMER 2026 (June-August)                    TARGET: 62 hours
-├── The Vault: full shop audit + inventory sheet (V.1-V.3)
-├── The Grid: wiring standards + harnesses + checklist (E.1-E.6)
-└── The Antenna: CD scraper + scoring + Discord digest (AN.1-AN.6)
+APRIL 2026                                   TARGET: 38 hours
+├── The Blueprint B.1: API + COTS setup (6h)
+├── The Blueprint B.2: swerve frame generator (24h)
+└── The Antenna AN.1-AN.3: scraper + scoring + database (16h)
 
-FALL 2026 (September-December)               TARGET: 41 hours
-├── The Antenna: LLM summarization (AN.7)
-├── The Clock: task generator + standup bot + parts tracker (CL.1-CL.3)
-└── The Cockpit: controller mapping + dashboard + console (D.1-D.3)
+MAY 2026                                     TARGET: 42 hours
+├── The Blueprint B.3: Priority A templates — elevator + intake (26h)
+├── The Antenna AN.4-AN.6: digest + Discord + recommendations (11h)
+└── The Cockpit D.1-D.3: mapping + dashboard + console (11h)
+    *** Antenna weekly digests begin posting ***
 
-KICKOFF DAY (January 2027)                   ← YOU ARE HERE
-│   Run prediction engine → Run The Clock → Run The Vault cross-ref
-│   → Order parts → Teams assigned by hour 4
-│
-├── The Scout: pre-event report + pit questions + forms (S.1-S.3)
-├── The Cockpit: driver practice analytics (D.4)
-├── The Pit Crew: Robot Reports + checklist + diagnostics (P.1-P.3)
-└── The Blueprint: API setup + swerve frame generator (B.1-B.2)
+JUNE 2026                                    TARGET: 35 hours
+├── The Blueprint B.4: Priority B templates — intake, climber, wrist (30h)
+└── The Antenna AN.7: LLM summarization (5h)
 
-FEBRUARY 2027                                TARGET: 78 hours
-├── The Scout: alliance advisor + Monte Carlo (S.4-S.5)
-├── The Whisper: hardware + software + testing (W.1-W.7)
-└── The Pit Crew: wear tracking (P.4)
+JULY 2026                                    TARGET: 50 hours
+├── The Blueprint B.5: Priority C templates — shooter, turret, cascade (32h)
+├── The Scout S.1-S.2: pre-event report + anomaly detection (24h)
+└── Order Jetson Orin Nano hardware ($390)
 
-MARCH 2027 (FIRST EVENT)                     TARGET: 54 hours
-├── The Scout: Whisper integration (S.6)
-├── The Cockpit: coach info system (D.5)
-└── Deploy everything. Compete.
+AUGUST 2026                                  TARGET: 56 hours
+├── The Scout S.3-S.4: stand scouting + alliance advisor (16h)
+├── The Whisper W.1-W.4: hardware + NT bridge + dashboard + wiring (22h)
+└── The Eye E.1: proof of concept on one match (12-20h)
 
-APRIL-MAY 2027                               TARGET: 86 hours
-├── The Eye: proof of concept + event processing (E.1-E.2)
-├── The Pit Crew: pit display + digital twin (P.5-P.6)
-└── Process your own event data through The Eye
+SEPTEMBER 2026                               TARGET: 68 hours
+├── The Blueprint B.6: assembly composer + BOM (20h)
+├── The Whisper W.5-W.7: sim testing + prompt tuning + live test (16h)
+├── The Eye E.2: event-scale batch processing (30h)
+├── The Scout S.5-S.6: Monte Carlo + Whisper integration (14h)
+├── The Vault V.1-V.3: inventory template + audit + cross-ref (12h)
+└── The Grid E.1-E.2: wiring card + CAN map (5h)
 
-SUMMER 2027                                  TARGET: 74 hours
-├── The Blueprint: elevator + intake templates + BOM (B.3-B.5)
-├── The Eye: Scout integration + dashboard (E.3-E.4)
-└── Everything ready for kickoff 2028
+OCTOBER 2026                                 TARGET: 51 hours
+├── The Blueprint B.7: validation + dry runs (12h)
+├── The Grid E.3-E.6: harnesses + PDH + checklist + kit (13h)
+├── The Clock CL.1-CL.2: task generator + standup bot (18h)
+├── The Pit Crew P.1-P.2: Robot Reports + checklist (4.2h)
+└── The Cockpit D.4: driver practice analytics (12h)
+
+NOVEMBER 2026                                TARGET: 68 hours
+├── The Clock CL.3: parts tracker + BOM import + Vault link (10h)  *** Note: CL.2c (2h) already done in Oct ***
+├── The Pit Crew P.3-P.4: diagnostics + wear tracking (20h)
+├── The Cockpit D.5: coach info system (16h)
+├── The Eye E.3: Scout integration (15h)
+└── The Pit Crew P.5: pit display dashboard (16h)
+
+DECEMBER 2026                                TARGET: 42 hours
+├── The Eye E.4: dashboard visualization (15h)
+├── The Pit Crew P.6: digital twin (20h)
+├── Full system dry run: kickoff simulation with past game
+└── Fix integration gaps, document everything
 
 ═══════════════════════════════════════════════════════════════════
+JANUARY 2027 — KICKOFF DAY
+│
+│   Run prediction engine → Run The Blueprint → Run The Clock
+│   → Run The Vault cross-ref → Order parts → Teams assigned
+│   → The Scout generates pre-event reports
+│   → The Whisper loaded on driver station shelf
+│   → The Antenna has 9 months of intelligence
+│   → The Grid harnesses installed in hours, not days
+│
+│   YOU ARE THE MOST PREPARED TEAM AT YOUR EVENT.
+═══════════════════════════════════════════════════════════════════
 ```
+
+---
+
+## Monthly Hour Commitment
+
+| Month | Hours | Pace (hrs/week) |
+|-------|-------|-----------------|
+| April | 38 | ~10 |
+| May | 42 | ~10 |
+| June | 35 | ~9 |
+| July | 50 | ~12 |
+| August | 56 | ~14 |
+| September | 68 | ~17 |
+| October | 51 | ~13 |
+| November | 68 | ~17 |
+| December | 42 | ~10 |
+| **TOTAL** | **~450** | **avg ~12 hrs/week** |
+
+This is roughly 12 hours/week across 9 months. Peaks in August-September
+and November when multiple systems are building in parallel. Achievable
+with 2-3 dedicated students + mentor working evenings and weekends.
 
 ---
 
@@ -151,71 +199,65 @@ SUMMER 2027                                  TARGET: 74 hours
                     │  (EXISTS)    │
                     └──────┬──────┘
                            │
-              ┌────────────┼────────────┐
-              │            │            │
-              ▼            ▼            ▼
-      ┌──────────┐ ┌──────────┐ ┌──────────┐
-      │The Clock │ │  The     │ │  The     │
-      │(tasks)   │ │Blueprint │ │ Cockpit  │
-      └────┬─────┘ │(CAD)     │ │(driver)  │
-           │       └────┬─────┘ └────┬─────┘
-           │            │            │
-           ▼            ▼            │
-      ┌──────────┐ ┌──────────┐     │
-      │The Vault │ │BOM Export │     │
-      │(parts)   │◄┤          │     │
-      └──────────┘ └──────────┘     │
-                                    │
-      ┌──────────┐                  │
-      │The Grid  │                  │
-      │(wiring)  │──────────────────┘
-      └──────────┘        (harnesses ready for build)
+         ┌─────────────────┼─────────────────┐
+         │                 │                 │
+         ▼                 ▼                 ▼
+ ┌──────────────┐  ┌──────────┐      ┌──────────┐
+ │ The Blueprint│  │The Clock │      │ The      │
+ │ (CAD) ★ T1   │  │(tasks)T3 │      │ Cockpit  │
+ │ 12 templates │  └────┬─────┘      │(driver)  │
+ └──────┬───────┘       │            └──────────┘
+        │                │
+        ▼                ▼
+ ┌──────────┐     ┌──────────┐
+ │BOM Export │────►│The Vault │
+ │          │     │(parts)T3 │
+ └──────────┘     └──────────┘
 
-      ┌──────────┐     ┌──────────┐     ┌──────────┐
-      │The       │────►│The Scout │────►│The       │
-      │Antenna   │     │(scouting)│     │Whisper   │
-      │(CD intel)│     └────┬─────┘     │(coach AI)│
-      └──────────┘          │           └──────────┘
-                            │
-                    ┌───────▼──────┐
-                    │   The Eye    │
-                    │(video intel) │
-                    └──────────────┘
+ ┌──────────┐     ┌──────────┐     ┌──────────┐
+ │The       │────►│The Scout │────►│The       │
+ │Antenna   │     │(scouting)│     │Whisper   │
+ │★ T1      │     │T2        │     │(coach)T2 │
+ └──────────┘     └────┬─────┘     └──────────┘
+                       │
+               ┌───────▼──────┐
+               │   The Eye    │
+               │(video) T2/T4 │
+               └──────────────┘
 
-      ┌──────────┐
-      │The Pit   │  (standalone — reads AdvantageKit logs)
-      │Crew      │
-      └──────────┘
+ ┌──────────┐     ┌──────────┐
+ │The Grid  │     │The Pit   │
+ │(wiring)T3│     │Crew T3/T4│
+ └──────────┘     └──────────┘
 ```
+
+★ = Tier 1 priority
 
 ---
 
 ## What Compounds
 
-These systems get better over time. Starting them early is critical:
+Start these early — they get better over time:
 
 | System | Compound Effect |
 |--------|----------------|
-| **The Antenna** | 6 months of CD intelligence by kickoff. 12 months by first event. Every week adds to the knowledge base. |
-| **The Vault** | Consumption data from one season predicts next season's orders. |
-| **The Pit Crew P.1** | Robot Reports from one event inform pre-inspection at the next. After 3 events, you have a real reliability database. |
-| **The Eye** | More events processed = more accurate team profiles. By playoffs, you've analyzed 200+ matches. |
-| **D.4 Practice Analytics** | 30 practice sessions of data shows exactly where the driver improved and what still needs work. |
-| **The Blueprint** | Templates improve annually. Year 2 kickoff is even faster than Year 1. |
+| **The Antenna** | 9 months of CD intelligence by kickoff. Every week adds to the knowledge base. |
+| **The Blueprint** | Templates improve with each dry run. Year 2 kickoff is even faster. |
+| **The Eye** | More events processed = more accurate team profiles. |
+| **The Pit Crew P.1** | Robot Reports build a reliability database over time. |
+| **D.4 Practice Analytics** | More sessions tracked = better drill recommendations. |
 
 ---
 
 ## Quick Wins (Do This Week)
 
-These take less than 2 hours each and create immediate value:
-
 | # | Action | Time | Impact |
 |---|--------|------|--------|
-| 1 | Create #robot-reports channel on Discord/Slack (P.1) | 10 min | Starts reliability database |
-| 2 | Print wiring standards card (E.1) — laminate, post in shop | 30 min | Every student wires correctly |
-| 3 | Set up The Vault Google Sheet with 6 inventory tabs | 1 hour | Ready for shop audit |
-| 4 | Print controller mapping card (D.1) — tape to driver station | 30 min | Driver never looks down |
-| 5 | Order Jetson Orin Nano Dev Kit ($249) — lead time matters | 10 min | Hardware arrives when you need it |
+| 1 | Set up OnShape API key + test onshape-client | 1 hour | Blueprint B.1 started |
+| 2 | Start The Antenna scraper (AN.1) | 3 hours | Intelligence starts accumulating |
+| 3 | Create #robot-reports Discord channel (P.1) | 10 min | Reliability database begins |
+| 4 | Order Jetson Orin Nano Dev Kit ($249) | 10 min | Lead time — arrives when needed |
+| 5 | Catalog MKCad parts for Blueprint (B.1.2) | 2 hours | Foundation for all templates |
 
 ---
 
@@ -223,13 +265,13 @@ These take less than 2 hours each and create immediate value:
 
 | Item | Cost | When to Buy |
 |------|------|-------------|
-| Jetson Orin Nano 8GB Dev Kit | $249 | January 2027 (lead time) |
-| 7" HDMI IPS monitor | $55 | January 2027 |
-| HDMI cable (3ft) | $8 | January 2027 |
-| Ethernet cable (3ft) | $5 | January 2027 |
-| USB-C PD power bank (65W) | $40 | January 2027 |
-| USB-C PD cable (1ft) | $8 | January 2027 |
-| 3D-printed Jetson enclosure | $5 | February 2027 |
+| Jetson Orin Nano 8GB Dev Kit | $249 | July 2026 |
+| 7" HDMI IPS monitor | $55 | July 2026 |
+| HDMI cable (3ft) | $8 | July 2026 |
+| Ethernet cable (3ft) | $5 | July 2026 |
+| USB-C PD power bank (65W) | $40 | July 2026 |
+| USB-C PD cable (1ft) | $8 | July 2026 |
+| 3D-printed Jetson enclosure | $5 | August 2026 |
 | 8-port Ethernet switch | $20 | If not already owned |
 | **TOTAL** | **~$390** | |
 
@@ -240,25 +282,23 @@ open source libraries, Google Sheets, Discord webhooks.
 
 ## Success Metrics
 
-### By Kickoff 2027
-- [ ] Full shop inventory completed (The Vault)
-- [ ] 4 swerve wiring harnesses pre-built (The Grid)
-- [ ] 6 months of CD intelligence accumulated (The Antenna)
-- [ ] Build plan auto-generated within 30 minutes of game reveal (The Clock)
-- [ ] Parts ordered within 4 hours of kickoff (The Vault + The Clock)
+### By July 2026
+- [ ] Blueprint generating swerve frames + elevators + OB intakes (Priority A)
+- [ ] Antenna posting weekly CD digests to Discord
+- [ ] Driver station mapping and dashboard locked
 
-### By First Event 2027
-- [ ] Pre-event scouting report generated for all teams (The Scout)
-- [ ] Driver practice analytics showing improvement curves (The Cockpit)
-- [ ] Pre-match checklist operational (The Pit Crew)
-- [ ] Post-match diagnostic reports auto-generated (The Pit Crew)
+### By September 2026
+- [ ] All 12 Blueprint templates generating correctly
+- [ ] Scout pre-event reports generating from TBA/Statbotics
+- [ ] Whisper showing recommendations from simulated matches
+- [ ] Eye processing at least one full offseason event
 
-### By End of Season 2027
-- [ ] AI coach deployed on driver station (The Whisper)
-- [ ] Data-informed alliance selection at every event (The Scout)
-- [ ] Video analysis of at least one full event (The Eye)
-- [ ] Parametric swerve frame + elevator + intake templates ready (The Blueprint)
-- [ ] All 10 systems operational for kickoff 2028
+### By December 2026
+- [ ] Full kickoff workflow validated end-to-end (past game dry run)
+- [ ] All 10 systems operational
+- [ ] 8+ months of Antenna intelligence accumulated
+- [ ] Pit display + digital twin running
+- [ ] Team ready for January 2027 kickoff
 
 ---
 
