@@ -14,6 +14,9 @@ plugins {
 java {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
 }
 
 def ROBOT_MAIN_CLASS = "frc.robot.Main"
@@ -144,7 +147,7 @@ tasks.withType(com.github.spotbugs.snom.SpotBugsTask).configureEach {
 // JACOCO — Test Coverage Measurement
 // ═══════════════════════════════════════════════════════════════════════════════
 // Measures what percentage of code is exercised by JUnit tests.
-// Targets: 90%+ on frc.lib (pure math), 50%+ on frc.robot (hardware-coupled).
+// Targets: 80%+ on frc.lib (pure math, enforced by build gate), 50%+ on frc.robot (hardware-coupled).
 // Run: ./gradlew test jacocoTestReport
 // Report: build/reports/jacoco/test/html/index.html
 

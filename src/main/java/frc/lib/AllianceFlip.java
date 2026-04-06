@@ -13,7 +13,7 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
  */
 public final class AllianceFlip {
 
-  private static final double kFieldLengthMeters = 16.54;
+  private static final double kFieldLengthMeters = 16.541;
 
   private AllianceFlip() {}
 

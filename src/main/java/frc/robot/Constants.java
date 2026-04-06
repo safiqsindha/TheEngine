@@ -15,8 +15,11 @@ public final class Constants {
   // Robot physical constants (used for velocity limiting in swerve)
   public static final double kRobotMassKg = (148 - 20.3) * 0.453592;
 
-  /** FRC 2024 (Crescendo) field length in meters (54 ft 3.25 in). */
+  /** FRC field length in meters (54 ft 3.25 in). */
   public static final double kFieldLengthMeters = 16.541;
+
+  /** FRC field width in meters (26 ft 11.25 in). */
+  public static final double kFieldWidthMeters = 8.211;
 
   public static final Matter kChassis =
       new Matter(new Translation3d(0, 0, Units.inchesToMeters(8)), kRobotMassKg);

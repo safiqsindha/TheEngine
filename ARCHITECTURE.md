@@ -13,7 +13,7 @@
 - **Game:** 2026 REBUILT (FUEL scoring, HUB active/inactive shifts, TOWER climbing)
 - **Language:** Java 17
 - **Framework:** WPILib 2026, Command-Based
-- **Build:** Gradle + GradleRIO 2026.1.1
+- **Build:** Gradle + GradleRIO 2026.2.1 (canonical version in `build.gradle`)
 
 ## 2. Hardware Configuration
 
@@ -249,7 +249,7 @@ it as a transitive dependency anyway. REVLib is REQUIRED for SPARK MAX motor con
 
 ## 10. Testing Requirements
 
-- **frc.lib.***: 90%+ line coverage. Pure math — every function tested.
+- **frc.lib.***: 80%+ line coverage (enforced by build gate). Pure math — every function tested.
 - **frc.robot.***: 50%+ line coverage. Use WPILib sim hooks + fake NT data.
 - Run: `./gradlew test` (must pass before every commit)
 - Coverage: `./gradlew test jacocoTestReport` (report at build/reports/jacoco/)

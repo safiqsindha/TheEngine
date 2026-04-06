@@ -220,6 +220,6 @@ public class VisionSubsystem extends SubsystemBase {
     }
     double x = botpose[0];
     double y = botpose[1];
-    return x >= 0 && x <= 16.54 && y >= 0 && y <= 8.21;
+    return x >= 0 && x <= Constants.kFieldLengthMeters && y >= 0 && y <= Constants.kFieldWidthMeters;
   }
 }
