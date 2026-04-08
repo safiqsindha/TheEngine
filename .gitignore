@@ -22,3 +22,13 @@ Thumbs.db
 *.log
 *.wpilog
 *.hoot
+
+# Antenna system
+systems/antenna/.env
+systems/antenna/*.db
+systems/antenna/*.db-shm
+systems/antenna/*.db-wal
+systems/antenna/.bot.lock
+
+# Claude
+.claude/

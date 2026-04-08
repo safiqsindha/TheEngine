@@ -15,6 +15,7 @@ from config import (
     CD_USER_AGENT,
     CD_RATE_LIMIT_SECONDS,
     CD_TOPICS_PER_PAGE,
+    CD_CATEGORY_SLUGS,
     MAX_PAGES_PER_RUN,
 )
 
@@ -60,6 +61,25 @@ class CDScraper:
             logger.error(f"JSON decode error for {url}: {e}")
             return None
 
+    def _build_user_lookup(self, data: dict) -> dict:
+        """Build a user_id → username lookup from the API response."""
+        lookup = {}
+        for user in data.get("users", []):
+            lookup[user.get("id")] = user.get("username", "")
+        return lookup
+
+    def _extract_topics(self, data: dict) -> list[dict]:
+        """Extract and standardize topics from an API response."""
+        if not data or "topic_list" not in data:
+            return []
+        user_lookup = self._build_user_lookup(data)
+        results = []
+        for topic in data["topic_list"].get("topics", []):
+            standardized = self._standardize_topic(topic, user_lookup)
+            if standardized:
+                results.append(standardized)
+        return results
+
     def fetch_latest_topics(self, max_pages: int = MAX_PAGES_PER_RUN) -> list[dict]:
         """
         Fetch the latest topics from Chief Delphi.
@@ -75,17 +95,13 @@ class CDScraper:
                 logger.warning(f"No data on page {page}, stopping.")
                 break
 
-            topics = data["topic_list"].get("topics", [])
+            topics = self._extract_topics(data)
             if not topics:
                 logger.info(f"No more topics on page {page}, stopping.")
                 break
 
-            for topic in topics:
-                standardized = self._standardize_topic(topic)
-                if standardized:
-                    all_topics.append(standardized)
+            all_topics.extend(topics)
 
-            # Check if there are more pages
             if not data["topic_list"].get("more_topics_url"):
                 logger.info("No more pages available.")
                 break
@@ -106,19 +122,89 @@ class CDScraper:
             if not data or "topic_list" not in data:
                 break
 
-            topics = data["topic_list"].get("topics", [])
+            topics = self._extract_topics(data)
             if not topics:
                 break
 
-            for topic in topics:
-                standardized = self._standardize_topic(topic)
-                if standardized:
-                    all_topics.append(standardized)
+            all_topics.extend(topics)
 
             if not data["topic_list"].get("more_topics_url"):
                 break
 
         return all_topics
+
+    def fetch_priority_categories(self, max_pages_per_cat: int = 3) -> list[dict]:
+        """
+        Fetch topics from priority categories (Technical, Competition).
+        Deduplicates against /latest results by topic_id.
+        """
+        all_topics = []
+        seen_ids = set()
+
+        for cat_id, slug in CD_CATEGORY_SLUGS.items():
+            logger.info(f"Fetching category: {slug} (id={cat_id})...")
+            topics = self.fetch_category_topics(slug, max_pages=max_pages_per_cat)
+            for t in topics:
+                if t["topic_id"] not in seen_ids:
+                    t["category_name"] = slug
+                    all_topics.append(t)
+                    seen_ids.add(t["topic_id"])
+
+        logger.info(f"Fetched {len(all_topics)} unique topics from priority categories.")
+        return all_topics
+
+    def search_topics(self, query: str, max_results: int = 20) -> list[dict]:
+        """
+        Search Chief Delphi for a specific query.
+        Returns standardized topic dicts.
+        """
+        data = self._get("/search.json", params={"q": query})
+        if not data:
+            return []
+
+        results = []
+        seen_ids = set()
+
+        for topic in data.get("topics", []):
+            if topic.get("id") in seen_ids:
+                continue
+            seen_ids.add(topic["id"])
+
+            # Search results have a slightly different shape than /latest
+            standardized = {
+                "topic_id": topic.get("id"),
+                "url": f"{CD_BASE_URL}/t/{topic.get('slug', '')}/{topic.get('id')}",
+                "title": topic.get("title", ""),
+                "author": "",
+                "category_id": topic.get("category_id"),
+                "category_name": "",
+                "date_posted": topic.get("created_at", ""),
+                "last_activity": topic.get("last_posted_at", ""),
+                "like_count": topic.get("like_count", 0) or 0,
+                "reply_count": max(0, (topic.get("posts_count", 1) or 1) - 1),
+                "views": topic.get("views", 0) or 0,
+                "tags": "",
+                "raw_excerpt": "",
+                "summary": "",
+                "excerpt": topic.get("title", ""),
+            }
+
+            # Search results include blurb text from matching posts
+            for post in data.get("posts", []):
+                if post.get("topic_id") == topic["id"]:
+                    blurb = post.get("blurb", "")
+                    standardized["excerpt"] = f"{standardized['title']} {blurb}"
+                    standardized["raw_excerpt"] = blurb[:200]
+                    standardized["author"] = post.get("username", "")
+                    break
+
+            results.append(standardized)
+
+            if len(results) >= max_results:
+                break
+
+        logger.info(f"Search '{query}': {len(results)} results")
+        return results
 
     def fetch_topic_detail(self, topic_id: int) -> Optional[dict]:
         """
@@ -150,7 +236,8 @@ class CDScraper:
 
         return result
 
-    def _standardize_topic(self, raw: dict) -> Optional[dict]:
+    def _standardize_topic(self, raw: dict,
+                           user_lookup: Optional[dict] = None) -> Optional[dict]:
         """Convert raw Discourse topic dict to our standard format."""
         topic_id = raw.get("id")
         if not topic_id:
@@ -163,18 +250,18 @@ class CDScraper:
         title = raw.get("title", "")
         slug = raw.get("slug", "")
 
-        # Extract poster info
-        posters = raw.get("posters", [])
+        # Extract OP username from posters array + user lookup
         author = ""
-        if posters:
-            # First poster with description containing "Original Poster"
+        posters = raw.get("posters", [])
+        if posters and user_lookup:
             for p in posters:
                 if "Original Poster" in (p.get("description") or ""):
-                    # The user info is in the top-level users array,
-                    # but we only have the poster extras here.
-                    # Use last_poster_username as fallback.
+                    user_id = p.get("user_id")
+                    if user_id and user_id in user_lookup:
+                        author = user_lookup[user_id]
                     break
-        author = raw.get("last_poster_username", "")
+        if not author:
+            author = raw.get("last_poster_username", "")
 
         # Build excerpt from available data
         excerpt = raw.get("excerpt", "") or ""
@@ -199,7 +286,7 @@ class CDScraper:
             "date_posted": raw.get("created_at", ""),
             "last_activity": raw.get("last_posted_at", ""),
             "like_count": raw.get("like_count", 0) or 0,
-            "reply_count": raw.get("posts_count", 1) - 1,  # posts includes OP
+            "reply_count": (raw.get("posts_count") or 1) - 1,  # posts includes OP
             "views": raw.get("views", 0) or 0,
             "tags": tags_str,
             "raw_excerpt": excerpt,
@@ -211,12 +298,24 @@ class CDScraper:
 
 def fetch_and_filter_recent(scraper: CDScraper,
                             since: Optional[datetime] = None,
-                            max_pages: int = MAX_PAGES_PER_RUN) -> list[dict]:
+                            max_pages: int = MAX_PAGES_PER_RUN,
+                            include_categories: bool = True) -> list[dict]:
     """
-    Fetch recent topics and optionally filter to only those
-    posted/updated since a given datetime.
+    Fetch recent topics from /latest and priority categories.
+    Deduplicates by topic_id. Optionally filter by date.
     """
+    # Fetch from /latest
     topics = scraper.fetch_latest_topics(max_pages=max_pages)
+    seen_ids = {t["topic_id"] for t in topics}
+
+    # Also fetch from priority categories to catch category-specific posts
+    if include_categories:
+        cat_topics = scraper.fetch_priority_categories(max_pages_per_cat=2)
+        for t in cat_topics:
+            if t["topic_id"] not in seen_ids:
+                topics.append(t)
+                seen_ids.add(t["topic_id"])
+        logger.info(f"Combined: {len(topics)} unique topics (latest + categories)")
 
     if since:
         filtered = []

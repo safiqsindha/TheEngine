@@ -191,11 +191,11 @@ def upsert_post(conn: sqlite3.Connection, post: dict) -> bool:
 
 def get_posts_since(conn: sqlite3.Connection, since: datetime,
                     min_score: int = 0) -> list[dict]:
-    """Get posts from the last N days with minimum score."""
+    """Get posts created since a given date with minimum score."""
     cursor = conn.cursor()
     rows = cursor.execute("""
         SELECT * FROM posts
-        WHERE date_scraped >= ? AND relevance_score >= ?
+        WHERE date_posted >= ? AND relevance_score >= ?
         ORDER BY relevance_score DESC, like_count DESC
     """, (since.isoformat(), min_score)).fetchall()
     return [dict(row) for row in rows]

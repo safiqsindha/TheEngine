@@ -2,6 +2,9 @@
 The Antenna — Weekly Digest Formatter (AN.4) + Action Recommender (AN.6)
 Formats scored posts into a Discord-ready weekly intelligence digest.
 Team 2950 — The Devastators
+
+Design principle: NO bare URLs in digest body text.
+URLs only appear on reaction-trackable messages, wrapped in <> to suppress embeds.
 """
 
 from datetime import datetime, timedelta
@@ -16,10 +19,12 @@ def format_weekly_digest(
     week_start: Optional[datetime] = None,
     week_end: Optional[datetime] = None,
     db_total: int = 0,
+    trends: Optional[list[dict]] = None,
 ) -> str:
     """
     Format the weekly digest from scored posts.
-    Returns a string ready for Discord (may need splitting at 2000 chars).
+    Returns a single Discord message (kept under 1900 chars).
+    NO URLs in this text — they go on separate reaction messages.
     """
     if not week_start:
         week_start = datetime.utcnow() - timedelta(days=7)
@@ -32,87 +37,65 @@ def format_weekly_digest(
     notable = [p for p in posts if p.get("tier") == "notable"]
     high_priority = critical + high
 
-    # Header
     lines = []
+
+    # Header in code block
     lines.append("```")
-    lines.append("=" * 55)
     lines.append("THE ANTENNA — Weekly Intelligence Digest")
-    lines.append(f"Week of {week_start.strftime('%B %d')} - {week_end.strftime('%B %d, %Y')}")
+    lines.append(f"Week of {week_start.strftime('%b %d')} – {week_end.strftime('%b %d, %Y')}")
     lines.append(
-        f"Posts scanned: {total_scanned} | "
-        f"Relevant: {len(posts)} | "
-        f"High priority: {len(high_priority)}"
+        f"Scanned: {total_scanned} | Relevant: {len(posts)} | High priority: {len(high_priority)}"
     )
-    lines.append("=" * 55)
     lines.append("```")
 
-    # High Priority section
+    # High Priority — titles only, no URLs
     if high_priority:
         lines.append("")
-        lines.append("**HIGH PRIORITY (action recommended)**")
-        lines.append("")
+        lines.append("**HIGH PRIORITY** (react below to track)")
         for i, post in enumerate(high_priority, 1):
-            lines.append(f"**{i}. {post['title']}**")
-            lines.append(f"   {post['url']}")
+            target = f" → {post['engine_file_target']}" if post.get("engine_file_target") else ""
+            teams = f" | Teams: {post['tracked_teams']}" if post.get("tracked_teams") else ""
             lines.append(
-                f"   Score: {post['relevance_score']} | "
-                f"{post['like_count']} likes | "
-                f"{post['reply_count']} replies"
+                f"**{i}.** {post['title'][:60]} "
+                f"[{post['relevance_score']}]{teams}{target}"
             )
-            if post.get("tracked_teams"):
-                lines.append(f"   Teams: {post['tracked_teams']}")
-            if post.get("keywords_matched"):
-                lines.append(f"   Keywords: {post['keywords_matched']}")
-            if post.get("engine_file_target"):
-                lines.append(f"   **TARGET:** {post['engine_file_target']}")
-            if post.get("action_recommendation"):
-                lines.append(f"   **ACTION:** {post['action_recommendation']}")
-            lines.append("")
 
-    # Notable section
+    # Notable — compact one-liners, no URLs
     if notable:
         lines.append("")
-        lines.append("**NOTABLE (review when time allows)**")
-        lines.append("")
-        for i, post in enumerate(notable, len(high_priority) + 1):
-            lines.append(f"{i}. **{post['title']}**")
-            lines.append(f"   {post['url']}")
-            score_info = f"Score: {post['relevance_score']}"
-            if post["like_count"]:
-                score_info += f" | {post['like_count']} likes"
-            lines.append(f"   {score_info}")
-            if post.get("keywords_matched"):
-                lines.append(f"   Keywords: {post['keywords_matched']}")
-            lines.append("")
+        shown = notable[:5]
+        remaining = len(notable) - len(shown)
+        lines.append(f"**NOTABLE** ({len(notable)} total)")
+        for post in shown:
+            likes = f" ({post['like_count']} likes)" if post.get("like_count") else ""
+            lines.append(f"• [{post['relevance_score']}] {post['title'][:55]}{likes}")
+        if remaining > 0:
+            lines.append(f"*+{remaining} more — run `!top` for full list*")
 
     # Tracked team activity
     team_posts = _group_by_tracked_teams(posts)
     if team_posts:
         lines.append("")
-        lines.append("**TRACKED TEAM ACTIVITY**")
-        lines.append("")
+        lines.append("**TRACKED TEAMS**")
         for team_num in sorted(team_posts.keys()):
-            team_topics = team_posts[team_num]
-            count = len(team_topics)
-            titles = ", ".join(t["title"][:40] for t in team_topics[:3])
-            lines.append(f"- **{team_num}**: {count} post(s) ({titles})")
+            topics = team_posts[team_num]
+            titles = ", ".join(t["title"][:30] for t in topics[:2])
+            lines.append(f"• **{team_num}**: {len(topics)} post(s) — {titles}")
+        active = set(team_posts.keys())
+        silent = TRACKED_TEAMS - active
+        if silent:
+            lines.append(f"• No activity: {', '.join(str(t) for t in sorted(silent))}")
 
-        # Show tracked teams with no activity
-        active_teams = set(team_posts.keys())
-        silent_teams = TRACKED_TEAMS - active_teams
-        if silent_teams:
-            silent_str = ", ".join(str(t) for t in sorted(silent_teams))
-            lines.append(f"- No activity: {silent_str}")
+    # Community trends
+    if trends:
         lines.append("")
+        lines.append("**TRENDS**")
+        for trend in trends[:5]:
+            lines.append(f"• **{trend['keyword']}**: {trend['count']} threads")
 
     # Footer
-    lines.append("```")
-    lines.append(f"Total posts in database: {db_total}")
-    lines.append(
-        f"Next digest: Sunday, "
-        f"{(week_end + timedelta(days=7)).strftime('%B %d, %Y')}"
-    )
-    lines.append("```")
+    lines.append("")
+    lines.append(f"```DB: {db_total} posts | Next digest: {(week_end + timedelta(days=7)).strftime('%b %d')}```")
 
     return "\n".join(lines)
 
@@ -123,7 +106,7 @@ def format_critical_alert(post: dict) -> str:
         "**ANTENNA CRITICAL ALERT**",
         "",
         f"**{post['title']}**",
-        f"{post['url']}",
+        f"<{post['url']}>",
         f"Score: {post['relevance_score']} | "
         f"{post['like_count']} likes | "
         f"{post['reply_count']} replies",
@@ -173,55 +156,3 @@ def _group_by_tracked_teams(posts: list[dict]) -> dict[int, list[dict]]:
             except ValueError:
                 continue
     return team_posts
-
-
-if __name__ == "__main__":
-    # Test with sample data
-    sample_posts = [
-        {
-            "title": "254 Technical Binder 2026 Released",
-            "url": "https://www.chiefdelphi.com/t/254-binder/12345",
-            "relevance_score": 18,
-            "tier": "critical",
-            "like_count": 234,
-            "reply_count": 89,
-            "tracked_teams": "254",
-            "keywords_matched": "binder,elevator,swerve",
-            "engine_file_target": "254_CROSS_SEASON_ANALYSIS.md",
-            "action_recommendation": "Extract motor census and architecture.",
-        },
-        {
-            "title": "1323 Build Thread — Mid-Season Redesign",
-            "url": "https://www.chiefdelphi.com/t/1323-build/12346",
-            "relevance_score": 14,
-            "tier": "high",
-            "like_count": 67,
-            "reply_count": 34,
-            "tracked_teams": "1323",
-            "keywords_matched": "intake,build thread",
-            "engine_file_target": "TEAM_DATABASE.md",
-            "action_recommendation": "Update with redesign details.",
-        },
-        {
-            "title": "AdvantageScope 4.0 Released",
-            "url": "https://www.chiefdelphi.com/t/as-4/12347",
-            "relevance_score": 9,
-            "tier": "notable",
-            "like_count": 112,
-            "reply_count": 28,
-            "tracked_teams": "",
-            "keywords_matched": "advantagescope",
-            "engine_file_target": "",
-            "action_recommendation": "",
-        },
-    ]
-
-    digest = format_weekly_digest(
-        posts=sample_posts,
-        total_scanned=847,
-        db_total=1847,
-    )
-    print(digest)
-    print(f"\n--- Digest length: {len(digest)} chars ---")
-    chunks = split_for_discord(digest)
-    print(f"--- Would split into {len(chunks)} Discord message(s) ---")
