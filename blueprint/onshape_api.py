@@ -59,7 +59,7 @@ def create_document(name: str, description: str = "") -> dict:
     response = client.documents_api.create_document({
         "name": name,
         "description": description,
-        "isPublic": False,
+        "isPublic": True,  # Free edu accounts require public documents
     })
     doc_id = response.id
     workspace_id = response.default_workspace.id

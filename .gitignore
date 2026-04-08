@@ -55,3 +55,4 @@ MASTER_DISPATCH_PROMPT.md
 
 # Blueprint
 blueprint/.env
+blueprint/*_spec.json
