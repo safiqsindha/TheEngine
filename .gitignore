@@ -1,34 +1,39 @@
-# Java build artifacts
-build/
-.gradle/
-bin/
-
-# IDE files
-.idea/
-*.iml
-.classpath
-.project
-.settings/
-
-# WPILib generated
-simgui.json
-networktables.json
-
 # OS files
 .DS_Store
 Thumbs.db
 
 # Logs
 *.log
-*.wpilog
-*.hoot
 
 # Antenna system
-systems/antenna/.env
-systems/antenna/*.db
-systems/antenna/*.db-shm
-systems/antenna/*.db-wal
-systems/antenna/.bot.lock
+antenna/.env
+antenna/*.db
+antenna/*.db-shm
+antenna/*.db-wal
+antenna/.bot.lock
+antenna/__pycache__/
 
-# Claude
-.claude/
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Claude (keep skills, ignore settings)
+.claude/settings.local.json
+
+# Robot code (lives in 2950-robot repo)
+src/
+swervelib/
+vendordeps/
+build/
+bin/
+.gradle/
+*.gradle
+gradlew
+gradlew.bat
+gradle/
+.wpilib/
+.vscode/
+config/
+META-INF/
+{src/
