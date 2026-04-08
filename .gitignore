@@ -36,4 +36,22 @@ gradle/
 .vscode/
 config/
 META-INF/
-{src/
+networktables.json
+simgui.json
+CAN_ID_REFERENCE.md
+HARDWARE_QUESTIONNAIRE.md
+HOW_TO_PACKAGE.md
+VENDORDEP_URLS.md
+MAPLE_SIM_BUG_REPORT.md
+MAPLE_SIM_TELEOP_FIX_PROMPT.md
+
+# Cursor (IDE config)
+.cursorrules
+CURSOR_PROMPTS.md
+MASTER_DISPATCH_PROMPT.md
+
+# Robot CI (lives in 2950-robot repo)
+.github/workflows/build.yml
+
+# Blueprint
+blueprint/.env

@@ -300,6 +300,7 @@ async def cmd_commands(ctx):
         "!watch <query>   Add a search to the watchlist\n"
         "!watchlist       Show all active watches\n"
         "!unwatch <id>    Remove a watch by ID\n"
+        "!report          Post a robot report template\n"
         "!commands        Show this help message\n"
         "─────────────────────────────────────\n"
         "Reactions on digest posts:\n"
@@ -308,6 +309,40 @@ async def cmd_commands(ctx):
         "```"
     )
     await ctx.send(text)
+
+
+@bot.command(name="report")
+async def cmd_report(ctx):
+    """Post a blank robot report template for the team to fill out."""
+    template = (
+        "**ROBOT REPORT** — Fill this out after every match/practice\n"
+        "```\n"
+        "Match/Session: _______________\n"
+        "Reporter: _______________\n"
+        "\n"
+        "MECHANICAL\n"
+        "  Drivetrain: OK / Issue: ___\n"
+        "  Intake:     OK / Issue: ___\n"
+        "  Elevator:   OK / Issue: ___\n"
+        "  Climber:    OK / Issue: ___\n"
+        "  Bumpers:    OK / Issue: ___\n"
+        "\n"
+        "ELECTRICAL\n"
+        "  Battery post-match: ___ V\n"
+        "  Brownout: Y / N\n"
+        "  CAN errors: Y / N\n"
+        "\n"
+        "WHAT BROKE:\n"
+        "\n"
+        "WHAT WE FIXED:\n"
+        "\n"
+        "PRIORITY FOR NEXT MATCH:\n"
+        "  1.\n"
+        "  2.\n"
+        "  3.\n"
+        "```"
+    )
+    await ctx.send(template)
 
 
 @bot.command(name="scan")
