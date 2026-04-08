@@ -12,12 +12,18 @@
 
 | Team | Seasons | Resource Type | Primary Source |
 |------|---------|---------------|----------------|
-| 254 Cheesy Poofs | ALL (2016-2025) | Technical Binder | team254.com, GitHub Team254/FRC-20XX-Public |
-| 1678 Citrus Circuits | ALL (2016-2025) | Full Robot CAD | GitHub frc1678/C20XX-Public, OnShape |
-| 6328 Mechanical Advantage | 2021-2025 | CAD + Build Thread | GitHub Mechanical-Advantage, CD Open Alliance |
+| 254 Cheesy Poofs | ALL (2016-2025) | Technical Binder + Code | team254.com, GitHub Team254/FRC-20XX-Public |
+| 1678 Citrus Circuits | ALL (2016-2025) | Full Robot CAD + Strategy + Scouting | GitHub frc1678, citruscircuits.org |
+| 6328 Mechanical Advantage | 2021-2025 | CAD + Build Thread + AdvantageKit | GitHub, CD Open Alliance |
 | 4414 HighTide | 2020-2025 | Robot CAD | OnShape, CD build thread |
 | 2910 Jack in the Bot | 2018-2025 | Robot CAD | OnShape, CD build thread |
-| 1323 MadTown Robotics | 2018,2019,2023,2025 | Robot CAD | OnShape |
+| 1323 MadTown Robotics | 2018,2019,2023,2025 | Tech Binder | CD thread, OnShape |
+| 118 Robonauts | ALL (1997-2026) | Binder + CAD + Code + PCB + Everybot | 118robonauts.org, GrabCAD |
+| 3847 Spectrum | 2012-2026 | Build Blog + Design Guidelines | CD Open Alliance, spectrum3847.org |
+| 2056 OP Robotics | 2023-2025 | Engineering Drawings + Binder | 2056.ca, CD threads |
+| 1114 Simbotics | 2015-2025 | Code + Simbot-Base Template | GitHub simbotics |
+| 973 Greybots | 2010-2025 | Code + Subsystem Examples | GitHub team973 |
+| 2826 Wave Robotics | 2026 | YOLO Models + Open Alliance | GitHub WaveRobotics |
 | 118 Robonauts | 2016-2020 | Robot CAD | OnShape |
 | 971 Spartan Robotics | 2016-2019 | Full Robot CAD | GitHub, OnShape |
 

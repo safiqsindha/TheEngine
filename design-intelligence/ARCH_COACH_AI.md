@@ -427,3 +427,111 @@ Award (novel application of AI in competitive robotics).
 ---
 
 *Architecture document — The Whisper | THE ENGINE | Team 2950 The Devastators*
+
+Assistant response: COLLECT. Hub activates in 9 seconds. Position near Hub to dump all 5.
+
+### Color Coding
+
+| Recommendation Type | Background | Meaning |
+|-------------------|-----------|---------|
+| SCORE NOW | Green #22C55E | Hub active, dump fuel |
+| COLLECT | Blue #3B82F6 | Gather fuel, Hub inactive |
+| CLIMB NOW | Red pulse #EF4444 | Endgame, secure points |
+| POSITION / WAIT | Cyan #06B6D4 | Move to scoring position |
+| DEFEND | Orange #F97316 | Block opponent |
+| WARNING | Red solid #DC2626 | Stall, jam, or error |
+
+---
+
+## NetworkTables Keys Required
+
+Most already exist in The Engine codebase. Keys marked NEW need 30 min of code.
+
+| NT Key | Type | Source | Exists? |
+|--------|------|--------|---------|
+| /Strategy/TimeRemaining | double | AutonomousStrategy | Yes |
+| /Strategy/RecommendedAction | string | AutonomousStrategy | Yes |
+| /Strategy/HubStatus | string | AutonomousStrategy | NEW |
+| /Strategy/HubTimer | double | AutonomousStrategy | NEW |
+| /Strategy/AllianceScore | double | FMS / DriverStation | NEW |
+| /Strategy/OpponentScore | double | FMS / DriverStation | NEW |
+| /Strategy/FuelHeld | int | SuperstructureStateMachine | Yes |
+| /Strategy/Utilities/Score | double | AutonomousStrategy | Yes |
+| /Strategy/Utilities/Collect | double | AutonomousStrategy | Yes |
+| /Strategy/Utilities/Climb | double | AutonomousStrategy | Yes |
+| /Superstructure/CurrentState | string | SuperstructureStateMachine | Yes |
+| /CycleTracker/AvgCycleTime | double | CycleTracker | Yes |
+| /StallDetector/IsStalled | boolean | StallDetector | Yes |
+
+---
+
+## Example Recommendations
+
+| Game State | Whisper Output |
+|-----------|---------------|
+| Hub active, 5 fuel held, 1:30 left | SCORE NOW. Dump all 5 fuel. Hub active for 14 more seconds. |
+| Hub inactive, near depot, 1:00 left | COLLECT. Hub activates in 11s. Fill hopper from depot. |
+| Hub inactive, full hopper, 0:45 left | POSITION. Move to Hub. Ready to dump in 6 seconds. |
+| Up by 30, 0:25 left, not climbing | CLIMB NOW. Lead is safe. Secure endgame points. |
+| Down by 15, 0:20 left, not climbing | KEEP SCORING. Need 2 more cycles. Climb only if Hub inactive. |
+| Intake stalled | INTAKE JAM. Reverse intake. Eject and retry. |
+
+---
+
+## Development Roadmap
+
+| Block | Task | Hours | Target |
+|-------|------|-------|--------|
+| W.1 | Install AI Edge Gallery on tablet, test Gemma 4 E2B inference | 2 | Oct 2026 |
+| W.2 | Build Android app: NetworkTables client over Ethernet | 8 | Oct 2026 |
+| W.3 | Build Android app: Gemma inference via LiteRT-LM | 8 | Oct 2026 |
+| W.4 | Build Android app: Coach display UI (full-screen, color-coded) | 6 | Oct 2026 |
+| W.5 | Wire USB-C Ethernet adapter, test on DS Ethernet switch | 2 | Nov 2026 |
+| W.6 | Simulation testing (20+ sim matches, grade recommendations) | 8 | Nov 2026 |
+| W.7 | Prompt refinement + live scrimmage test | 4 | Dec 2026 |
+| **Total** | | **38** | |
+
+---
+
+## Fallback Modes
+
+| Failure | Detection | Fallback |
+|---------|-----------|----------|
+| Gemma inference fails | No output for 5+ seconds | Display raw utility scores (no LLM needed) |
+| NetworkTables disconnects | No data update for 5s | Show NO ROBOT DATA + last known state |
+| Tablet battery low | Android low battery warning | Plug into field outlet USB, or coach operates without |
+| Ethernet adapter disconnects | Network unreachable | Show DISCONNECTED, coach operates normally |
+| App crashes | Android ANR detection | Restart app (< 10 seconds, Gemma reloads from cache) |
+
+Every failure = operate like a normal FRC team. The Whisper is a bonus, never a dependency.
+
+---
+
+## Future Enhancements
+
+| Enhancement | Description | When |
+|-------------|-------------|------|
+| Pre-match strategy | Feed scouting data to Gemma, generate printed match plan | After first event |
+| Gemma 4 E4B upgrade | If tablet has 6GB+ RAM, upgrade for better reasoning | When E4B LiteRT-LM optimized |
+| Voice output | Gemma generates text, Android TTS speaks it to coach via earbud | Evaluate rules first |
+| Multimodal input | Point tablet camera at field, Gemma interprets what it sees | Rules concern (remote sensing) |
+| Alliance partner display | Share Whisper data with alliance partners coach tablets | Requires alliance agreement |
+
+---
+
+## What To Tell Judges
+
+Your Operator Console includes an Android tablet hardwired via USB-C
+Ethernet to our driver station network. It runs a Google Gemma 4 AI
+model completely locally on the tablet hardware. It reads game state
+from our robot through NetworkTables and displays real-time strategic
+recommendations to our drive coach. No cloud, no wireless, no external
+connections. The entire system runs on a single tablet the coach holds.
+
+Awards supported: Innovation in Control Award, Autonomous Award
+(strategic intelligence extending into teleop), Excellence in
+Engineering Award (novel application of on-device AI in robotics).
+
+---
+
+*Architecture document - The Whisper | THE ENGINE | Team 2950 The Devastators*

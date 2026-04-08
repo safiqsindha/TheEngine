@@ -1,6 +1,6 @@
 # THE ENGINE — Open Alliance & Team Intelligence Tracker
-# Last updated: April 2, 2026
-# Source: Chief Delphi Open Alliance Directory, team websites, GitHub, TBA
+# Last updated: April 4, 2026
+# Source: Chief Delphi, team websites, GitHub, TBA, Spectrum3847.org resources
 # ═══════════════════════════════════════════════════════════════════
 
 ## How to Use This Document
@@ -188,11 +188,52 @@ https://www.chiefdelphi.com/t/2026-frc-open-alliance-information-and-directory/5
 - 3847 "Don't Do" List: 2026 build blog first post
 - 3847 Conference Presentations: Maximizing Week 1, Robot Architecture, Prototyping
 - 254 2022 Strategy Presentation: CD thread
+- Karthik (1114) Effective FIRST Strategies: Video series (2012, 2016, 2019, 2020) — legendary strategy education
+- 2056 Keys to Success: Video (2019, 2020) — from the backlash elimination team
+- 1241 Theory 6 Robot Playbook: (2017, 2019) — complete robot design playbook
+- 125 Building to Your Capabilities: Presentation — directly relevant to mid-resource teams
+- 1241 Business Playbook + Suggested Team Structure: Team organization templates
+- 1114 Running an FRC Team: Slides — program structure from a legendary team
+- FIRST Fundraising Toolkit: Official FIRST resource for budget improvement
 
-### CAD Collections
-- 3847 FRC CAD Collection: ~850 links (spectrum3847.org)
+### CAD Collections & Design Tools
+- 3847 FRC CAD Collection: 805+ links (cadcollection.spectrum3847.org) — THE mechanical design resource
+  - Google Sheet: https://docs.google.com/spreadsheets/d/1acT6PpdR5l3zVhPqrehgamPsnUbk6yg-2JC5FcwIbb4/
+  - Submission form: https://forms.gle/5wji6FbuZWPc4 (submit your team's CAD to the collection)
+  - Filter by year and game type on kickoff day to find mechanisms for your predicted architecture
+- 3847 Robot Mechanism Library: mechanisms.spectrum3847.org — photo library of mechanisms for inspiration
 - 118 GrabCAD: All robots since 2013
 - 2056 Drawing Packages: Engineering drawings with revision history
+- AMB Design Spreadsheet: Motor/sprocket/gear/pneumatics calculator — shows how changing one component
+  changes your mechanism. Essential for mechanism design. Every student should use this.
+
+### Spectrum Guides (spectrum3847.org/resources)
+- MCC (Minimum Competitive Concept): mcc.spectrum3847.org — defines the simplest competitive robot.
+  YOUR BASELINE. Build the MCC first, then add complexity from The Engine's predictions.
+- FRC Electrical Guide: electrical.spectrum3847.org — wiring, CAN, power distribution
+- FRC Maintenance Guide: maintenance.spectrum3847.org — between-event robot maintenance procedures
+- FIRST $2000 Tool Guide: 2000.spectrum3847.org — essential tools for any team
+  - Also: $1000 version (1000.spectrum3847.org) and $10000 version (10000.spectrum3847.org)
+- Illuminations Young Team Guide: illuminations.spectrum3847.org — rookie team onboarding
+- Swerve Guide: spectrum3847.org/resources/swerve-guide — basic swerve intro for new teams
+- Spectrum Cart 3.0: Robot cart design (24"x36", legal for FRC field)
+- Inexpensive Build Tips: Low-cost fabrication approaches
+
+### Spectrum Training Curriculum (spectrum3847.org/resources/training)
+- F1.1-F1.8: FRC Fundamentals (What is FRC, team roles, season overview, match overview,
+  event roles, event spaces, schedules, Slack) — fill the gap our modules don't cover
+- C1.1: Intro to Java Programming (Video + Slides)
+- C1.2: Intro to FRC Control System (2025 Video + Slides)
+- C1.3: Overview of FRC Programming (Video + Slides)
+- D3.1: OnShape FRC Robot Organization (Slides)
+- D3.5: Part Design Process (Slides) — process for designing a robot part
+
+### Community Tools & Education
+- OnShape4FRC.com: Complete OnShape setup guide for FRC teams (by 6328 + community)
+- MKCad: Most complete FRC parts library for OnShape — insert COTS parts directly into assemblies
+- Julia Schatz FeatureScripts: OnShape automation tools for FRC design (tube notching, gussets, etc.)
+- Dan Gelbart Prototyping Lectures: World-class manufacturing education from an R&D pioneer (free)
+- MIT Prototype Machining Videos: Machining education from MIT professors (FRC mentors)
 
 ---
 
@@ -216,6 +257,34 @@ https://www.chiefdelphi.com/t/2026-frc-open-alliance-information-and-directory/5
 | Permanently tracked teams | 13 | 15-20 |
 | Teams with full binder extraction | 4 (254, 118, 1690, 3847) | 8+ |
 | Teams with code analysis | 3 (254, 1114, 973) | 6+ |
-| Cross-season patterns formalized | 15 rules + 5 meta-rules | 20+ rules |
+| Cross-season patterns formalized | 17 rules + 10 meta-rules | 20+ rules |
 | Open Alliance threads monitored | 60+ (2026) | All active |
-| Statbotics EPA data pulled | Not yet | All tracked teams, 8 seasons |
+| Statbotics EPA data pulled | 3 teams (254, 1323, 118) | All tracked teams, 8 seasons |
+| CAD Collection links available | 805+ | Use on kickoff day |
+| Community tools catalogued | 12 (guides, calculators, training) | Ongoing |
+
+---
+
+## Kickoff Day Workflow (uses all resources above)
+
+**Hour 1 (0:00-1:00): Watch & Analyze**
+1. Watch game reveal as a team
+2. Fill in design-intelligence/KICKOFF_TEMPLATE.md with game rules
+3. Identify: game piece type, scoring method (throw vs place), heights, endgame, obstacles
+
+**Hour 2 (1:00-2:00): Run the Prediction Engine**
+4. Paste KICKOFF_TEMPLATE.md + CROSS_SEASON_PATTERNS.md into Claude
+5. Get mechanism recommendations with confidence scores
+6. Cross-reference with Spectrum MCC (mcc.spectrum3847.org) — what's the MINIMUM viable robot?
+
+**Hour 3 (2:00-3:00): Find Existing Designs**
+7. Open the FRC CAD Collection (805+ links) — filter by game type and mechanism
+8. Find 3-5 robots with similar mechanisms to your predicted architecture
+9. Study their CAD — how did they solve the intake? The elevator? The end effector?
+10. Use AMB Design Spreadsheet to calculate gear ratios for your specific mechanism choices
+
+**Hour 4 (3:00-4:00): Decide & Start Prototyping**
+11. Lock the robot architecture (intake type, scorer type, climber type)
+12. Assign prototype groups (Rule M7: start the Alpha Machine immediately)
+13. Begin prototyping with cardboard/PVC while CAD team starts modeling
+14. Software team starts adapting The Engine's modular subsystems to the new game

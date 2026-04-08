@@ -136,3 +136,65 @@ to ground as possible (0.5-0.625"). Frame is always square or near-square.
 6. **Intake complexity increasing** — from simple rollers to floating rollers on foam
 7. **Frame size increasing** — from 27" to 29.5" for stability with heavier mechanisms
 8. **2 Limelights becoming standard** — dual camera for better tag visibility
+
+## 2025 Undertow Binder — Detailed Extraction (Full 27-Page Binder)
+
+### Motor Census (18 total)
+| Subsystem | Motor | Qty | Notes |
+|-----------|-------|-----|-------|
+| Drive | Kraken X60 (in WCP X2i) | 4 | 10T X1 reduction, ~13.2 ft/s |
+| Steer | (in WCP X2i) | 4 | Gear-based azimuth (not belt) |
+| Intake rollers | Kraken X44 | 1 | ~15 ft/s surface speed |
+| Intake deploy | Kraken X44 | 1 | 10:36→14:42→14:56, ~0.15s |
+| Indexer | Kraken X44 | 1 | 8:48T, ~30 ft/s surface speed |
+| Elevator | Kraken X60 | 2 | 11:50T, 52" in 0.3s |
+| Wrist | Kraken X44 | 1 | 210° in 0.2s, sector gear |
+| End effector (coral+algae) | Kraken X44 | 1 | Shared motor, ~13 ft/s |
+| Climber claw | Kraken X44 | 1 | 10:30T→15:28T |
+| Climber winch | Kraken X60 | 1 | 1:224 gearbox |
+
+### Sensor Census
+- 2× Limelight 4 (with heatsinks and fans)
+- CANrange sensors on swerve modules
+- 2× Banner beam break (indexer front/rear)
+- 2× Banner beam break (end effector)
+- CANcoder on wrist pivot (1:1 absolute)
+- CANcoder on climber claw
+- Hall effect on elevator (zeroing)
+- PDP 2.0
+
+### Key Design Decisions (from Architecture page)
+Three architectures were considered and REJECTED:
+1. Wrist Dunk + Funnel + Passthrough
+2. Dual Intakes flip-up to Laterator
+3. Side Elevator with Intake, Funnel, Climber, and Wrist
+
+The chosen architecture places intake on one end, elevator on the other,
+with indexer and funnel feeding into the end effector from both sides.
+
+### AlphaBot Lessons (built in 1 week using 2023 drivebase)
+1. End effector without auto-align compliance misses coral
+2. Pivoting arm + coordinated elevator/arm motion is SLOWER than driving into reef
+3. Small roller claw too narrow for coral station intaking
+4. Limelight cameras must be set back from corners to see tags near the reef
+5. Electronics need shielding from dropped coral
+
+### Software Architecture (confirmed from binder)
+- A* and AD* pathfinding with real-time collision avoidance
+- Pre-computed paths cached at robot init, merged with on-the-fly paths
+- Simple mirror for red vs blue alliance
+- Centralized state machine (3 modes: Coral, Algae/Climb, Coral Manual)
+- MegaTag 1 (not MegaTag 2) for localization using both cameras
+- Validation on tag count, area, ambiguity
+- Falls back to swerve odometry when far from tags
+- Heading controller with snap for auto-alignment
+- Slew rate, velocity, and acceleration constraints
+- maple-sim + AdvantageScope with imported 3D model, masses, MOI, gear ratios
+- PhotonVision sim for AprilTag detection
+
+### 2026 Robot "Overload" (REBUILT)
+- Weight: 115 lbs (10 under max — lighter than 2025, suggests speed/agility game)
+- Record: 32-2-0, #3 in CA district, won Silicon Valley + Central Valley events
+- Sponsors include NVIDIA, Apple, Boeing, Google, SDS, WCP, Fabworks
+- maple-sim fork updated Feb 2026 — confirmed continued simulation usage
+- Tech binder expected September 2026 after Chezy Champs
