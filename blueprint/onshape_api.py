@@ -79,6 +79,8 @@ def list_documents(query: str = "Engine", limit: int = 10) -> list[dict]:
         "limit": limit,
     })
     results = []
+    if not response or not hasattr(response, 'items') or not response.items:
+        return results
     for item in response.items:
         results.append({
             "document_id": item.id,

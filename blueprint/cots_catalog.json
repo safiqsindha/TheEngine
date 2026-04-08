@@ -1,0 +1,244 @@
+{
+  "_meta": {
+    "version": "0.1.0",
+    "description": "FRC COTS parts catalog for The Blueprint. OnShape refs populated via FRCDesignLib API.",
+    "sources": ["FRCDesignLib", "MKCad"],
+    "last_updated": "2026-04-08"
+  },
+
+  "SDS MK4i Swerve Module": {
+    "category": "drivetrain",
+    "subcategory": "swerve",
+    "vendor": "SDS",
+    "vendor_full": "Swerve Drive Specialties",
+    "specs": { "gear_ratios": ["L1 (8.14:1)", "L2 (6.75:1)", "L3 (6.12:1)", "L4 (5.50:1)"], "wheel_diameter": "4in" },
+    "onshape": {}
+  },
+  "SDS MK4n Swerve Module": {
+    "category": "drivetrain",
+    "subcategory": "swerve",
+    "vendor": "SDS",
+    "vendor_full": "Swerve Drive Specialties",
+    "specs": { "wheel_diameter": "4in" },
+    "onshape": {}
+  },
+  "REV MAXSwerve": {
+    "category": "drivetrain",
+    "subcategory": "swerve",
+    "vendor": "REV",
+    "vendor_full": "REV Robotics",
+    "specs": { "wheel_diameter": "3in" },
+    "onshape": {}
+  },
+
+  "REV NEO Motor": {
+    "category": "motors",
+    "subcategory": "brushless",
+    "vendor": "REV",
+    "vendor_full": "REV Robotics",
+    "specs": { "free_speed_rpm": 5676, "stall_torque_nm": 2.6, "stall_current_a": 105, "mounting": "#10-32" },
+    "onshape": {}
+  },
+  "REV NEO Vortex": {
+    "category": "motors",
+    "subcategory": "brushless",
+    "vendor": "REV",
+    "vendor_full": "REV Robotics",
+    "specs": { "free_speed_rpm": 6784, "stall_torque_nm": 3.6, "stall_current_a": 211, "mounting": "#10-32" },
+    "onshape": {}
+  },
+  "VEXpro Falcon 500": {
+    "category": "motors",
+    "subcategory": "brushless",
+    "vendor": "VEX",
+    "vendor_full": "VEXpro",
+    "specs": { "free_speed_rpm": 6380, "stall_torque_nm": 4.69, "stall_current_a": 257, "mounting": "#10-32" },
+    "onshape": {}
+  },
+  "WCP Kraken X60": {
+    "category": "motors",
+    "subcategory": "brushless",
+    "vendor": "WCP",
+    "vendor_full": "West Coast Products",
+    "specs": { "free_speed_rpm": 6000, "stall_torque_nm": 7.09, "stall_current_a": 366, "mounting": "#10-32" },
+    "onshape": {}
+  },
+
+  "REV MAXPlanetary Gearbox": {
+    "category": "gearboxes",
+    "subcategory": "planetary",
+    "vendor": "REV",
+    "vendor_full": "REV Robotics",
+    "specs": { "stages": [3, 4, 5, 9, 12, 15, 16, 20, 25, 36, 45, 48, 60, 64, 75, 80, 100], "input_motors": ["NEO", "NEO Vortex", "NEO 550"] },
+    "onshape": {}
+  },
+  "VEX VersaPlanetary Gearbox": {
+    "category": "gearboxes",
+    "subcategory": "planetary",
+    "vendor": "VEX",
+    "vendor_full": "VEXpro",
+    "specs": { "stages": ["3:1", "4:1", "5:1", "7:1", "9:1", "10:1"] },
+    "onshape": {}
+  },
+
+  "REV Spark MAX": {
+    "category": "electronics",
+    "subcategory": "motor_controller",
+    "vendor": "REV",
+    "vendor_full": "REV Robotics",
+    "specs": { "protocol": "CAN/PWM", "max_current_a": 60, "compatible_motors": ["NEO", "NEO 550"] },
+    "onshape": {}
+  },
+  "REV Spark Flex": {
+    "category": "electronics",
+    "subcategory": "motor_controller",
+    "vendor": "REV",
+    "vendor_full": "REV Robotics",
+    "specs": { "protocol": "CAN/PWM", "max_current_a": 60, "compatible_motors": ["NEO", "NEO Vortex", "NEO 550"] },
+    "onshape": {}
+  },
+  "CTRE Talon FX": {
+    "category": "electronics",
+    "subcategory": "motor_controller",
+    "vendor": "WCP",
+    "vendor_full": "West Coast Products / CTRE",
+    "specs": { "protocol": "CAN", "integrated_in": ["Falcon 500", "Kraken X60"] },
+    "onshape": {}
+  },
+  "Power Distribution Hub": {
+    "category": "electronics",
+    "subcategory": "power",
+    "vendor": "REV",
+    "vendor_full": "REV Robotics",
+    "specs": { "channels": 20, "mounting": "#10-32" },
+    "onshape": {}
+  },
+  "RoboRIO 2": {
+    "category": "electronics",
+    "subcategory": "controller",
+    "vendor": "NI",
+    "vendor_full": "National Instruments",
+    "specs": { "mounting": "#4-40" },
+    "onshape": {}
+  },
+  "CTRE Pigeon 2.0 IMU": {
+    "category": "electronics",
+    "subcategory": "sensor",
+    "vendor": "WCP",
+    "vendor_full": "West Coast Products / CTRE",
+    "specs": { "protocol": "CAN", "mounting": "#6-32" },
+    "onshape": {}
+  },
+  "Redux Canandgyro IMU": {
+    "category": "electronics",
+    "subcategory": "sensor",
+    "vendor": "REDUX",
+    "vendor_full": "Redux Robotics",
+    "specs": { "protocol": "CAN", "mounting": "#8-32" },
+    "onshape": {}
+  },
+
+  "1x1 Aluminum Box Tube": {
+    "category": "structure",
+    "subcategory": "tube",
+    "vendor": "WCP",
+    "vendor_full": "West Coast Products",
+    "specs": { "size": "1x1in", "wall": "0.040in", "hole_pattern": "0.5in spacing, 0.196in diameter" },
+    "onshape": {}
+  },
+  "2x1 Aluminum Box Tube": {
+    "category": "structure",
+    "subcategory": "tube",
+    "vendor": "WCP",
+    "vendor_full": "West Coast Products",
+    "specs": { "size": "2x1in", "wall": "0.040in", "hole_pattern": "0.5in spacing, 0.196in diameter" },
+    "onshape": {}
+  },
+  "REV MAXTube": {
+    "category": "structure",
+    "subcategory": "tube",
+    "vendor": "REV",
+    "vendor_full": "REV Robotics",
+    "specs": { "size": "1x1in", "hole_pattern": "M3, 16mm spacing" },
+    "onshape": {}
+  },
+  "Thrifty Bot Extrusion": {
+    "category": "structure",
+    "subcategory": "tube",
+    "vendor": "TTB",
+    "vendor_full": "The Thrifty Bot",
+    "specs": { "size": "1x1in" },
+    "onshape": {}
+  },
+
+  "GT2 Timing Belt Pulley 36T": {
+    "category": "power_transmission",
+    "subcategory": "pulley",
+    "vendor": "various",
+    "specs": { "teeth": 36, "pitch": "GT2 (3mm)" },
+    "onshape": {}
+  },
+  "1/2in Hex Shaft": {
+    "category": "power_transmission",
+    "subcategory": "shaft",
+    "vendor": "various",
+    "specs": { "size": "0.500in hex" },
+    "onshape": {}
+  },
+  "MAXSpline Hub": {
+    "category": "power_transmission",
+    "subcategory": "hub",
+    "vendor": "REV",
+    "vendor_full": "REV Robotics",
+    "specs": { "shaft_type": "MAXSpline" },
+    "onshape": {}
+  },
+  "SplineXL Hub": {
+    "category": "power_transmission",
+    "subcategory": "hub",
+    "vendor": "WCP",
+    "vendor_full": "West Coast Products",
+    "specs": { "shaft_type": "SplineXL" },
+    "onshape": {}
+  },
+
+  "Flanged Bearing 1/2in Hex": {
+    "category": "bearings",
+    "subcategory": "flanged",
+    "vendor": "various",
+    "specs": { "bore": "0.500in hex", "od": "1.125in" },
+    "onshape": {}
+  },
+  "Flanged Bearing 3/8in Round": {
+    "category": "bearings",
+    "subcategory": "flanged",
+    "vendor": "various",
+    "specs": { "bore": "0.375in round", "od": "0.875in" },
+    "onshape": {}
+  },
+
+  "#10-32 Button Head Bolt": {
+    "category": "fasteners",
+    "subcategory": "bolt",
+    "vendor": "MCM",
+    "vendor_full": "McMaster-Carr",
+    "specs": { "thread": "#10-32", "head": "button", "common_lengths": ["0.5in", "0.75in", "1.0in"] },
+    "onshape": {}
+  },
+  "1/4-20 Button Head Bolt": {
+    "category": "fasteners",
+    "subcategory": "bolt",
+    "vendor": "MCM",
+    "vendor_full": "McMaster-Carr",
+    "specs": { "thread": "1/4-20", "head": "button", "common_lengths": ["0.5in", "0.75in", "1.0in"] },
+    "onshape": {}
+  },
+  "#10-32 Nylock Nut": {
+    "category": "fasteners",
+    "subcategory": "nut",
+    "vendor": "MCM",
+    "vendor_full": "McMaster-Carr",
+    "specs": { "thread": "#10-32", "type": "nylon insert lock" },
+    "onshape": {}
+  }
+}
