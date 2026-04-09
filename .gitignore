@@ -62,3 +62,17 @@ MASTER_DISPATCH_PROMPT.md
 # Blueprint
 blueprint/.env
 blueprint/*_spec.json
+
+# Scout cache (API responses, draft state)
+scout/.cache/
+scout/.state/
+scout/.tba_key
+scout/picks_*.json
+scout/report_*.json
+
+# EYE cache (videos, frames, results)
+eye/.cache/
+
+# API keys
+.anthropic_key
+*.key

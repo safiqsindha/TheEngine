@@ -117,10 +117,11 @@ def plan_assembly(spec: dict) -> list[PartInstance]:
     for mod in layout.swerve_modules:
         pos = mod.get("position_in", [0, 0])
         name = mod.get("name", "module")
+        # Convert center-origin → corner-origin (FeatureScript frame starts at 0,0)
         parts.append(PartInstance(
             name=f"swerve_{name}",
             catalog_name=module_catalog,
-            position_mm=[_mm(pos[0]), _mm(pos[1]), 0],
+            position_mm=[_mm(pos[0]) + L/2, _mm(pos[1]) + W/2, 0],
             subassembly="drivetrain",
         ))
 
@@ -131,18 +132,21 @@ def plan_assembly(spec: dict) -> list[PartInstance]:
     for mod in layout.swerve_modules:
         pos = mod.get("position_in", [0, 0])
         name = mod.get("name", "module")
+        # Convert center-origin → corner-origin
+        mx = _mm(pos[0]) + L/2
+        my = _mm(pos[1]) + W/2
         # Drive motor sits on top of module
         parts.append(PartInstance(
             name=f"drive_motor_{name}",
             catalog_name=drive_motor,
-            position_mm=[_mm(pos[0]), _mm(pos[1]), 76.2],  # above frame
+            position_mm=[mx, my, 76.2],  # above frame
             subassembly="drivetrain",
         ))
         # Steer motor offset from module center
         parts.append(PartInstance(
             name=f"steer_motor_{name}",
             catalog_name=steer_motor,
-            position_mm=[_mm(pos[0]) + 30, _mm(pos[1]), 76.2],
+            position_mm=[mx + 30, my, 76.2],
             subassembly="drivetrain",
         ))
 

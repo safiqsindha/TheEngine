@@ -1,0 +1,578 @@
+{
+  "oracle_prediction": {
+    "game_name": "Charged Up",
+    "year": 2023,
+    "drivetrain": {
+      "type": "swerve",
+      "module": "sds_mk4i",
+      "speed_fps": 14.0,
+      "gear_for": "acceleration",
+      "frame_length": 27.0,
+      "frame_width": 27.0,
+      "reasoning": "Swerve mandatory post-2022. Every Einstein competitor uses swerve."
+    },
+    "intake": {
+      "type": "over_bumper",
+      "width": "full",
+      "roller_material": "flex_wheels",
+      "deploy": true,
+      "motors": 2,
+      "game_piece": "cube/cone (irregular)",
+      "reasoning": "Full-width bumper-to-bumper intake. Every champion since 2019. Irregular piece \u2192 flex wheels (safest default)"
+    },
+    "scorer": {
+      "method": "elevator",
+      "height_in": 46,
+      "stages": 2,
+      "motors": 2,
+      "has_wrist": true,
+      "turret": "none",
+      "reasoning": "Placement scoring targets \u2192 elevator + wrist. Height 46\" \u2192 two-stage continuous elevator. Placement + distributed \u2192 SKIP turret (90%)"
+    },
+    "endgame": {
+      "type": "balance",
+      "height_in": 12,
+      "motors": 1,
+      "reasoning": "Endgame is 12% of winning score, strongly recommended"
+    },
+    "autonomous": {
+      "priority_actions": [
+        "score_preload",
+        "intake_nearby",
+        "score_second",
+        "intake_nearby",
+        "score_second"
+      ],
+      "cycle_time_s": 4.0,
+      "preload_score": true,
+      "estimated_pieces": 4,
+      "reasoning": "Target 4-piece auto. Known positions: True. Cycle target: 4.0s (R11)."
+    },
+    "weight_budget": {
+      "drivetrain_lb": 42,
+      "intake_lb": 10,
+      "scorer_lb": 22,
+      "endgame_lb": 8,
+      "electronics_lb": 15,
+      "bumpers_lb": 10,
+      "margin_lb": 18,
+      "total_limit_lb": 125
+    },
+    "build_order": [
+      "drivetrain",
+      "scorer",
+      "intake",
+      "autonomous",
+      "endgame"
+    ],
+    "rule_log": [
+      {
+        "rule": "R1",
+        "applies": true,
+        "recommendation": "swerve",
+        "confidence": 1.0,
+        "reasoning": "Swerve mandatory post-2022. Every Einstein competitor uses swerve."
+      },
+      {
+        "rule": "R2",
+        "applies": true,
+        "recommendation": "full_width_intake",
+        "confidence": 0.95,
+        "reasoning": "Full-width bumper-to-bumper intake. Every champion since 2019."
+      },
+      {
+        "rule": "R3",
+        "applies": true,
+        "recommendation": "flex_wheels",
+        "confidence": 0.85,
+        "reasoning": "Irregular piece \u2192 flex wheels (safest default)"
+      },
+      {
+        "rule": "R4",
+        "applies": true,
+        "recommendation": "elevator",
+        "confidence": 0.9,
+        "reasoning": "Placement scoring targets \u2192 elevator + wrist"
+      },
+      {
+        "rule": "R5",
+        "applies": true,
+        "recommendation": "2_stage",
+        "confidence": 0.85,
+        "reasoning": "Height 46\" \u2192 two-stage continuous elevator"
+      },
+      {
+        "rule": "R6",
+        "applies": true,
+        "recommendation": "none",
+        "confidence": 0.9,
+        "reasoning": "Placement + distributed \u2192 SKIP turret (90%)"
+      },
+      {
+        "rule": "R7",
+        "applies": true,
+        "recommendation": "climb",
+        "confidence": 0.95,
+        "reasoning": "Endgame is 12% of winning score, strongly recommended"
+      },
+      {
+        "rule": "R8",
+        "applies": true,
+        "recommendation": "4_piece_auto",
+        "confidence": 0.85,
+        "reasoning": "Target 4-piece auto. Known positions: True"
+      },
+      {
+        "rule": "R10",
+        "applies": true,
+        "recommendation": "yolo_neural",
+        "confidence": 0.85,
+        "reasoning": "Detection: yolo_neural"
+      }
+    ],
+    "confidence": 0.9
+  },
+  "specs": {
+    "intake": {
+      "intake_type": "over_bumper",
+      "game_piece_diameter_in": 4.5,
+      "game_piece_shape": "cylinder",
+      "frame_width_in": 26.0,
+      "roller_material": "flex_wheels",
+      "deploy_type": "pivot",
+      "drivetrain_speed_fps": 14.0,
+      "intake_width_in": 24.0,
+      "roller_count": 2,
+      "roller_spacing_in": 7.83,
+      "roller_speed_rpm": 1514.0,
+      "compression_in": 0.67,
+      "roller_od_in": 4.0,
+      "roller_motor_type": "neo",
+      "roller_motor_count": 1,
+      "roller_gear_ratio": 3.0,
+      "deploy_motor_type": "neo_550",
+      "deploy_gear_ratio": 50.0,
+      "surface_speed_fps": 26.4,
+      "acquire_time_sec": 0.05,
+      "cycle_contribution_sec": 0.65,
+      "roller_weight_lb": 2.22,
+      "frame_weight_lb": 0.3,
+      "motor_weight_lb": 1.43,
+      "deploy_weight_lb": 1.5,
+      "hardware_weight_lb": 0.5,
+      "total_weight_lb": 5.95,
+      "weight_ok": true,
+      "software_constants": {
+        "ROLLER_GEAR_RATIO": 3.0,
+        "ROLLER_MOTOR_COUNT": 1,
+        "ROLLER_DIAMETER_IN": 4.0,
+        "SURFACE_SPEED_FPS": 26.4,
+        "INTAKE_SPEED": 0.8,
+        "OUTTAKE_SPEED": -0.5,
+        "DEPLOY_GEAR_RATIO": 50.0,
+        "DEPLOY_ANGLE_DEG": 110.0,
+        "DEPLOY_SPEED": 0.5,
+        "RETRACT_SPEED": -0.3,
+        "DEPLOY_POSITION_TOLERANCE_DEG": 5.0
+      },
+      "parts_list": [
+        {
+          "qty": 16,
+          "item": "Flex Wheels (WCP/TTB) (4.0\" OD)",
+          "notes": "Roller wheels, 2 rollers x 8 per shaft"
+        },
+        {
+          "qty": 2,
+          "item": "1/2\" hex shaft",
+          "notes": "Cut to 26.0\" (intake width + bearings)"
+        },
+        {
+          "qty": 4,
+          "item": "Flanged bearing (1/2\" hex bore)",
+          "notes": "One per shaft end"
+        },
+        {
+          "qty": 1,
+          "item": "NEO Brushless motor",
+          "notes": "With SparkMax, 3.0:1 reduction"
+        },
+        {
+          "qty": 2,
+          "item": "Side plates (1/4\" polycarb or 1/8\" aluminum)",
+          "notes": "Cut to intake profile, 24.0\" apart"
+        },
+        {
+          "qty": 1,
+          "item": "NEO 550 motor (deploy)",
+          "notes": "With SparkMax, 50.0:1 MAXPlanetary"
+        },
+        {
+          "qty": 2,
+          "item": "Pivot shaft + bearing blocks",
+          "notes": "1/2\" hex, mounted on robot frame cross member"
+        },
+        {
+          "qty": 1,
+          "item": "Hardware assortment (#10-32)",
+          "notes": "Bolts, nuts, spacers for assembly"
+        }
+      ],
+      "preset_name": "oracle_generated",
+      "notes": [
+        "R3: Flex wheels are the championship standard for round game pieces",
+        "R2: Full-width intake (bumper-to-bumper) for maximum capture zone",
+        "ReCalc: surface speed = 2x drivetrain speed (14.0 fps \u2192 26.4 fps)"
+      ]
+    },
+    "elevator": {
+      "name": "2950 Oracle Elevator",
+      "version": "1.0",
+      "generator": "The Blueprint B.3",
+      "travel_height_in": 46.0,
+      "end_effector_weight_lb": 8.0,
+      "motor_type": "kraken_x60",
+      "motor_count": 2,
+      "rigging_type": "continuous",
+      "tube_wall_in": 0.0625,
+      "stage_count": 2,
+      "tube_length_in": 27.0,
+      "bearing_block_height_in": 4.0,
+      "gear_ratio": 3.0,
+      "belt_type": "9mm_htd3",
+      "belt_length_in": 120.0,
+      "pulley_type": "18t_htd3",
+      "pulley_circumference_in": 2.125984251968504,
+      "current_limit_a": 40.0,
+      "efficiency": 0.85,
+      "max_speed_in_per_sec": 138.6,
+      "full_travel_time_sec": 0.42,
+      "max_acceleration_in_per_sec2": 803.0,
+      "peak_current_a": 40.0,
+      "stall_load_lb": 51.7,
+      "spring_force_lb": 11.5,
+      "spring_type": "WCP 12 lb constant force spring",
+      "tube_weight_lb": 5.67,
+      "bearing_block_weight_lb": 1.6,
+      "belt_pulley_weight_lb": 0.52,
+      "motor_gearbox_weight_lb": 3.4,
+      "spring_weight_lb": 0.6,
+      "carriage_weight_lb": 0.8,
+      "hardware_weight_lb": 0.5,
+      "total_weight_lb": 13.09,
+      "software_constants": {
+        "GEAR_RATIO": 3.0,
+        "MOTOR_COUNT": 2,
+        "CURRENT_LIMIT_A": 40.0,
+        "EFFICIENCY": 0.85,
+        "PULLEY_CIRCUMFERENCE_IN": 2.126,
+        "CONTINUOUS_RATIO": 2.0,
+        "INCHES_PER_MOTOR_ROTATION": 1.4173,
+        "MIN_HEIGHT_IN": 0.0,
+        "MAX_HEIGHT_IN": 46.0,
+        "MAX_VELOCITY_IN_PER_SEC": 124.7,
+        "MAX_ACCELERATION_IN_PER_SEC2": 642.4,
+        "kS": 0.12,
+        "kG": 0.292,
+        "kV": 0.00936,
+        "kA": 0.02,
+        "POSITION_TOLERANCE_IN": 0.5
+      },
+      "parts_list": [
+        {
+          "item": "2x1x0.0625\" 6061-T6 aluminum tube",
+          "quantity": 6,
+          "length_in": 27.0,
+          "notes": "Cut to length, deburr all edges"
+        },
+        {
+          "item": "Thrifty Elevator bearing block set",
+          "quantity": 4,
+          "notes": "2 per stage (top + bottom)"
+        },
+        {
+          "item": "9mm HTD3 Timing Belt",
+          "quantity": 1,
+          "length_in": 120.0,
+          "notes": "Order nearest standard length"
+        },
+        {
+          "item": "18T HTD3 drive pulley (1/2\" hex bore)",
+          "quantity": 1,
+          "notes": "Drive pulley on motor shaft"
+        },
+        {
+          "item": "HTD3 idler pulley (flanged bearing)",
+          "quantity": 3,
+          "notes": "Direction changes in belt path"
+        },
+        {
+          "item": "Kraken X60 motor",
+          "quantity": 2,
+          "notes": "With TalonFX (integrated)"
+        },
+        {
+          "item": "Gearbox (single stage planetary)",
+          "quantity": 1,
+          "notes": "3.0:1 ratio"
+        },
+        {
+          "item": "WCP 12 lb constant force spring",
+          "quantity": 2,
+          "notes": "Target force: 11.5 lb total"
+        },
+        {
+          "item": "Hall effect sensor + magnet",
+          "quantity": 1,
+          "notes": "Bottom of travel zero reference"
+        },
+        {
+          "item": "1/2\" hex shaft, 12\"",
+          "quantity": 1,
+          "notes": "Drive shaft"
+        },
+        {
+          "item": "1/4\" aluminum carriage plate",
+          "quantity": 1,
+          "notes": "Drill for end effector on kickoff day"
+        },
+        {
+          "item": "#10-32 hardware assortment",
+          "quantity": 50,
+          "notes": "Bolts, nuts, washers"
+        }
+      ],
+      "travel_time_ok": true,
+      "weight_ok": true
+    },
+    "arm": {
+      "arm_length_in": 8.0,
+      "com_distance_in": 4.0,
+      "arm_mass_lb": 1.5,
+      "end_effector_weight_lb": 2.0,
+      "motor_type": "neo_550",
+      "motor_count": 1,
+      "gear_ratio": 50.0,
+      "current_limit_a": 40.0,
+      "efficiency": 0.85,
+      "start_angle_deg": -45.0,
+      "end_angle_deg": 90.0,
+      "total_mass_lb": 3.5,
+      "max_gravity_torque_nm": 1.58,
+      "travel_time_sec": 0.118,
+      "max_angular_velocity_deg_s": 1324.5,
+      "holding_current_a": 3.8,
+      "peak_current_a": 40.0,
+      "spring_force_lb": 1.8,
+      "motor_weight_lb": 1.49,
+      "total_weight_lb": 3.49,
+      "software_constants": {
+        "ARM_GEAR_RATIO": 50.0,
+        "ARM_LENGTH_IN": 8.0,
+        "MIN_ANGLE_DEG": -45.0,
+        "MAX_ANGLE_DEG": 90.0,
+        "CURRENT_LIMIT_A": 40.0,
+        "kS": 0.1,
+        "kG": 0.391,
+        "kV": 0.00909,
+        "kA": 0.01,
+        "POSITION_TOLERANCE_DEG": 2.0
+      },
+      "parts_list": [
+        {
+          "qty": 1,
+          "item": "NEO 550 motor",
+          "notes": "With SparkMax"
+        },
+        {
+          "qty": 1,
+          "item": "MAXPlanetary gearbox (50.0:1)",
+          "notes": "High reduction for arm control"
+        },
+        {
+          "qty": 1,
+          "item": "Arm tube (1x1 or 2x1 aluminum)",
+          "notes": "8.0\" long"
+        },
+        {
+          "qty": 2,
+          "item": "Pivot bearing + shaft",
+          "notes": "1/2\" hex through pivot point"
+        },
+        {
+          "qty": 1,
+          "item": "Absolute encoder (through-bore)",
+          "notes": "REV Through Bore or equivalent"
+        },
+        {
+          "qty": 1,
+          "item": "Hardware assortment",
+          "notes": "Bolts, spacers, shaft collar"
+        }
+      ],
+      "notes": [],
+      "preset_name": "oracle_wrist"
+    },
+    "conveyor": {
+      "path_length_in": 18.0,
+      "game_piece_diameter_in": 4.5,
+      "staging_count": 1,
+      "belt_type": "belt",
+      "motor_type": "neo_550",
+      "motor_count": 1,
+      "gear_ratio": 5.0,
+      "roller_diameter_in": 2.0,
+      "current_limit_a": 20.0,
+      "efficiency": 0.85,
+      "sensor_type": "beam_break",
+      "sensor_count": 2,
+      "belt_speed_fps": 15.4,
+      "transit_time_sec": 0.097,
+      "belt_length_in": 42.3,
+      "roller_rpm": 1760.0,
+      "holding_current_a": 1.3,
+      "motor_weight_lb": 0.49,
+      "mechanism_weight_lb": 1.27,
+      "total_weight_lb": 2.06,
+      "software_constants": {
+        "CONVEYOR_GEAR_RATIO": 5.0,
+        "CONVEYOR_SPEED": 0.8,
+        "CONVEYOR_REVERSE_SPEED": -0.5,
+        "CONVEYOR_SLOW_SPEED": 0.3,
+        "SENSOR_COUNT": 2,
+        "STAGING_COUNT": 1,
+        "TRANSIT_TIME_SEC": 0.097
+      },
+      "parts_list": [
+        {
+          "qty": 1,
+          "item": "NEO 550 motor",
+          "notes": "With SparkMax"
+        },
+        {
+          "qty": 1,
+          "item": "Gearbox (5.0:1)",
+          "notes": "MAXPlanetary or belt reduction"
+        },
+        {
+          "qty": 1,
+          "item": "Polyurethane belt (42.3\")",
+          "notes": "1\" or 2\" wide"
+        },
+        {
+          "qty": 2,
+          "item": "Drive rollers (2.0\" dia)",
+          "notes": "One driven, one idler"
+        },
+        {
+          "qty": 2,
+          "item": "IR Beam Break",
+          "notes": "Most reliable, detects any game piece crossing the beam"
+        },
+        {
+          "qty": 2,
+          "item": "Side rails (1x1 aluminum or polycarb)",
+          "notes": "18.0\" long"
+        },
+        {
+          "qty": 1,
+          "item": "Hardware assortment",
+          "notes": "Bolts, spacers, belt tensioner"
+        }
+      ],
+      "notes": [
+        "Sensor placement: entry at 0\", exit at 18.0\""
+      ],
+      "preset_name": "oracle_generated"
+    },
+    "climber": {
+      "climb_height_in": 12.0,
+      "robot_weight_lb": 125.0,
+      "climb_style": "winch",
+      "motor_type": "neo",
+      "motor_count": 1,
+      "gear_ratio": 50.0,
+      "spool_diameter_in": 1.0,
+      "current_limit_a": 40.0,
+      "efficiency": 0.8,
+      "climb_time_sec": 2.205,
+      "max_climb_speed_in_s": 5.5,
+      "peak_current_a": 40.0,
+      "holding_current_a": 7.1,
+      "stall_load_lb": 701.3164926069095,
+      "safety_factor": 5.61,
+      "motor_weight_lb": 1.94,
+      "mechanism_weight_lb": 3.0,
+      "total_weight_lb": 5.44,
+      "software_constants": {
+        "CLIMB_GEAR_RATIO": 50.0,
+        "CLIMB_MOTOR_COUNT": 1,
+        "SPOOL_DIAMETER_IN": 1.0,
+        "CLIMB_HEIGHT_IN": 12.0,
+        "CURRENT_LIMIT_A": 40.0,
+        "CLIMB_SPEED": 0.8,
+        "HOLD_SPEED": 0.1,
+        "CLIMB_POSITION_TOLERANCE_IN": 0.5
+      },
+      "parts_list": [
+        {
+          "qty": 1,
+          "item": "NEO Brushless motor",
+          "notes": "With SparkMax"
+        },
+        {
+          "qty": 1,
+          "item": "MAXPlanetary gearbox (50.0:1)",
+          "notes": "High reduction for climb"
+        },
+        {
+          "qty": 1,
+          "item": "Winch spool (1.0\" dia)",
+          "notes": "3D printed or machined"
+        },
+        {
+          "qty": 1,
+          "item": "Dyneema rope (1/8\" dia, 200+ lb)",
+          "notes": "24.0\" length"
+        },
+        {
+          "qty": 1,
+          "item": "Hook assembly",
+          "notes": "Bent 1/4\" steel plate or tube"
+        },
+        {
+          "qty": 1,
+          "item": "Telescoping tube (1x1 or 1.5x1.5)",
+          "notes": "12.0\" travel"
+        },
+        {
+          "qty": 1,
+          "item": "Hardware assortment",
+          "notes": "Bolts, shaft collars, bearings"
+        }
+      ],
+      "notes": [
+        "Safety factor 5.61x \u2014 excellent margin",
+        "Winch climber: use Dyneema rope (200+ lb rated) on 3D printed spool"
+      ],
+      "preset_name": "oracle_generated"
+    }
+  },
+  "bom": {
+    "mechanism_weight_lb": 30.03,
+    "drivetrain_weight_lb": 42,
+    "bumper_weight_lb": 10,
+    "battery_weight_lb": 13.0,
+    "electronics_weight_lb": 15,
+    "total_weight_lb": 110.03,
+    "margin_lb": 14.97,
+    "weight_ok": true
+  },
+  "log": [
+    "[OK] Intake: over_bumper, 26.4 fps, 5.95 lb",
+    "[OK] Elevator: 46.0\" travel, 0.42s, 13.09 lb",
+    "[OK] Arm (wrist): 0.118s, 3.49 lb",
+    "[OK] Conveyor: 0.097s transit, 2.06 lb",
+    "[OK] Climber: 2.205s, safety 5.61x, 5.44 lb",
+    "[OK] Weight: 110.0 lb, margin 15.0 lb"
+  ]
+}

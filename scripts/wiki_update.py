@@ -4,31 +4,45 @@ The Engine — Wiki Update Script (Karpathy LLM Wiki Pattern)
 Team 2950 — The Devastators
 
 Automated incremental update loop for the design-intelligence wiki.
-Takes a new source (URL, file path, or raw text), reads the existing wiki,
-identifies which pages are affected, and outputs proposed diffs for human review.
+Takes a new source (URL, file path, raw text, or Antenna DB posts),
+reads the existing wiki, identifies which pages are affected, generates
+precise diffs via Claude API, and optionally applies them.
 
-Does NOT auto-commit. Outputs diffs to stdout and optionally writes .patch files.
+Modes:
+  Single source:  url / file / text — one-shot analysis + diff
+  Antenna feed:   antenna — pulls unprocessed high-priority CD posts
+  Watch mode:     --watch — continuous loop polling Antenna every N minutes
 
 Usage:
   python3 wiki_update.py url "https://www.chiefdelphi.com/t/..."
   python3 wiki_update.py file "/path/to/team_binder.pdf"
   python3 wiki_update.py text "Team 254 released their 2026 CAD..."
-  python3 wiki_update.py file source.md --apply    # Apply changes directly
-  python3 wiki_update.py --dry-run url "https://..."  # Show affected pages only
+  python3 wiki_update.py antenna                          # Process new Antenna posts
+  python3 wiki_update.py antenna --apply                  # Apply changes directly
+  python3 wiki_update.py antenna --watch --interval 30    # Poll every 30 min
+  python3 wiki_update.py --dry-run url "https://..."      # Show affected pages only
+  python3 wiki_update.py --use-api url "https://..."      # Use Claude API for diffs
 
-Requires: ANTHROPIC_API_KEY environment variable (uses Claude API for analysis).
+Requires: ANTHROPIC_API_KEY environment variable for --use-api / --apply modes.
 """
 
 import argparse
 import json
 import os
+import re
+import sqlite3
 import sys
 import textwrap
+import time
 from datetime import datetime
 from pathlib import Path
 
-WIKI_DIR = Path(__file__).parent.parent / "design-intelligence"
+SCRIPT_DIR = Path(__file__).parent
+PROJECT_DIR = SCRIPT_DIR.parent
+WIKI_DIR = PROJECT_DIR / "design-intelligence"
 WIKI_INDEX = WIKI_DIR / "WIKI_INDEX.md"
+ANTENNA_DIR = PROJECT_DIR / "antenna"
+ANTENNA_DB = ANTENNA_DIR / "antenna.db"
 
 # ═══════════════════════════════════════════════════════════════════
 # WIKI FILE CATALOG
@@ -165,19 +179,17 @@ def ingest_source(source_type: str, source_value: str) -> dict:
             sys.exit(1)
 
         if path.suffix == ".pdf":
-            # Try to extract text from PDF
             try:
                 import subprocess
                 result = subprocess.run(
                     ["python3", "-c", f"""
 import sys
 try:
-    import fitz  # PyMuPDF
+    import fitz
     doc = fitz.open("{path}")
     for page in doc:
         print(page.get_text())
 except ImportError:
-    # Fallback: just note it's a PDF
     print(f"[PDF file: {path.name}, unable to extract - install PyMuPDF]")
 """],
                     capture_output=True, text=True, timeout=30
@@ -195,7 +207,6 @@ except ImportError:
         }
 
     elif source_type == "url":
-        # Use requests if available, otherwise note the URL
         try:
             import requests
             resp = requests.get(source_value, timeout=30,
@@ -203,14 +214,11 @@ except ImportError:
             resp.raise_for_status()
             content = resp.text
 
-            # Strip HTML tags for rough text extraction
-            import re
             content = re.sub(r'<script[^>]*>.*?</script>', '', content, flags=re.DOTALL)
             content = re.sub(r'<style[^>]*>.*?</style>', '', content, flags=re.DOTALL)
             content = re.sub(r'<[^>]+>', ' ', content)
             content = re.sub(r'\s+', ' ', content).strip()
 
-            # Truncate very long pages
             if len(content) > 50000:
                 content = content[:50000] + "\n\n[TRUNCATED — source exceeds 50k chars]"
 
@@ -231,6 +239,98 @@ except ImportError:
 
 
 # ═══════════════════════════════════════════════════════════════════
+# ANTENNA INTEGRATION
+# ═══════════════════════════════════════════════════════════════════
+
+def get_antenna_connection() -> sqlite3.Connection:
+    """Connect to the Antenna SQLite database."""
+    if not ANTENNA_DB.exists():
+        print(f"  ERROR: Antenna database not found at {ANTENNA_DB}")
+        print(f"         Run the Antenna bot first to create it.")
+        sys.exit(1)
+    conn = sqlite3.connect(str(ANTENNA_DB))
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def get_unprocessed_posts(conn: sqlite3.Connection,
+                          min_score: int = 12) -> list[dict]:
+    """
+    Get high-priority Antenna posts that haven't been wiki-processed yet.
+    Joins against engine_updates to exclude already-processed posts.
+    """
+    rows = conn.execute("""
+        SELECT p.* FROM posts p
+        WHERE p.tier IN ('high', 'critical')
+          AND p.relevance_score >= ?
+          AND p.engine_file_target IS NOT NULL
+          AND p.engine_file_target != ''
+          AND p.topic_id NOT IN (
+              SELECT DISTINCT eu.post_id FROM engine_updates eu
+              WHERE eu.applied_by = 'wiki_update'
+          )
+        ORDER BY p.relevance_score DESC
+        LIMIT 20
+    """, (min_score,)).fetchall()
+    return [dict(row) for row in rows]
+
+
+def mark_post_wiki_processed(conn: sqlite3.Connection, topic_id: int,
+                              files_updated: list[str]):
+    """Record that a post has been processed by the wiki updater."""
+    for wiki_file in files_updated:
+        conn.execute("""
+            INSERT INTO engine_updates (post_id, engine_file, change_description, applied_by)
+            SELECT post_id, ?, ?, 'wiki_update'
+            FROM posts WHERE topic_id = ?
+        """, (wiki_file, f"Wiki auto-update from topic {topic_id}", topic_id))
+    conn.commit()
+
+
+def ingest_antenna_posts() -> list[dict]:
+    """
+    Pull unprocessed high-priority posts from the Antenna DB.
+    Returns a list of source dicts (one per post).
+    """
+    conn = get_antenna_connection()
+    posts = get_unprocessed_posts(conn)
+    conn.close()
+
+    sources = []
+    for post in posts:
+        content_parts = [
+            f"Title: {post.get('title', '')}",
+            f"Author: {post.get('author', '')}",
+            f"URL: {post.get('url', '')}",
+            f"Category: {post.get('category_name', '')}",
+            f"Score: {post.get('relevance_score', 0)} | Tier: {post.get('tier', '')}",
+            f"Teams: {post.get('tracked_teams', '')}",
+            f"Keywords: {post.get('keywords_matched', '')}",
+            f"Engine Target: {post.get('engine_file_target', '')}",
+            f"Action: {post.get('action_recommendation', '')}",
+        ]
+        if post.get("raw_excerpt"):
+            content_parts.append(f"\nExcerpt:\n{post['raw_excerpt']}")
+        if post.get("summary"):
+            content_parts.append(f"\nSummary:\n{post['summary']}")
+
+        sources.append({
+            "type": "antenna",
+            "content": "\n".join(content_parts),
+            "metadata": {
+                "topic_id": post["topic_id"],
+                "title": post.get("title", ""),
+                "url": post.get("url", ""),
+                "relevance_score": post.get("relevance_score", 0),
+                "tier": post.get("tier", ""),
+                "engine_file_target": post.get("engine_file_target", ""),
+            },
+        })
+
+    return sources
+
+
+# ═══════════════════════════════════════════════════════════════════
 # ANALYSIS — Identify affected wiki pages
 # ═══════════════════════════════════════════════════════════════════
 
@@ -238,15 +338,6 @@ def analyze_source(source: dict) -> dict:
     """
     Analyze ingested source content and identify which wiki pages are affected.
     Uses keyword matching and entity detection.
-
-    Returns: {
-        "affected_files": {filename: [reasons]},
-        "detected_teams": [team_numbers],
-        "detected_mechanisms": [mechanism_names],
-        "detected_keywords": [keywords],
-        "contradictions": [potential rule contradictions],
-        "summary": str,
-    }
     """
     content = source["content"].lower()
     result = {
@@ -264,9 +355,16 @@ def analyze_source(source: dict) -> dict:
         if reason not in result["affected_files"][filename]:
             result["affected_files"][filename].append(reason)
 
+    # For Antenna sources, use the pre-computed engine_file_target
+    if source["type"] == "antenna":
+        target = source["metadata"].get("engine_file_target", "")
+        if target:
+            for f in target.split(","):
+                f = f.strip()
+                if f in WIKI_FILES:
+                    add_affected(f, f"Antenna target: {source['metadata'].get('title', '')[:60]}")
+
     # Detect team numbers
-    import re
-    # Match "team 254", "frc 254", "254's", "#254", "team254", etc.
     team_patterns = re.findall(
         r'(?:team\s*|frc\s*|#)(\d{1,5})\b|\b(\d{3,5})(?:\'s|\s+(?:robot|design|cad|code|binder))',
         content
@@ -344,7 +442,6 @@ def analyze_source(source: dict) -> dict:
 def generate_update_prompt(source: dict, analysis: dict, wiki_file: str) -> str:
     """
     Generate a prompt for Claude to produce the actual wiki page update.
-    This is used with the Anthropic API to get specific diffs.
     """
     wiki_path = WIKI_DIR / wiki_file
     if not wiki_path.exists():
@@ -372,27 +469,58 @@ CONTRADICTIONS DETECTED:
 {chr(10).join(f'- {c}' for c in analysis.get('contradictions', [])) or 'None'}
 
 TASK: Generate the specific lines that need to change in {wiki_file}.
-Output ONLY the diff in this format:
+Output ONLY the diff in this exact format (one or more blocks):
 
+```diff
 SECTION: <section heading where change goes>
-OLD: <exact text to replace (or "NEW ADDITION" if adding)>
+OLD: <exact text to replace (or "NEW ADDITION" if adding new content)>
 NEW: <replacement text>
 REASON: <why this change is needed>
+```
 
 Rules:
 - Only propose changes supported by the new source content
 - Preserve existing formatting and structure
 - Flag contradictions with existing rules — don't silently override them
-- If no changes are needed for this page, output: NO_CHANGES_NEEDED
+- If no changes are needed for this page, output exactly: NO_CHANGES_NEEDED
 - Keep changes minimal and precise
+- Each block must have all four fields: SECTION, OLD, NEW, REASON
 """
     return prompt
+
+
+def parse_diff_blocks(diff_text: str) -> list[dict]:
+    """Parse structured diff blocks from Claude API response."""
+    if "NO_CHANGES_NEEDED" in diff_text:
+        return []
+
+    blocks = []
+    current = {}
+
+    for line in diff_text.split("\n"):
+        line = line.strip()
+        if line.startswith("SECTION:"):
+            if current.get("section"):
+                blocks.append(current)
+            current = {"section": line[8:].strip()}
+        elif line.startswith("OLD:"):
+            current["old"] = line[4:].strip()
+        elif line.startswith("NEW:"):
+            current["new"] = line[4:].strip()
+        elif line.startswith("REASON:"):
+            current["reason"] = line[7:].strip()
+            blocks.append(current)
+            current = {}
+
+    if current.get("section"):
+        blocks.append(current)
+
+    return blocks
 
 
 def generate_diffs_local(source: dict, analysis: dict) -> list[dict]:
     """
     Generate proposed diffs using local heuristic analysis (no API needed).
-    Returns a list of proposed changes.
     """
     diffs = []
 
@@ -404,20 +532,19 @@ def generate_diffs_local(source: dict, analysis: dict) -> list[dict]:
                 "status": "FILE_NOT_FOUND",
                 "reasons": reasons,
                 "changes": [],
+                "diff_blocks": [],
             })
             continue
 
         current = wiki_path.read_text()
-
-        # For now, record what WOULD change and why — actual content generation
-        # requires the Claude API (see generate_diffs_api below)
         diffs.append({
             "file": wiki_file,
             "status": "NEEDS_UPDATE",
             "reasons": reasons,
             "current_size": len(current),
-            "changes": [f"[Requires Claude API to generate specific changes] Reason: {r}"
+            "changes": [f"[Requires --use-api for specific changes] Reason: {r}"
                         for r in reasons],
+            "diff_blocks": [],
         })
 
     return diffs
@@ -426,7 +553,6 @@ def generate_diffs_local(source: dict, analysis: dict) -> list[dict]:
 def generate_diffs_api(source: dict, analysis: dict) -> list[dict]:
     """
     Generate proposed diffs using Claude API for precise content updates.
-    Requires ANTHROPIC_API_KEY environment variable.
     """
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
@@ -453,12 +579,15 @@ def generate_diffs_api(source: dict, analysis: dict) -> list[dict]:
                 messages=[{"role": "user", "content": prompt}],
             )
             diff_text = response.content[0].text
+            diff_blocks = parse_diff_blocks(diff_text)
 
+            status = "NO_CHANGES" if not diff_blocks else "DIFF_GENERATED"
             diffs.append({
                 "file": wiki_file,
-                "status": "DIFF_GENERATED",
+                "status": status,
                 "reasons": reasons,
                 "diff": diff_text,
+                "diff_blocks": diff_blocks,
             })
         except Exception as e:
             diffs.append({
@@ -466,9 +595,72 @@ def generate_diffs_api(source: dict, analysis: dict) -> list[dict]:
                 "status": "API_ERROR",
                 "reasons": reasons,
                 "error": str(e),
+                "diff_blocks": [],
             })
 
     return diffs
+
+
+# ═══════════════════════════════════════════════════════════════════
+# APPLY — Write diffs to wiki files
+# ═══════════════════════════════════════════════════════════════════
+
+def apply_diffs(diffs: list[dict]) -> list[str]:
+    """
+    Apply parsed diff blocks to wiki files.
+    Returns list of files that were modified.
+    """
+    modified = []
+
+    for diff in diffs:
+        if diff["status"] != "DIFF_GENERATED" or not diff.get("diff_blocks"):
+            continue
+
+        wiki_path = WIKI_DIR / diff["file"]
+        if not wiki_path.exists():
+            continue
+
+        content = wiki_path.read_text()
+        original = content
+        applied_count = 0
+
+        for block in diff["diff_blocks"]:
+            old = block.get("old", "")
+            new = block.get("new", "")
+            section = block.get("section", "")
+
+            if not new:
+                continue
+
+            if old == "NEW ADDITION" or not old:
+                # Insert new content after section heading
+                if section:
+                    marker = f"## {section}"
+                    if marker not in content:
+                        marker = f"# {section}"
+                    if marker in content:
+                        idx = content.index(marker) + len(marker)
+                        next_newline = content.index("\n", idx) if "\n" in content[idx:] else len(content)
+                        content = content[:next_newline] + "\n" + new + "\n" + content[next_newline:]
+                        applied_count += 1
+                    else:
+                        content += f"\n\n## {section}\n{new}\n"
+                        applied_count += 1
+                else:
+                    content += f"\n{new}\n"
+                    applied_count += 1
+            elif old in content:
+                content = content.replace(old, new, 1)
+                applied_count += 1
+
+        if content != original:
+            wiki_path.write_text(content)
+            modified.append(diff["file"])
+            print(f"    [APPLIED] {diff['file']} — {applied_count} change(s)")
+        else:
+            print(f"    [SKIPPED] {diff['file']} — no text matches found")
+
+    return modified
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -477,24 +669,24 @@ def generate_diffs_api(source: dict, analysis: dict) -> list[dict]:
 
 def print_analysis(source: dict, analysis: dict):
     """Print the analysis results."""
-    print(f"\n{'═' * 65}")
+    print(f"\n{'=' * 65}")
     print(f"  THE ENGINE — WIKI UPDATE ANALYSIS")
     print(f"  {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-    print(f"{'═' * 65}")
+    print(f"{'=' * 65}")
 
-    # Source info
     meta = source.get("metadata", {})
     if source["type"] == "url":
         print(f"\n  Source: {meta.get('url', 'unknown')}")
     elif source["type"] == "file":
         print(f"\n  Source: {meta.get('name', 'unknown')} ({meta.get('size', 0)} bytes)")
+    elif source["type"] == "antenna":
+        print(f"\n  Source: Antenna post — {meta.get('title', 'unknown')[:60]}")
+        print(f"          Score: {meta.get('relevance_score', 0)} | Tier: {meta.get('tier', '')}")
     else:
         print(f"\n  Source: inline text ({meta.get('length', 0)} chars)")
 
-    # Summary
     print(f"  {analysis['summary']}")
 
-    # Detected entities
     if analysis["detected_teams"]:
         print(f"\n  Teams detected: {', '.join(analysis['detected_teams'])}")
     if analysis["detected_mechanisms"]:
@@ -502,7 +694,6 @@ def print_analysis(source: dict, analysis: dict):
     if analysis["detected_keywords"]:
         print(f"  Keywords: {', '.join(analysis['detected_keywords'])}")
 
-    # Affected files
     if analysis["affected_files"]:
         print(f"\n  AFFECTED WIKI PAGES ({len(analysis['affected_files'])}):")
         for filename, reasons in sorted(analysis["affected_files"].items()):
@@ -512,13 +703,12 @@ def print_analysis(source: dict, analysis: dict):
     else:
         print(f"\n  No wiki pages affected by this source.")
 
-    # Contradictions
     if analysis["contradictions"]:
-        print(f"\n  ⚠ CONTRADICTIONS DETECTED:")
+        print(f"\n  CONTRADICTIONS DETECTED:")
         for c in analysis["contradictions"]:
             print(f"    - {c}")
 
-    print(f"\n{'═' * 65}\n")
+    print(f"\n{'=' * 65}\n")
 
 
 def print_diffs(diffs: list[dict]):
@@ -527,16 +717,23 @@ def print_diffs(diffs: list[dict]):
         print("  No diffs generated.")
         return
 
-    print(f"\n{'─' * 65}")
+    print(f"\n{'-' * 65}")
     print(f"  PROPOSED CHANGES")
-    print(f"{'─' * 65}")
+    print(f"{'-' * 65}")
 
     for diff in diffs:
         print(f"\n  [{diff['status']}] {diff['file']}")
         for reason in diff.get("reasons", []):
             print(f"    Reason: {reason}")
 
-        if diff.get("diff"):
+        if diff.get("diff_blocks"):
+            for block in diff["diff_blocks"]:
+                print(f"\n    Section: {block.get('section', '?')}")
+                if block.get("old") and block["old"] != "NEW ADDITION":
+                    print(f"    - {block['old'][:120]}")
+                print(f"    + {block.get('new', '')[:120]}")
+                print(f"    Why: {block.get('reason', '?')}")
+        elif diff.get("diff"):
             print(f"\n{textwrap.indent(diff['diff'], '    ')}")
         elif diff.get("changes"):
             for change in diff["changes"]:
@@ -544,7 +741,7 @@ def print_diffs(diffs: list[dict]):
         elif diff.get("error"):
             print(f"    Error: {diff['error']}")
 
-    print(f"\n{'─' * 65}\n")
+    print(f"\n{'-' * 65}\n")
 
 
 def save_report(source: dict, analysis: dict, diffs: list[dict]):
@@ -561,17 +758,163 @@ def save_report(source: dict, analysis: dict, diffs: list[dict]):
             "contradictions": analysis["contradictions"],
             "summary": analysis["summary"],
         },
-        "diffs": [{k: v for k, v in d.items() if k != "current_size"} for d in diffs],
+        "diffs": [{k: v for k, v in d.items() if k != "current_size"}
+                  for d in diffs],
     }
 
-    report_dir = Path(__file__).parent.parent / "design-intelligence" / "_updates"
+    report_dir = WIKI_DIR / "_updates"
     report_dir.mkdir(exist_ok=True)
     report_path = report_dir / f"update_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
     with open(report_path, "w") as f:
         json.dump(report, f, indent=2)
 
-    print(f"  Report saved: {report_path.relative_to(report_dir.parent.parent)}")
+    print(f"  Report saved: {report_path.relative_to(PROJECT_DIR)}")
     return report_path
+
+
+# ═══════════════════════════════════════════════════════════════════
+# PIPELINE — Process a single source end-to-end
+# ═══════════════════════════════════════════════════════════════════
+
+def process_source(source: dict, use_api: bool = False, apply: bool = False,
+                   dry_run: bool = False, save: bool = True,
+                   quiet: bool = False) -> dict:
+    """
+    Full pipeline for a single source: analyze → diff → optionally apply.
+    Returns: {"analysis": dict, "diffs": list, "applied": list}
+    """
+    analysis = analyze_source(source)
+
+    if not quiet:
+        print_analysis(source, analysis)
+
+    if dry_run or not analysis["affected_files"]:
+        return {"analysis": analysis, "diffs": [], "applied": []}
+
+    if use_api or apply:
+        diffs = generate_diffs_api(source, analysis)
+    else:
+        diffs = generate_diffs_local(source, analysis)
+
+    if not quiet:
+        print_diffs(diffs)
+
+    applied = []
+    if apply:
+        print(f"\n  Applying changes...")
+        applied = apply_diffs(diffs)
+        if applied:
+            print(f"  Applied to {len(applied)} file(s): {', '.join(applied)}")
+        else:
+            print(f"  No changes applied (no matching text found).")
+
+    if save:
+        save_report(source, analysis, diffs)
+
+    return {"analysis": analysis, "diffs": diffs, "applied": applied}
+
+
+# ═══════════════════════════════════════════════════════════════════
+# ANTENNA PIPELINE — Batch process unprocessed posts
+# ═══════════════════════════════════════════════════════════════════
+
+def process_antenna_feed(use_api: bool = False, apply: bool = False,
+                         dry_run: bool = False) -> dict:
+    """
+    Pull unprocessed Antenna posts and run each through the wiki pipeline.
+    Returns summary stats.
+    """
+    print(f"\n{'=' * 65}")
+    print(f"  THE ENGINE — ANTENNA → WIKI FEED")
+    print(f"  {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    print(f"{'=' * 65}")
+
+    sources = ingest_antenna_posts()
+
+    if not sources:
+        print(f"\n  No unprocessed high-priority posts in Antenna DB.")
+        print(f"  (Posts need tier=high/critical and engine_file_target set)")
+        return {"processed": 0, "applied_total": 0}
+
+    print(f"\n  Found {len(sources)} unprocessed post(s):")
+    for s in sources:
+        meta = s["metadata"]
+        print(f"    [{meta['tier']}] {meta['relevance_score']:3d}  {meta['title'][:55]}")
+    print()
+
+    total_applied = 0
+    conn = get_antenna_connection()
+
+    for i, source in enumerate(sources):
+        meta = source["metadata"]
+        print(f"\n  --- [{i+1}/{len(sources)}] {meta['title'][:55]} ---")
+
+        result = process_source(
+            source, use_api=use_api, apply=apply,
+            dry_run=dry_run, save=True, quiet=False,
+        )
+
+        # Mark as processed in Antenna DB
+        if result["applied"]:
+            mark_post_wiki_processed(conn, meta["topic_id"], result["applied"])
+            total_applied += len(result["applied"])
+        elif not dry_run:
+            # Mark as processed even without changes, so we don't re-process
+            mark_post_wiki_processed(
+                conn, meta["topic_id"],
+                list(result["analysis"]["affected_files"].keys())[:1] or ["_reviewed"],
+            )
+
+    conn.close()
+
+    print(f"\n{'=' * 65}")
+    print(f"  ANTENNA FEED COMPLETE")
+    print(f"  Posts processed: {len(sources)}")
+    print(f"  Wiki files updated: {total_applied}")
+    print(f"{'=' * 65}\n")
+
+    return {"processed": len(sources), "applied_total": total_applied}
+
+
+# ═══════════════════════════════════════════════════════════════════
+# WATCH MODE — Continuous polling loop
+# ═══════════════════════════════════════════════════════════════════
+
+def watch_loop(interval_minutes: int = 30, use_api: bool = False,
+               apply: bool = False):
+    """
+    Continuously poll the Antenna DB for new posts and process them.
+    Runs forever until interrupted.
+    """
+    print(f"\n{'=' * 65}")
+    print(f"  THE ENGINE — WIKI WATCHER (CONTINUOUS MODE)")
+    print(f"  Polling every {interval_minutes} minutes")
+    print(f"  API mode: {'ON' if use_api else 'OFF'}")
+    print(f"  Auto-apply: {'ON' if apply else 'OFF'}")
+    print(f"  Press Ctrl+C to stop")
+    print(f"{'=' * 65}\n")
+
+    cycle = 0
+    while True:
+        cycle += 1
+        print(f"\n  [Cycle {cycle}] {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+        try:
+            result = process_antenna_feed(use_api=use_api, apply=apply)
+            if result["processed"] > 0:
+                print(f"  Processed {result['processed']} posts, "
+                      f"updated {result['applied_total']} wiki files")
+            else:
+                print(f"  No new posts to process.")
+        except Exception as e:
+            print(f"  ERROR in cycle {cycle}: {e}")
+
+        print(f"  Next check in {interval_minutes} minutes...")
+        try:
+            time.sleep(interval_minutes * 60)
+        except KeyboardInterrupt:
+            print(f"\n  Watcher stopped after {cycle} cycles.")
+            break
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -587,59 +930,68 @@ def main():
           python3 wiki_update.py url "https://www.chiefdelphi.com/t/..."
           python3 wiki_update.py file "team_binder.pdf"
           python3 wiki_update.py text "Team 254 released new CAD for their 2026 intake"
+          python3 wiki_update.py antenna                          # Process Antenna posts
+          python3 wiki_update.py antenna --apply --use-api        # Process + apply
+          python3 wiki_update.py antenna --watch --interval 30    # Poll every 30m
           python3 wiki_update.py --dry-run url "https://..."
           python3 wiki_update.py --use-api url "https://..."
         """),
     )
-    parser.add_argument("source_type", choices=["url", "file", "text"],
-                        help="Type of source to ingest")
-    parser.add_argument("source_value", help="URL, file path, or text content")
+    parser.add_argument("source_type", choices=["url", "file", "text", "antenna"],
+                        help="Type of source to ingest (antenna = read from Antenna DB)")
+    parser.add_argument("source_value", nargs="?", default="",
+                        help="URL, file path, or text content (not needed for antenna)")
     parser.add_argument("--dry-run", action="store_true",
                         help="Show affected pages only, don't generate diffs")
     parser.add_argument("--use-api", action="store_true",
                         help="Use Claude API for precise diff generation")
-    parser.add_argument("--save-report", action="store_true", default=True,
-                        help="Save JSON report (default: true)")
+    parser.add_argument("--apply", action="store_true",
+                        help="Apply generated diffs to wiki files (implies --use-api)")
+    parser.add_argument("--watch", action="store_true",
+                        help="Continuous mode: poll Antenna DB on interval")
+    parser.add_argument("--interval", type=int, default=30,
+                        help="Watch mode poll interval in minutes (default: 30)")
     parser.add_argument("--no-report", action="store_true",
                         help="Skip saving JSON report")
 
     args = parser.parse_args()
 
-    # Step 1: Ingest
+    # --apply implies --use-api
+    if args.apply:
+        args.use_api = True
+
+    # ── Antenna mode ──
+    if args.source_type == "antenna":
+        if args.watch:
+            watch_loop(
+                interval_minutes=args.interval,
+                use_api=args.use_api,
+                apply=args.apply,
+            )
+        else:
+            process_antenna_feed(
+                use_api=args.use_api,
+                apply=args.apply,
+                dry_run=args.dry_run,
+            )
+        return
+
+    # ── Single source mode ──
+    if not args.source_value:
+        parser.error("source_value is required for url/file/text modes")
+
     print(f"\n  [1/4] Ingesting source ({args.source_type})...")
     source = ingest_source(args.source_type, args.source_value)
     print(f"         Content: {len(source['content'])} chars")
 
-    # Step 2: Analyze
     print(f"  [2/4] Analyzing against wiki index...")
-    analysis = analyze_source(source)
-
-    # Step 3: Print analysis
-    print_analysis(source, analysis)
-
-    if args.dry_run:
-        print("  (--dry-run: skipping diff generation)")
-        return
-
-    if not analysis["affected_files"]:
-        print("  No pages affected — nothing to update.")
-        return
-
-    # Step 4: Generate diffs
-    print(f"  [3/4] Generating diffs for {len(analysis['affected_files'])} pages...")
-    if args.use_api:
-        diffs = generate_diffs_api(source, analysis)
-    else:
-        diffs = generate_diffs_local(source, analysis)
-
-    print_diffs(diffs)
-
-    # Step 5: Save report
-    if not args.no_report:
-        print(f"  [4/4] Saving report...")
-        save_report(source, analysis, diffs)
-
-    print("  Done. Review the proposed changes above, then apply manually or with --use-api.")
+    process_source(
+        source,
+        use_api=args.use_api,
+        apply=args.apply,
+        dry_run=args.dry_run,
+        save=not args.no_report,
+    )
 
 
 if __name__ == "__main__":

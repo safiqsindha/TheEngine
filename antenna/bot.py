@@ -288,24 +288,47 @@ async def cmd_commands(ctx):
     """Show all available Antenna commands."""
     text = (
         "```\n"
-        "THE ANTENNA — Commands\n"
+        "THE ENGINE — All Commands\n"
+        "═════════════════════════════════════\n"
+        "\n"
+        "SCOUTING (competition day)\n"
         "─────────────────────────────────────\n"
-        "!scan [pages]    Scan Chief Delphi (default 10 pages)\n"
-        "!digest          Post the weekly intelligence digest\n"
-        "!search <query>  Search CD for a specific topic\n"
-        "!alerts          Show unreviewed high-priority posts\n"
-        "!top [n]         Show top N scored posts (default 10)\n"
-        "!pulled [days]   Monthly review: all ✅ pulled posts\n"
-        "!stats           Show database statistics\n"
-        "!watch <query>   Add a search to the watchlist\n"
-        "!watchlist       Show all active watches\n"
-        "!unwatch <id>    Remove a watch by ID\n"
-        "!report          Post a robot report template\n"
-        "!commands        Show this help message\n"
+        "!event <key>     Set active event for this channel\n"
+        "!matchnow <key>  Set current match being played\n"
+        "!scout <team> <tags>  Record scouting observation\n"
+        "!scouted [team]  Show scout data (team or summary)\n"
+        "!eyescores       Show EYE + stand scout scores\n"
+        "!loadscout       Load scouting data into pick board\n"
+        "\n"
+        "DRAFT (alliance selection)\n"
         "─────────────────────────────────────\n"
-        "Reactions on digest posts:\n"
-        "  👀 = reviewing   ✅ = pulled into Engine\n"
-        "  ❌ = dismiss      🔖 = bookmark\n"
+        "!rec             Show pick recommendation\n"
+        "!pick <a#> <t#>  Record a pick\n"
+        "!board           Show full pick board\n"
+        "!lookup <team>   Team EPA lookup\n"
+        "\n"
+        "STRATEGY\n"
+        "─────────────────────────────────────\n"
+        "!strategy        Strategy for next match\n"
+        "!strategy <key>  Strategy for specific match\n"
+        "!strategy opponent <teams>  Opponent report\n"
+        "!strategy synergy <teams>   Alliance synergy\n"
+        "\n"
+        "INTELLIGENCE (Antenna)\n"
+        "─────────────────────────────────────\n"
+        "!scan [pages]    Scan Chief Delphi\n"
+        "!digest          Post weekly digest\n"
+        "!search <query>  Search CD topics\n"
+        "!alerts          High-priority posts\n"
+        "!top [n]         Top scored posts\n"
+        "!pulled [days]   All pulled posts\n"
+        "!watch <query>   Add to watchlist\n"
+        "!watchlist       Show watches\n"
+        "!unwatch <id>    Remove a watch\n"
+        "!report          Robot report template\n"
+        "!stats           Database stats\n"
+        "!commands        This help message\n"
+        "═════════════════════════════════════\n"
         "```"
     )
     await ctx.send(text)
@@ -656,6 +679,543 @@ async def cmd_unwatch(ctx, watch_id: int = 0):
     else:
         await ctx.send(f"Watch #{watch_id} not found or already removed.")
     conn.close()
+
+
+# ═══════════════════════════════════════════════════════════════════
+# SCOUTING COMMANDS — Stand Scout + EYE + Strategy
+# ═══════════════════════════════════════════════════════════════════
+
+# Add scout paths for imports
+SCOUT_PATH = Path(__file__).parent.parent / "scout"
+EYE_PATH = Path(__file__).parent.parent / "eye"
+sys.path.insert(0, str(SCOUT_PATH))
+sys.path.insert(0, str(EYE_PATH))
+
+# Track active event per channel (set via !event)
+_active_events = {}  # channel_id -> event_key
+_active_match = {}   # channel_id -> match_key
+
+
+def _get_event(ctx) -> str:
+    """Get active event for this channel."""
+    return _active_events.get(ctx.channel.id, "")
+
+
+@bot.command(name="event")
+async def cmd_event(ctx, event_key: str = ""):
+    """Set the active event for this channel. All scouting commands use it."""
+    if not event_key:
+        current = _get_event(ctx)
+        if current:
+            await ctx.send(f"Active event: `{current}`\nChange with: `!event <event_key>`")
+        else:
+            await ctx.send("No active event set.\nUsage: `!event 2026txbel`")
+        return
+
+    _active_events[ctx.channel.id] = event_key
+    await ctx.send(f"Active event set to `{event_key}` for this channel.")
+
+
+@bot.command(name="matchnow")
+async def cmd_matchnow(ctx, match_key: str = ""):
+    """Set the current match being played. Auto-fills match key for !scout."""
+    if not match_key:
+        current = _active_match.get(ctx.channel.id, "")
+        if current:
+            await ctx.send(f"Current match: `{current}`\nChange: `!matchnow <match_key>`")
+        else:
+            await ctx.send("No match set. Usage: `!matchnow 2026txbel_qm15`")
+        return
+
+    _active_match[ctx.channel.id] = match_key
+    await ctx.send(f"Current match: `{match_key}`")
+
+
+@bot.command(name="scout")
+async def cmd_scout(ctx, team: str = "", *, tags_str: str = ""):
+    """Record a stand scouting observation.
+
+    Usage: !scout <team> <tags...> [note:"free text"]
+    Tags: auto:scored, fast, fuel, climbed, elite, intake-jam, etc.
+    """
+    if not team:
+        await ctx.send(
+            "```\n"
+            "STAND SCOUT — Quick-tap scouting\n"
+            "────────────────────────────────\n"
+            "!scout <team> <tags...> [note:\"text\"]\n\n"
+            "Auto:      auto:scored  auto:moved  auto:none\n"
+            "Speed:     fast  moderate  slow\n"
+            "Zone:      fuel  tower  both\n"
+            "Endgame:   climbed  barge  parked  no-endgame  fell\n"
+            "Defense:   played-defense  received-defense\n"
+            "Mechanism: intake-jam  drivetrain-issue  disabled  tipped\n"
+            "Quality:   elite  solid  average  weak  carried\n\n"
+            "Example:\n"
+            "  !scout 2950 auto:scored fast fuel climbed elite\n"
+            "  !scout 7521 moderate tower barge note:\"great driver\"\n"
+            "```"
+        )
+        return
+
+    try:
+        team_num = int(team)
+    except ValueError:
+        await ctx.send(f"Invalid team number: `{team}`")
+        return
+
+    # Parse tags and note from the combined string
+    tags = []
+    note = ""
+    parts = tags_str.split() if tags_str else []
+
+    i = 0
+    while i < len(parts):
+        part = parts[i]
+        if part.startswith("note:"):
+            # Collect everything after note: as the note text
+            note_text = part[5:].strip('"')
+            i += 1
+            while i < len(parts):
+                if parts[i].endswith('"'):
+                    note_text += " " + parts[i].strip('"')
+                    i += 1
+                    break
+                note_text += " " + parts[i]
+                i += 1
+            note = note_text.strip('"')
+        else:
+            tags.append(part)
+            i += 1
+
+    event_key = _get_event(ctx)
+    match_key = _active_match.get(ctx.channel.id, "")
+
+    def _do_scout():
+        from stand_scout import parse_scout_input, save_observation, format_observation_discord
+        obs = parse_scout_input(
+            team_num, tags, note=note,
+            match_key=match_key, event_key=event_key,
+            scout_name=str(ctx.author),
+        )
+        path = save_observation(obs, event_key=event_key)
+        display = format_observation_discord(obs)
+        return path.name, display
+
+    try:
+        filename, display = await asyncio.to_thread(_do_scout)
+        match_tag = f" | `{match_key}`" if match_key else ""
+        await ctx.send(f"Saved scouting data for **{team_num}**{match_tag}\n{display}")
+    except Exception as e:
+        await ctx.send(f"Error saving scout data: {e}")
+
+
+@bot.command(name="scouted")
+async def cmd_scouted(ctx, team: str = ""):
+    """Show scouting data for a team, or coverage summary if no team specified."""
+    event_key = _get_event(ctx)
+
+    if team:
+        try:
+            team_num = int(team)
+        except ValueError:
+            await ctx.send(f"Invalid team number: `{team}`")
+            return
+
+        def _get_data():
+            from stand_scout import get_team_observations, format_team_summary_discord
+            observations = get_team_observations(team_num, event_key)
+            return format_team_summary_discord(team_num, observations)
+
+        try:
+            text = await asyncio.to_thread(_get_data)
+            for chunk in split_for_discord(text):
+                await ctx.send(chunk)
+        except Exception as e:
+            await ctx.send(f"Error: {e}")
+    else:
+        def _get_summary():
+            from stand_scout import get_observation_summary
+            return get_observation_summary(event_key)
+
+        try:
+            summary = await asyncio.to_thread(_get_summary)
+            text = (
+                f"**STAND SCOUT — Coverage**\n"
+                f"```\n"
+                f"Observations: {summary['total_observations']}\n"
+                f"Teams scouted: {summary['teams_scouted']}\n"
+                f"Scouts: {', '.join(summary['scouts']) if summary['scouts'] else 'none'}\n"
+                f"Teams: {', '.join(summary['team_list'][:20])}\n"
+                f"```"
+            )
+            if event_key:
+                text += f"\nEvent: `{event_key}`"
+            else:
+                text += "\nNo event set. Use `!event <key>` to filter."
+            await ctx.send(text)
+        except Exception as e:
+            await ctx.send(f"Error: {e}")
+
+
+@bot.command(name="eyescores")
+async def cmd_eyescores(ctx):
+    """Show EYE + stand scout scores for all scouted teams in the draft."""
+    def _get_scores():
+        sys.path.insert(0, str(EYE_PATH))
+        from eye_bridge import load_all_reports, aggregate_blended, STATE_FILE
+        if not STATE_FILE.exists():
+            return None, "No active draft. Run `pick_board.py setup` first."
+
+        state = json.loads(STATE_FILE.read_text())
+        event_key = state.get("event_key", "")
+        eye_reports, stand_reports = load_all_reports(event_key)
+        scores = aggregate_blended(eye_reports, stand_reports)
+
+        if not scores:
+            return None, "No scouting data found."
+
+        lines = ["**EYE + STAND SCOUT SCORES**", "```"]
+        lines.append(f"{'Team':>6} {'Score':>6} {'Reliab':>7} {'Driver':>7} {'Src':>8} {'Conf':>5}")
+        lines.append("─" * 45)
+
+        sorted_teams = sorted(scores.items(),
+                              key=lambda x: x[1].get("eye_composite", 0), reverse=True)
+        for team_key, s in sorted_teams[:20]:
+            sources = s.get("eye_sources", {})
+            if sources:
+                src_str = f"E{sources.get('eye', 0)}+S{sources.get('stand', 0)}"
+            else:
+                src_str = f"{s.get('eye_matches', 0)}m"
+            lines.append(
+                f"{int(team_key):6d} {s.get('eye_composite', 0):6.1f} "
+                f"{s.get('eye_reliability', 0):7.1f} "
+                f"{s.get('eye_driver', 0):7.1f} "
+                f"{src_str:>8} {s.get('eye_confidence', 0):4d}%"
+            )
+
+        lines.append("```")
+        lines.append(f"E=EYE vision, S=stand scout | {len(eye_reports)} EYE + {len(stand_reports)} stand reports")
+        return "\n".join(lines), None
+
+    try:
+        text, err = await asyncio.to_thread(_get_scores)
+        if err:
+            await ctx.send(err)
+        else:
+            for chunk in split_for_discord(text):
+                await ctx.send(chunk)
+    except Exception as e:
+        await ctx.send(f"Error: {e}")
+
+
+@bot.command(name="loadscout")
+async def cmd_loadscout(ctx):
+    """Load all EYE + stand scout data into the pick board."""
+    def _do_load():
+        sys.path.insert(0, str(EYE_PATH))
+        from eye_bridge import (load_all_reports, aggregate_blended,
+                                inject_eye_data, STATE_FILE, STATE_DIR)
+        if not STATE_FILE.exists():
+            return "No active draft."
+
+        state = json.loads(STATE_FILE.read_text())
+        event_key = state.get("event_key", "")
+        eye_reports, stand_reports = load_all_reports(event_key)
+
+        if not eye_reports and not stand_reports:
+            eye_reports, stand_reports = load_all_reports()
+            if not eye_reports and not stand_reports:
+                return "No scouting data found."
+
+        scores = aggregate_blended(eye_reports, stand_reports)
+        enriched = inject_eye_data(state, scores)
+
+        STATE_DIR.mkdir(parents=True, exist_ok=True)
+        STATE_FILE.write_text(json.dumps(state, indent=2))
+
+        return (f"Loaded {len(eye_reports)} EYE + {len(stand_reports)} stand reports. "
+                f"Enriched {enriched} teams. Pick board rec now uses scouting data.")
+
+    try:
+        result = await asyncio.to_thread(_do_load)
+        await ctx.send(result)
+    except Exception as e:
+        await ctx.send(f"Error: {e}")
+
+
+@bot.command(name="strategy")
+async def cmd_strategy(ctx, match_key: str = "", *, extra: str = ""):
+    """Generate a match strategy brief.
+
+    Usage:
+      !strategy                          — next unplayed match
+      !strategy 2026txbel_qm15           — specific match
+      !strategy opponent 4364,9311,10032  — quick opponent report
+      !strategy synergy 2950,7521,3035   — alliance synergy
+    """
+    event_key = _get_event(ctx)
+    if not event_key:
+        await ctx.send("Set active event first: `!event <event_key>`")
+        return
+
+    # Determine our team from draft state or default
+    def _get_our_team():
+        if STATE_FILE.exists():
+            state = json.loads(STATE_FILE.read_text())
+            return state.get("our_team", 2950)
+        return 2950
+
+    our_team = await asyncio.to_thread(_get_our_team)
+
+    # Route to the right strategy sub-command
+    if match_key == "opponent" and extra:
+        teams_str = extra.split()[0]
+        def _opponent():
+            from match_strategy import load_teams_db, analyze_alliance
+            teams_db = load_teams_db(event_key)
+            opp_teams = [int(t) for t in teams_str.split(",")]
+            opp = analyze_alliance(teams_db, opp_teams)
+
+            lines = [f"**OPPONENT REPORT**"]
+            for detail in opp["team_details"]:
+                td = teams_db.get(str(detail["team"]), {})
+                lines.append(
+                    f"**{detail['team']}** {detail.get('name', '?')[:20]} — "
+                    f"EPA {td.get('epa', 0):.1f} | {detail['role']}"
+                )
+            lines.append(f"\nCombined EPA: {opp['total_epa']:.0f}")
+            if opp["strengths"]:
+                lines.append(f"Strengths: {', '.join(opp['strengths'])}")
+            if opp["weaknesses"]:
+                lines.append(f"Weaknesses: {', '.join(opp['weaknesses'])}")
+            return "\n".join(lines)
+
+        try:
+            text = await asyncio.to_thread(_opponent)
+            await ctx.send(text)
+        except Exception as e:
+            await ctx.send(f"Error: {e}")
+        return
+
+    if match_key == "synergy" and extra:
+        teams_str = extra.split()[0]
+        def _synergy():
+            from match_strategy import load_teams_db, analyze_alliance
+            teams_db = load_teams_db(event_key)
+            alliance_teams = [int(t) for t in teams_str.split(",")]
+            profile = analyze_alliance(teams_db, alliance_teams)
+
+            lines = [f"**ALLIANCE SYNERGY** — {', '.join(str(t) for t in alliance_teams)}"]
+            lines.append(f"Combined EPA: {profile['total_epa']:.0f} "
+                        f"(floor {profile['total_floor']:.0f}, ceiling {profile['total_ceiling']:.0f})")
+            lines.append("")
+            for detail in profile["team_details"]:
+                td = teams_db.get(str(detail["team"]), {})
+                lines.append(f"**{detail['team']}** — {detail['role']}")
+            if profile["strengths"]:
+                lines.append(f"\nStrengths: {', '.join(profile['strengths'])}")
+            if profile["weaknesses"]:
+                lines.append(f"Weaknesses: {', '.join(profile['weaknesses'])}")
+            return "\n".join(lines)
+
+        try:
+            text = await asyncio.to_thread(_synergy)
+            await ctx.send(text)
+        except Exception as e:
+            await ctx.send(f"Error: {e}")
+        return
+
+    # Default: generate full match strategy brief
+    def _strategy():
+        from match_strategy import (load_teams_db, get_match_teams,
+                                     find_next_match, generate_strategy)
+        teams_db = load_teams_db(event_key)
+        if not teams_db:
+            return f"No team data for `{event_key}`"
+
+        # Find the match
+        if match_key:
+            mk = match_key if event_key in match_key else f"{event_key}_{match_key}"
+        else:
+            # Find next unplayed match
+            next_m = find_next_match(event_key, our_team)
+            if not next_m:
+                return f"No upcoming match found for {our_team} at `{event_key}`"
+            mk = next_m["match_key"]
+
+        match_teams = get_match_teams(event_key, mk)
+        if not match_teams:
+            return f"Match `{mk}` not found"
+
+        # Determine our alliance
+        if our_team in match_teams.get("red", []):
+            our_alliance = match_teams["red"]
+            opp_alliance = match_teams["blue"]
+        elif our_team in match_teams.get("blue", []):
+            our_alliance = match_teams["blue"]
+            opp_alliance = match_teams["red"]
+        else:
+            return f"Team {our_team} not in match `{mk}`"
+
+        match_info = {
+            "match_key": mk,
+            "comp_level": match_teams.get("comp_level", "qm"),
+            "match_number": match_teams.get("match_number", 0),
+            "red": match_teams.get("red", []),
+            "blue": match_teams.get("blue", []),
+        }
+
+        strat = generate_strategy(our_team, our_alliance, opp_alliance,
+                                   teams_db, match_info)
+
+        # Format for Discord
+        pred = strat.get("prediction", {})
+        plan = strat.get("game_plan", {})
+        us = strat.get("our_alliance", {})
+        them = strat.get("opponent", {})
+
+        win_pct = pred.get("win_pct", 0) * 100
+        bar_len = int(win_pct / 5)
+        bar = "█" * bar_len + "░" * (20 - bar_len)
+
+        lines = [
+            f"**MATCH STRATEGY — {match_info.get('comp_level', 'qm').upper()} "
+            f"{match_info.get('match_number', '?')}**",
+            f"Win: **{win_pct:.0f}%** `[{bar}]`",
+            f"Score: {pred.get('us_avg', 0):.0f} — {pred.get('them_avg', 0):.0f} "
+            f"(margin {pred.get('avg_margin', 0):+.0f})",
+            "",
+        ]
+
+        if strat.get("key_insight"):
+            lines.append(f"**{strat['key_insight']}**")
+            lines.append("")
+
+        # Our alliance
+        lines.append("**OUR ALLIANCE:**")
+        for detail in us.get("team_details", []):
+            me = " ← US" if detail["team"] == our_team else ""
+            lines.append(f"  {detail['team']} — EPA {detail.get('epa', 0):.1f} | {detail.get('role', '?')}{me}")
+
+        # Opponent
+        lines.append("\n**OPPONENT:**")
+        for detail in them.get("team_details", []):
+            lines.append(f"  {detail['team']} — EPA {detail.get('epa', 0):.1f} | {detail.get('role', '?')}")
+
+        # Game plan highlights
+        lines.append("")
+        defense = plan.get("defense", {})
+        if defense.get("play_defense"):
+            lines.append(f"**DEFENSE:** Send {defense['defender']} → defend {defense['target']}")
+        else:
+            lines.append("**DEFENSE:** All-out scoring")
+
+        for note in defense.get("notes", [])[:2]:
+            lines.append(f"  _{note}_")
+
+        endgame = plan.get("endgame", {})
+        if endgame.get("sequence"):
+            lines.append(f"\n**ENDGAME:** {' → '.join(str(t) for t in endgame['sequence'])}")
+
+        # Risk flags
+        risks = strat.get("risk_flags", [])
+        if risks:
+            lines.append("\n**RISKS:**")
+            for r in risks[:3]:
+                lines.append(f"  ⚠ {r}")
+
+        return "\n".join(lines)
+
+    try:
+        text = await asyncio.to_thread(_strategy)
+        for chunk in split_for_discord(text):
+            await ctx.send(chunk)
+    except Exception as e:
+        await ctx.send(f"Error: {e}")
+
+
+@bot.command(name="rec")
+async def cmd_rec(ctx):
+    """Show current pick recommendation from the pick board."""
+    def _get_rec():
+        import subprocess
+        result = subprocess.run(
+            ["python3", str(SCOUT_PATH / "pick_board.py"), "rec"],
+            capture_output=True, text=True, timeout=30,
+        )
+        return result.stdout or result.stderr
+
+    try:
+        text = await asyncio.to_thread(_get_rec)
+        for chunk in split_for_discord(f"```\n{text}\n```"):
+            await ctx.send(chunk)
+    except Exception as e:
+        await ctx.send(f"Error: {e}")
+
+
+@bot.command(name="pick")
+async def cmd_pick_draft(ctx, alliance: str = "", team: str = ""):
+    """Record a pick in the live draft. Usage: !pick <alliance#> <team#>"""
+    if not alliance or not team:
+        await ctx.send("Usage: `!pick <alliance#> <team#>`\nExample: `!pick 1 148`")
+        return
+
+    def _record_pick():
+        import subprocess
+        result = subprocess.run(
+            ["python3", str(SCOUT_PATH / "pick_board.py"), "pick", alliance, team],
+            capture_output=True, text=True, timeout=15,
+        )
+        return result.stdout or result.stderr
+
+    try:
+        text = await asyncio.to_thread(_record_pick)
+        await ctx.send(f"```\n{text}\n```")
+    except Exception as e:
+        await ctx.send(f"Error: {e}")
+
+
+@bot.command(name="board")
+async def cmd_board(ctx):
+    """Show the current pick board."""
+    def _get_board():
+        import subprocess
+        result = subprocess.run(
+            ["python3", str(SCOUT_PATH / "pick_board.py"), "board"],
+            capture_output=True, text=True, timeout=15,
+        )
+        return result.stdout or result.stderr
+
+    try:
+        text = await asyncio.to_thread(_get_board)
+        for chunk in split_for_discord(f"```\n{text}\n```"):
+            await ctx.send(chunk)
+    except Exception as e:
+        await ctx.send(f"Error: {e}")
+
+
+@bot.command(name="lookup")
+async def cmd_lookup(ctx, team: str = ""):
+    """Look up a team's EPA and stats."""
+    if not team:
+        await ctx.send("Usage: `!lookup <team_number>`")
+        return
+
+    def _lookup():
+        import subprocess
+        result = subprocess.run(
+            ["python3", str(SCOUT_PATH / "the_scout.py"), "lookup", team],
+            capture_output=True, text=True, timeout=15,
+        )
+        return result.stdout or result.stderr
+
+    try:
+        text = await asyncio.to_thread(_lookup)
+        for chunk in split_for_discord(f"```\n{text}\n```"):
+            await ctx.send(chunk)
+    except Exception as e:
+        await ctx.send(f"Error: {e}")
 
 
 # ═══════════════════════════════════════════════════════════════════
