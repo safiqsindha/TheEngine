@@ -21,6 +21,12 @@ __pycache__/
 # Claude (keep skills, ignore settings)
 .claude/settings.local.json
 
+# Robot-specific files (belong in 2950-robot)
+hardware_config.ini
+sim_control.py
+simgui-ds.json
+simgui-window.json
+
 # Robot code (lives in 2950-robot repo)
 src/
 swervelib/
