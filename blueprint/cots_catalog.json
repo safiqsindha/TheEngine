@@ -6,6 +6,14 @@
     "last_updated": "2026-04-08"
   },
 
+  "Thrifty Swerve Module": {
+    "category": "drivetrain",
+    "subcategory": "swerve",
+    "vendor": "TTB",
+    "vendor_full": "The Thrifty Bot",
+    "specs": { "gear_ratios": ["6.23:1"], "wheel_diameter": "4in", "steer_ratio": "25:1" },
+    "onshape": {}
+  },
   "SDS MK4i Swerve Module": {
     "category": "drivetrain",
     "subcategory": "swerve",
