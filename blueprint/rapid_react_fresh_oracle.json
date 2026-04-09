@@ -1,0 +1,79 @@
+{
+  "game_name": "Rapid React",
+  "season_year": 2022,
+  "confidence_overall": 0.88,
+  "drivetrain": {
+    "type": "swerve",
+    "module": "sds_mk4i",
+    "speed_fps": 16.0,
+    "gear_for": "speed",
+    "frame_length_in": 27.0,
+    "frame_width_in": 27.0,
+    "reasoning": "R1: Swerve mandatory for 2022+. Speed-geared — fast cycles between terminal and hub are the primary differentiator (R11). MK4i L2 for balance of speed and reliability. 27x27 square frame for symmetrical shooting angles."
+  },
+  "intake": {
+    "type": "over_bumper",
+    "width": "full",
+    "roller_material": "flex_wheels",
+    "deploy": true,
+    "motors": 1,
+    "game_piece": "CARGO (9.5\" inflated ball, ~0.55 lb)",
+    "reasoning": "R2: Full-width intake for maximum capture zone. R3: Flex wheels for rubber/foam balls — good grip without over-compression. Over-bumper with deploy pivot to reach ground cargo. R17: Intake on front, shooter on back — cargo flows through conveyor."
+  },
+  "scorer": {
+    "method": "flywheel",
+    "height_in": 0,
+    "stages": 0,
+    "motors": 2,
+    "has_wrist": false,
+    "turret": "none",
+    "reasoning": "R4: Upper hub at 8'2\" — ranged flywheel shooter is the clear choice. R6: Hub is FIXED location at field center, not distributed — turret is optional per the 4-quadrant matrix, but skipping saves 3-5 lbs and 20+ dev hours. Aim by rotating drivetrain (swerve makes this fast). R19: Upper hub is UNCAPPED at 2 pts/cargo teleop — this is THE differentiator. Lower hub only 1 pt — not worth optimizing for."
+  },
+  "endgame": {
+    "type": "telescope",
+    "height_in": 60.0,
+    "motors": 2,
+    "reasoning": "R7: Climb is worth up to 15 pts (traversal) = ~25% of a strong alliance score — MUST build climber. Traversal at 6'6\" requires ~60\" of reach from frame top. Telescoping arms to reach high bar then swing to traversal. R7: Target <2 seconds fully hung. Two NEO motors with high reduction (60:1+) for holding torque."
+  },
+  "autonomous": {
+    "priority_actions": ["score_preload_upper", "intake_ground_cargo", "score_upper", "intake_second_cargo", "score_upper", "taxi"],
+    "cycle_time_target_s": 3.5,
+    "preload_score": true,
+    "estimated_pieces": 3,
+    "reasoning": "R8: 3-piece auto is championship baseline. Score preload in upper hub (4 pts auto), pick up 2 nearby floor cargo and shoot both (8 pts auto), taxi for 5 pts. Total: 17 pts auto. R11: Optimize cycle speed — 3.5s target per cycle in auto."
+  },
+  "weight_budget": {
+    "drivetrain_lb": 42,
+    "intake_lb": 8,
+    "scorer_lb": 12,
+    "endgame_lb": 12,
+    "electronics_lb": 15,
+    "bumpers_lb": 10,
+    "margin_lb": 26,
+    "total_limit_lb": 125
+  },
+  "build_order": [
+    "drivetrain",
+    "scorer",
+    "intake",
+    "endgame",
+    "autonomous"
+  ],
+  "scoring_analysis": {
+    "methods": [
+      {"name": "Upper Hub (Teleop)", "type": "UNCAPPED", "pts_per_unit": 2, "cap": "none"},
+      {"name": "Upper Hub (Auto)", "type": "UNCAPPED", "pts_per_unit": 4, "cap": "none"},
+      {"name": "Lower Hub (Teleop)", "type": "UNCAPPED", "pts_per_unit": 1, "cap": "none"},
+      {"name": "Lower Hub (Auto)", "type": "UNCAPPED", "pts_per_unit": 2, "cap": "none"},
+      {"name": "Taxi (Auto)", "type": "CAPPED", "pts_per_unit": 5, "cap": "once per robot"},
+      {"name": "Climb Low", "type": "SEMI-CAPPED", "pts_per_unit": 4, "cap": "1 per robot"},
+      {"name": "Climb Mid", "type": "SEMI-CAPPED", "pts_per_unit": 6, "cap": "1 per robot"},
+      {"name": "Climb High", "type": "SEMI-CAPPED", "pts_per_unit": 10, "cap": "1 per robot"},
+      {"name": "Climb Traversal", "type": "SEMI-CAPPED", "pts_per_unit": 15, "cap": "1 per robot"},
+      {"name": "Cargo RP", "type": "CAPPED", "threshold": 20, "cap": "binary — alliance needs 20 cargo total"},
+      {"name": "Climb RP", "type": "CAPPED", "threshold": 16, "cap": "binary — alliance needs 16+ climb points"}
+    ],
+    "primary_method": "Upper hub throughput (UNCAPPED, 2 pts teleop / 4 pts auto)",
+    "reasoning": "R19: Both hubs are UNCAPPED — no saturation ceiling. Upper hub at 2x lower hub value is the clear primary. 3 good robots will NOT saturate scoring — more cargo always = more points. Cargo RP at 20 cargo = ~7 per robot achievable. Climb RP at 16 pts = needs 2 mid-or-higher climbs. Traversal (15 pts) is extremely high value and differentiates at playoffs."
+  }
+}

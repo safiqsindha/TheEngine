@@ -1,0 +1,74 @@
+{
+  "game_name": "Charged Up",
+  "season_year": 2023,
+  "confidence_overall": 0.85,
+  "drivetrain": {
+    "type": "swerve",
+    "module": "sds_mk4i",
+    "speed_fps": 15.0,
+    "gear_for": "balanced",
+    "frame_length_in": 27.0,
+    "frame_width_in": 27.0,
+    "reasoning": "R1: Swerve mandatory. Balanced speed for grid alignment precision. MK4i L2 for reliability."
+  },
+  "intake": {
+    "type": "over_bumper",
+    "width": "partial",
+    "roller_material": "compliant_wheels",
+    "deploy": true,
+    "motors": 1,
+    "game_piece": "CONE (12.5\" tall, 0.55 lb) + CUBE (9.5\" inflated, 0.8 lb)",
+    "reasoning": "R5: Dual game piece — compliant wheels grip both cone rubber and cube foam. Over-bumper intake pivots to reach ground. Must handle 2 shapes."
+  },
+  "scorer": {
+    "method": "elevator",
+    "height_in": 50.0,
+    "stages": 2,
+    "motors": 2,
+    "has_wrist": true,
+    "turret": "none",
+    "reasoning": "R4+R6: Grid has 3 rows — bottom (floor), mid (27.5\"), high (46\"). Two-stage elevator to reach high row. Wrist for cone orientation (upright vs inverted). R19: Grid scoring is UNCAPPED per slot but grid has 27 slots shared by alliance. High row = 5 pts. Links (3 in a row) provide Ranking Point."
+  },
+  "endgame": {
+    "type": "none",
+    "height_in": 0,
+    "motors": 0,
+    "reasoning": "R8: Charge station balance — drive-only endgame, no climb mechanism needed. Just drive onto tilting platform and auto-balance. R19: Charge Station RP requires all 3 robots engaged (docked/engaged). 10 pts for engaged. Worth it via driving, not a mechanism."
+  },
+  "autonomous": {
+    "priority_actions": ["score_preload_high", "drive_to_balance", "engage_charge_station"],
+    "cycle_time_target_s": 4.0,
+    "preload_score": true,
+    "estimated_pieces": 1,
+    "reasoning": "R7: Auto mobility 3 pts + charge station engage 12 pts. Score preload on high row (6 pts auto) then engage. R18: 1-piece + engage is the reliable auto."
+  },
+  "weight_budget": {
+    "drivetrain_lb": 42,
+    "intake_lb": 10,
+    "scorer_lb": 20,
+    "endgame_lb": 0,
+    "electronics_lb": 15,
+    "bumpers_lb": 10,
+    "margin_lb": 28,
+    "total_limit_lb": 125
+  },
+  "build_order": [
+    "drivetrain",
+    "scorer",
+    "intake",
+    "autonomous"
+  ],
+  "scoring_analysis": {
+    "methods": [
+      {"name": "Grid High", "type": "SEMI-CAPPED", "pts_per_unit_teleop": 5, "pts_per_unit_auto": 6, "cap": "9 slots shared by alliance"},
+      {"name": "Grid Mid", "type": "SEMI-CAPPED", "pts_per_unit_teleop": 3, "pts_per_unit_auto": 4, "cap": "9 slots shared by alliance"},
+      {"name": "Grid Low", "type": "SEMI-CAPPED", "pts_per_unit_teleop": 2, "pts_per_unit_auto": 3, "cap": "9 slots shared by alliance"},
+      {"name": "Link RP", "type": "CAPPED", "threshold": 5, "cap": "binary (5 links)"},
+      {"name": "Charge Station (Dock)", "type": "SEMI-CAPPED", "pts_per_unit": 6, "cap": "3 robots"},
+      {"name": "Charge Station (Engage)", "type": "SEMI-CAPPED", "pts_per_unit": 10, "cap": "3 robots"},
+      {"name": "Charge Station RP", "type": "CAPPED", "threshold": 26, "cap": "binary"}
+    ],
+    "primary_method": "High row grid scoring (5 pts, SEMI-CAPPED at 9 slots)",
+    "reasoning": "R19: Grid is SEMI-CAPPED (27 total slots) but most matches don't fill it. High row dominates. Link RP at 5 links = 15 high-row pieces. Elevator + wrist to reach all rows is the architecture."
+  }
+}

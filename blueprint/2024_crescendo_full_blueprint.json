@@ -1,0 +1,1038 @@
+{
+  "game": "Crescendo",
+  "year": 2024,
+  "generated_by": "The Engine \u2014 Full Blueprint Pipeline",
+  "rules_applied": "CROSS_SEASON_PATTERNS R1-R19",
+  "frame": {
+    "name": "2950 Swerve Frame",
+    "version": "1.0",
+    "generator": "The Blueprint B.2",
+    "frame_length_in": 27.0,
+    "frame_width_in": 27.0,
+    "frame_height_in": 1.0,
+    "bumper_thickness_in": 3.5,
+    "perimeter_tube": "2x1",
+    "cross_tube": "1x1",
+    "tube_wall_in": 0.04,
+    "module_type": "sds_mk4i",
+    "module_inset_in": 2.5,
+    "bellypan": true,
+    "bellypan_material": "1/8 polycarbonate",
+    "bellypan_weight_lb": 3.44,
+    "tube_members": [
+      {
+        "name": "front_rail",
+        "length_in": 23.0,
+        "tube_size": "2x1",
+        "position": [
+          0,
+          12.5,
+          0
+        ],
+        "orientation": "x",
+        "quantity": 1,
+        "holes": 46,
+        "notes": "Front perimeter rail"
+      },
+      {
+        "name": "back_rail",
+        "length_in": 23.0,
+        "tube_size": "2x1",
+        "position": [
+          0,
+          -12.5,
+          0
+        ],
+        "orientation": "x",
+        "quantity": 1,
+        "holes": 46,
+        "notes": "Back perimeter rail"
+      },
+      {
+        "name": "left_rail",
+        "length_in": 27.0,
+        "tube_size": "2x1",
+        "position": [
+          -12.5,
+          0,
+          0
+        ],
+        "orientation": "y",
+        "quantity": 1,
+        "holes": 54,
+        "notes": "Left perimeter rail"
+      },
+      {
+        "name": "right_rail",
+        "length_in": 27.0,
+        "tube_size": "2x1",
+        "position": [
+          12.5,
+          0,
+          0
+        ],
+        "orientation": "y",
+        "quantity": 1,
+        "holes": 54,
+        "notes": "Right perimeter rail"
+      },
+      {
+        "name": "front_cross",
+        "length_in": 23.0,
+        "tube_size": "1x1",
+        "position": [
+          0,
+          11.0,
+          0
+        ],
+        "orientation": "x",
+        "quantity": 1,
+        "holes": 46,
+        "notes": "Front cross member (module support)"
+      },
+      {
+        "name": "back_cross",
+        "length_in": 23.0,
+        "tube_size": "1x1",
+        "position": [
+          0,
+          -11.0,
+          0
+        ],
+        "orientation": "x",
+        "quantity": 1,
+        "holes": 46,
+        "notes": "Back cross member (module support)"
+      },
+      {
+        "name": "center_cross",
+        "length_in": 23.0,
+        "tube_size": "1x1",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "orientation": "x",
+        "quantity": 1,
+        "holes": 46,
+        "notes": "Center cross member (electronics/battery support)"
+      }
+    ],
+    "module_placements": [
+      {
+        "name": "front_left",
+        "position": [
+          -11.0,
+          11.0
+        ],
+        "module_type": "sds_mk4i"
+      },
+      {
+        "name": "front_right",
+        "position": [
+          11.0,
+          11.0
+        ],
+        "module_type": "sds_mk4i"
+      },
+      {
+        "name": "back_left",
+        "position": [
+          -11.0,
+          -11.0
+        ],
+        "module_type": "sds_mk4i"
+      },
+      {
+        "name": "back_right",
+        "position": [
+          11.0,
+          -11.0
+        ],
+        "module_type": "sds_mk4i"
+      }
+    ],
+    "electronics_placements": [
+      {
+        "name": "battery",
+        "component": "battery",
+        "position": [
+          0,
+          -2
+        ],
+        "rotation_deg": 0
+      },
+      {
+        "name": "pdh",
+        "component": "pdh",
+        "position": [
+          0,
+          -6.75
+        ],
+        "rotation_deg": 0
+      },
+      {
+        "name": "roborio",
+        "component": "roborio",
+        "position": [
+          0,
+          4.5
+        ],
+        "rotation_deg": 0
+      },
+      {
+        "name": "radio",
+        "component": "radio",
+        "position": [
+          0,
+          6.75
+        ],
+        "rotation_deg": 0
+      },
+      {
+        "name": "main_breaker",
+        "component": "main_breaker",
+        "position": [
+          6.75,
+          0
+        ],
+        "rotation_deg": 0
+      }
+    ],
+    "cross_member_count": 3,
+    "frame_weight_lb": 11.83,
+    "module_weight_lb": 11.6,
+    "electronics_weight_lb": 14.94,
+    "total_weight_lb": 41.81,
+    "cut_list": [
+      {
+        "description": "1x1 @ 23.00in",
+        "quantity": 3
+      },
+      {
+        "description": "2x1 @ 23.00in",
+        "quantity": 2
+      },
+      {
+        "description": "2x1 @ 27.00in",
+        "quantity": 2
+      }
+    ],
+    "within_frame_perimeter": true,
+    "max_dimension_in": 27.0,
+    "bumper_perimeter_in": 108.0
+  },
+  "intake": {
+    "intake_type": "under_bumper",
+    "game_piece_diameter_in": 14.0,
+    "game_piece_shape": "cylinder",
+    "frame_width_in": 27.0,
+    "roller_material": "flex_wheels",
+    "deploy_type": "none",
+    "drivetrain_speed_fps": 16.5,
+    "intake_width_in": 25.0,
+    "roller_count": 2,
+    "roller_spacing_in": 15.9,
+    "roller_speed_rpm": 1816.0,
+    "compression_in": 2.1,
+    "roller_od_in": 4.0,
+    "roller_motor_type": "neo",
+    "roller_motor_count": 1,
+    "roller_gear_ratio": 2.5,
+    "deploy_motor_type": "none",
+    "deploy_gear_ratio": 0,
+    "surface_speed_fps": 31.7,
+    "acquire_time_sec": 0.08,
+    "cycle_contribution_sec": 0.08,
+    "roller_weight_lb": 2.46,
+    "frame_weight_lb": 0.3,
+    "motor_weight_lb": 0.94,
+    "deploy_weight_lb": 0,
+    "hardware_weight_lb": 0.5,
+    "total_weight_lb": 4.2,
+    "weight_ok": true,
+    "software_constants": {
+      "ROLLER_GEAR_RATIO": 2.5,
+      "ROLLER_MOTOR_COUNT": 1,
+      "ROLLER_DIAMETER_IN": 4.0,
+      "SURFACE_SPEED_FPS": 31.7,
+      "INTAKE_SPEED": 0.8,
+      "OUTTAKE_SPEED": -0.5
+    },
+    "parts_list": [
+      {
+        "qty": 18,
+        "item": "Flex Wheels (WCP/TTB) (4.0\" OD)",
+        "notes": "Roller wheels, 2 rollers x 9 per shaft"
+      },
+      {
+        "qty": 2,
+        "item": "1/2\" hex shaft",
+        "notes": "Cut to 27.0\" (intake width + bearings)"
+      },
+      {
+        "qty": 4,
+        "item": "Flanged bearing (1/2\" hex bore)",
+        "notes": "One per shaft end"
+      },
+      {
+        "qty": 1,
+        "item": "NEO Brushless motor",
+        "notes": "With SparkMax, 2.5:1 reduction"
+      },
+      {
+        "qty": 2,
+        "item": "Side plates (1/4\" polycarb or 1/8\" aluminum)",
+        "notes": "Cut to intake profile, 25.0\" apart"
+      },
+      {
+        "qty": 1,
+        "item": "Hardware assortment (#10-32)",
+        "notes": "Bolts, nuts, spacers for assembly"
+      }
+    ],
+    "preset_name": "2024_crescendo",
+    "notes": [
+      "R3: Flex wheels are the championship standard for round game pieces",
+      "R2: Full-width intake (bumper-to-bumper) for maximum capture zone",
+      "ReCalc: surface speed = 2x drivetrain speed (16.5 fps \u2192 31.7 fps)"
+    ]
+  },
+  "flywheel": {
+    "wheel_diameter_in": 6.0,
+    "wheel_count": 2,
+    "motor_type": "neo_vortex",
+    "motor_count": 2,
+    "gear_ratio": 1.0,
+    "target_rpm": 4000.0,
+    "current_limit_a": 40.0,
+    "efficiency": 0.9,
+    "piece_mass_lb": 0.44,
+    "piece_diameter_in": 14.0,
+    "wheel_moi_kg_m2": 0.0007898569583119264,
+    "stored_energy_j": 69.29,
+    "spinup_time_sec": 0.407,
+    "surface_speed_fps": 104.7,
+    "exit_velocity_fps": 7.9,
+    "energy_transfer_pct": 7.6,
+    "speed_drop_after_shot_rpm": 24.0,
+    "recovery_time_sec": 0,
+    "spinup_peak_current_a": 40.0,
+    "holding_current_a": 8.6,
+    "wheel_weight_lb": 0.6,
+    "motor_weight_lb": 1.76,
+    "total_weight_lb": 3.86,
+    "software_constants": {
+      "FLYWHEEL_GEAR_RATIO": 1.0,
+      "FLYWHEEL_MOTOR_COUNT": 2,
+      "TARGET_RPM": 4000.0,
+      "WHEEL_DIAMETER_IN": 6.0,
+      "CURRENT_LIMIT_A": 40.0,
+      "kS": 0.1,
+      "kV": 0.00177,
+      "kA": 0.01,
+      "RPM_TOLERANCE": 120.0,
+      "RECOVERY_TIME_SEC": 0
+    },
+    "parts_list": [
+      {
+        "qty": 2,
+        "item": "6.0\" shooter wheel",
+        "notes": "Colson or polycarb, balanced"
+      },
+      {
+        "qty": 2,
+        "item": "NEO Vortex motor",
+        "notes": "With SparkFlex"
+      },
+      {
+        "qty": 1,
+        "item": "Flywheel shaft (1/2\" hex)",
+        "notes": "Length = wheel stack + bearings"
+      },
+      {
+        "qty": 2,
+        "item": "Flanged bearing (1/2\" hex bore)",
+        "notes": "One per shaft end"
+      },
+      {
+        "qty": 1,
+        "item": "Flywheel housing plates (2x)",
+        "notes": "1/4\" aluminum or polycarb"
+      },
+      {
+        "qty": 1,
+        "item": "Hardware assortment (#10-32)",
+        "notes": "Bolts, nuts, spacers"
+      }
+    ],
+    "notes": [
+      "Low energy transfer \u2014 increase flywheel MOI (heavier wheels)"
+    ],
+    "preset_name": "2024_shooter"
+  },
+  "conveyor": {
+    "path_length_in": 24.0,
+    "game_piece_diameter_in": 14.0,
+    "staging_count": 2,
+    "belt_type": "belt",
+    "motor_type": "neo_550",
+    "motor_count": 1,
+    "gear_ratio": 5.0,
+    "roller_diameter_in": 2.0,
+    "current_limit_a": 20.0,
+    "efficiency": 0.85,
+    "sensor_type": "beam_break",
+    "sensor_count": 2,
+    "belt_speed_fps": 15.4,
+    "transit_time_sec": 0.13,
+    "belt_length_in": 54.3,
+    "roller_rpm": 1760.0,
+    "holding_current_a": 1.3,
+    "motor_weight_lb": 0.49,
+    "mechanism_weight_lb": 1.57,
+    "total_weight_lb": 2.36,
+    "software_constants": {
+      "CONVEYOR_GEAR_RATIO": 5.0,
+      "CONVEYOR_SPEED": 0.8,
+      "CONVEYOR_REVERSE_SPEED": -0.5,
+      "CONVEYOR_SLOW_SPEED": 0.3,
+      "SENSOR_COUNT": 2,
+      "STAGING_COUNT": 2,
+      "TRANSIT_TIME_SEC": 0.13
+    },
+    "parts_list": [
+      {
+        "qty": 1,
+        "item": "NEO 550 motor",
+        "notes": "With SparkMax"
+      },
+      {
+        "qty": 1,
+        "item": "Gearbox (5.0:1)",
+        "notes": "MAXPlanetary or belt reduction"
+      },
+      {
+        "qty": 1,
+        "item": "Polyurethane belt (54.3\")",
+        "notes": "1\" or 2\" wide"
+      },
+      {
+        "qty": 2,
+        "item": "Drive rollers (2.0\" dia)",
+        "notes": "One driven, one idler"
+      },
+      {
+        "qty": 2,
+        "item": "IR Beam Break",
+        "notes": "Most reliable, detects any game piece crossing the beam"
+      },
+      {
+        "qty": 2,
+        "item": "Side rails (1x1 aluminum or polycarb)",
+        "notes": "24.0\" long"
+      },
+      {
+        "qty": 1,
+        "item": "Hardware assortment",
+        "notes": "Bolts, spacers, belt tensioner"
+      }
+    ],
+    "notes": [
+      "Multi-stage indexer: 2 sensors for 2 staging positions",
+      "Sensor placement: entry at 0\", exit at 24.0\", staging at 12\""
+    ],
+    "preset_name": "2024_indexer"
+  },
+  "climber": {
+    "climb_height_in": 26.0,
+    "robot_weight_lb": 125.0,
+    "climb_style": "winch",
+    "motor_type": "neo",
+    "motor_count": 2,
+    "gear_ratio": 60.0,
+    "spool_diameter_in": 1.25,
+    "current_limit_a": 40.0,
+    "efficiency": 0.8,
+    "climb_time_sec": 4.352,
+    "max_climb_speed_in_s": 6.0,
+    "peak_current_a": 40.0,
+    "holding_current_a": 3.7,
+    "stall_load_lb": 1346.5276658052665,
+    "safety_factor": 10.77,
+    "motor_weight_lb": 2.88,
+    "mechanism_weight_lb": 3.0,
+    "total_weight_lb": 6.38,
+    "software_constants": {
+      "CLIMB_GEAR_RATIO": 60.0,
+      "CLIMB_MOTOR_COUNT": 2,
+      "SPOOL_DIAMETER_IN": 1.25,
+      "CLIMB_HEIGHT_IN": 26.0,
+      "CURRENT_LIMIT_A": 40.0,
+      "CLIMB_SPEED": 0.8,
+      "HOLD_SPEED": 0.1,
+      "CLIMB_POSITION_TOLERANCE_IN": 0.5
+    },
+    "parts_list": [
+      {
+        "qty": 2,
+        "item": "NEO Brushless motor",
+        "notes": "With SparkMax"
+      },
+      {
+        "qty": 1,
+        "item": "MAXPlanetary gearbox (60.0:1)",
+        "notes": "High reduction for climb"
+      },
+      {
+        "qty": 1,
+        "item": "Winch spool (1.25\" dia)",
+        "notes": "3D printed or machined"
+      },
+      {
+        "qty": 1,
+        "item": "Dyneema rope (1/8\" dia, 200+ lb)",
+        "notes": "38.0\" length"
+      },
+      {
+        "qty": 1,
+        "item": "Hook assembly",
+        "notes": "Bent 1/4\" steel plate or tube"
+      },
+      {
+        "qty": 1,
+        "item": "Telescoping tube (1x1 or 1.5x1.5)",
+        "notes": "26.0\" travel"
+      },
+      {
+        "qty": 1,
+        "item": "Hardware assortment",
+        "notes": "Bolts, shaft collars, bearings"
+      }
+    ],
+    "notes": [
+      "Safety factor 10.77x \u2014 excellent margin",
+      "Winch climber: use Dyneema rope (200+ lb rated) on 3D printed spool"
+    ],
+    "preset_name": "2024_hook_winch"
+  },
+  "bom_rollup": {
+    "mechanisms": {
+      "intake": {
+        "preset": "2024_crescendo",
+        "weight_lb": 4.2,
+        "motor_type": "neo",
+        "motor_count": 1,
+        "current_limit_a": 40.0,
+        "peak_current_a": 40.0,
+        "holding_current_a": 5.0,
+        "parts": [
+          {
+            "qty": 18,
+            "item": "Flex Wheels (WCP/TTB) (4.0\" OD)",
+            "notes": "Roller wheels, 2 rollers x 9 per shaft"
+          },
+          {
+            "qty": 2,
+            "item": "1/2\" hex shaft",
+            "notes": "Cut to 27.0\" (intake width + bearings)"
+          },
+          {
+            "qty": 4,
+            "item": "Flanged bearing (1/2\" hex bore)",
+            "notes": "One per shaft end"
+          },
+          {
+            "qty": 1,
+            "item": "NEO Brushless motor",
+            "notes": "With SparkMax, 2.5:1 reduction"
+          },
+          {
+            "qty": 2,
+            "item": "Side plates (1/4\" polycarb or 1/8\" aluminum)",
+            "notes": "Cut to intake profile, 25.0\" apart"
+          },
+          {
+            "qty": 1,
+            "item": "Hardware assortment (#10-32)",
+            "notes": "Bolts, nuts, spacers for assembly"
+          }
+        ],
+        "software_constants": {
+          "ROLLER_GEAR_RATIO": 2.5,
+          "ROLLER_MOTOR_COUNT": 1,
+          "ROLLER_DIAMETER_IN": 4.0,
+          "SURFACE_SPEED_FPS": 31.7,
+          "INTAKE_SPEED": 0.8,
+          "OUTTAKE_SPEED": -0.5
+        }
+      },
+      "flywheel": {
+        "preset": "2024_shooter",
+        "weight_lb": 3.86,
+        "motor_type": "neo_vortex",
+        "motor_count": 2,
+        "current_limit_a": 40.0,
+        "peak_current_a": 40.0,
+        "holding_current_a": 8.6,
+        "parts": [
+          {
+            "qty": 2,
+            "item": "6.0\" shooter wheel",
+            "notes": "Colson or polycarb, balanced"
+          },
+          {
+            "qty": 2,
+            "item": "NEO Vortex motor",
+            "notes": "With SparkFlex"
+          },
+          {
+            "qty": 1,
+            "item": "Flywheel shaft (1/2\" hex)",
+            "notes": "Length = wheel stack + bearings"
+          },
+          {
+            "qty": 2,
+            "item": "Flanged bearing (1/2\" hex bore)",
+            "notes": "One per shaft end"
+          },
+          {
+            "qty": 1,
+            "item": "Flywheel housing plates (2x)",
+            "notes": "1/4\" aluminum or polycarb"
+          },
+          {
+            "qty": 1,
+            "item": "Hardware assortment (#10-32)",
+            "notes": "Bolts, nuts, spacers"
+          }
+        ],
+        "software_constants": {
+          "FLYWHEEL_GEAR_RATIO": 1.0,
+          "FLYWHEEL_MOTOR_COUNT": 2,
+          "TARGET_RPM": 4000.0,
+          "WHEEL_DIAMETER_IN": 6.0,
+          "CURRENT_LIMIT_A": 40.0,
+          "kS": 0.1,
+          "kV": 0.00177,
+          "kA": 0.01,
+          "RPM_TOLERANCE": 120.0,
+          "RECOVERY_TIME_SEC": 0
+        }
+      },
+      "conveyor": {
+        "preset": "2024_indexer",
+        "weight_lb": 2.36,
+        "motor_type": "neo_550",
+        "motor_count": 1,
+        "current_limit_a": 20.0,
+        "peak_current_a": 40.0,
+        "holding_current_a": 1.3,
+        "parts": [
+          {
+            "qty": 1,
+            "item": "NEO 550 motor",
+            "notes": "With SparkMax"
+          },
+          {
+            "qty": 1,
+            "item": "Gearbox (5.0:1)",
+            "notes": "MAXPlanetary or belt reduction"
+          },
+          {
+            "qty": 1,
+            "item": "Polyurethane belt (54.3\")",
+            "notes": "1\" or 2\" wide"
+          },
+          {
+            "qty": 2,
+            "item": "Drive rollers (2.0\" dia)",
+            "notes": "One driven, one idler"
+          },
+          {
+            "qty": 2,
+            "item": "IR Beam Break",
+            "notes": "Most reliable, detects any game piece crossing the beam"
+          },
+          {
+            "qty": 2,
+            "item": "Side rails (1x1 aluminum or polycarb)",
+            "notes": "24.0\" long"
+          },
+          {
+            "qty": 1,
+            "item": "Hardware assortment",
+            "notes": "Bolts, spacers, belt tensioner"
+          }
+        ],
+        "software_constants": {
+          "CONVEYOR_GEAR_RATIO": 5.0,
+          "CONVEYOR_SPEED": 0.8,
+          "CONVEYOR_REVERSE_SPEED": -0.5,
+          "CONVEYOR_SLOW_SPEED": 0.3,
+          "SENSOR_COUNT": 2,
+          "STAGING_COUNT": 2,
+          "TRANSIT_TIME_SEC": 0.13
+        }
+      },
+      "climber": {
+        "preset": "2024_hook_winch",
+        "weight_lb": 6.38,
+        "motor_type": "neo",
+        "motor_count": 2,
+        "current_limit_a": 40.0,
+        "peak_current_a": 40.0,
+        "holding_current_a": 3.7,
+        "parts": [
+          {
+            "qty": 2,
+            "item": "NEO Brushless motor",
+            "notes": "With SparkMax"
+          },
+          {
+            "qty": 1,
+            "item": "MAXPlanetary gearbox (60.0:1)",
+            "notes": "High reduction for climb"
+          },
+          {
+            "qty": 1,
+            "item": "Winch spool (1.25\" dia)",
+            "notes": "3D printed or machined"
+          },
+          {
+            "qty": 1,
+            "item": "Dyneema rope (1/8\" dia, 200+ lb)",
+            "notes": "38.0\" length"
+          },
+          {
+            "qty": 1,
+            "item": "Hook assembly",
+            "notes": "Bent 1/4\" steel plate or tube"
+          },
+          {
+            "qty": 1,
+            "item": "Telescoping tube (1x1 or 1.5x1.5)",
+            "notes": "26.0\" travel"
+          },
+          {
+            "qty": 1,
+            "item": "Hardware assortment",
+            "notes": "Bolts, shaft collars, bearings"
+          }
+        ],
+        "software_constants": {
+          "CLIMB_GEAR_RATIO": 60.0,
+          "CLIMB_MOTOR_COUNT": 2,
+          "SPOOL_DIAMETER_IN": 1.25,
+          "CLIMB_HEIGHT_IN": 26.0,
+          "CURRENT_LIMIT_A": 40.0,
+          "CLIMB_SPEED": 0.8,
+          "HOLD_SPEED": 0.1,
+          "CLIMB_POSITION_TOLERANCE_IN": 0.5
+        }
+      }
+    },
+    "mechanism_weight_lb": 16.8,
+    "drivetrain_weight_lb": 41.81,
+    "bumper_weight_lb": 8.0,
+    "battery_weight_lb": 13.0,
+    "electronics_weight_lb": 5.0,
+    "total_weight_lb": 84.61,
+    "weight_margin_lb": 40.39,
+    "weight_ok": true,
+    "motors": [
+      {
+        "mechanism": "drivetrain_drive",
+        "motor_type": "kraken_x60",
+        "motor_name": "Kraken X60",
+        "count": 4,
+        "current_limit_a": 40.0,
+        "peak_current_a": 40.0,
+        "holding_current_a": 5.0
+      },
+      {
+        "mechanism": "drivetrain_steer",
+        "motor_type": "neo_550",
+        "motor_name": "NEO 550",
+        "count": 4,
+        "current_limit_a": 20.0,
+        "peak_current_a": 20.0,
+        "holding_current_a": 2.0
+      },
+      {
+        "mechanism": "intake",
+        "motor_type": "neo",
+        "motor_name": "NEO Brushless",
+        "count": 1,
+        "current_limit_a": 40.0,
+        "peak_current_a": 40.0,
+        "holding_current_a": 5.0
+      },
+      {
+        "mechanism": "flywheel",
+        "motor_type": "neo_vortex",
+        "motor_name": "NEO Vortex",
+        "count": 2,
+        "current_limit_a": 40.0,
+        "peak_current_a": 40.0,
+        "holding_current_a": 8.6
+      },
+      {
+        "mechanism": "conveyor",
+        "motor_type": "neo_550",
+        "motor_name": "NEO 550",
+        "count": 1,
+        "current_limit_a": 20.0,
+        "peak_current_a": 40.0,
+        "holding_current_a": 1.3
+      },
+      {
+        "mechanism": "climber",
+        "motor_type": "neo",
+        "motor_name": "NEO Brushless",
+        "count": 2,
+        "current_limit_a": 40.0,
+        "peak_current_a": 40.0,
+        "holding_current_a": 3.7
+      }
+    ],
+    "total_motor_count": 14,
+    "total_can_devices": 17,
+    "peak_current_total_a": 480.0,
+    "sustained_current_total_a": 58.9,
+    "combined_parts": [
+      {
+        "qty": 18,
+        "item": "Flex Wheels (WCP/TTB) (4.0\" OD)",
+        "notes": "Roller wheels, 2 rollers x 9 per shaft",
+        "mechanism": "intake"
+      },
+      {
+        "qty": 2,
+        "item": "1/2\" hex shaft",
+        "notes": "Cut to 27.0\" (intake width + bearings)",
+        "mechanism": "intake"
+      },
+      {
+        "qty": 4,
+        "item": "Flanged bearing (1/2\" hex bore)",
+        "notes": "One per shaft end",
+        "mechanism": "intake"
+      },
+      {
+        "qty": 1,
+        "item": "NEO Brushless motor",
+        "notes": "With SparkMax, 2.5:1 reduction",
+        "mechanism": "intake"
+      },
+      {
+        "qty": 2,
+        "item": "Side plates (1/4\" polycarb or 1/8\" aluminum)",
+        "notes": "Cut to intake profile, 25.0\" apart",
+        "mechanism": "intake"
+      },
+      {
+        "qty": 1,
+        "item": "Hardware assortment (#10-32)",
+        "notes": "Bolts, nuts, spacers for assembly",
+        "mechanism": "intake"
+      },
+      {
+        "qty": 2,
+        "item": "6.0\" shooter wheel",
+        "notes": "Colson or polycarb, balanced",
+        "mechanism": "flywheel"
+      },
+      {
+        "qty": 2,
+        "item": "NEO Vortex motor",
+        "notes": "With SparkFlex",
+        "mechanism": "flywheel"
+      },
+      {
+        "qty": 1,
+        "item": "Flywheel shaft (1/2\" hex)",
+        "notes": "Length = wheel stack + bearings",
+        "mechanism": "flywheel"
+      },
+      {
+        "qty": 2,
+        "item": "Flanged bearing (1/2\" hex bore)",
+        "notes": "One per shaft end",
+        "mechanism": "flywheel"
+      },
+      {
+        "qty": 1,
+        "item": "Flywheel housing plates (2x)",
+        "notes": "1/4\" aluminum or polycarb",
+        "mechanism": "flywheel"
+      },
+      {
+        "qty": 1,
+        "item": "Hardware assortment (#10-32)",
+        "notes": "Bolts, nuts, spacers",
+        "mechanism": "flywheel"
+      },
+      {
+        "qty": 1,
+        "item": "NEO 550 motor",
+        "notes": "With SparkMax",
+        "mechanism": "conveyor"
+      },
+      {
+        "qty": 1,
+        "item": "Gearbox (5.0:1)",
+        "notes": "MAXPlanetary or belt reduction",
+        "mechanism": "conveyor"
+      },
+      {
+        "qty": 1,
+        "item": "Polyurethane belt (54.3\")",
+        "notes": "1\" or 2\" wide",
+        "mechanism": "conveyor"
+      },
+      {
+        "qty": 2,
+        "item": "Drive rollers (2.0\" dia)",
+        "notes": "One driven, one idler",
+        "mechanism": "conveyor"
+      },
+      {
+        "qty": 2,
+        "item": "IR Beam Break",
+        "notes": "Most reliable, detects any game piece crossing the beam",
+        "mechanism": "conveyor"
+      },
+      {
+        "qty": 2,
+        "item": "Side rails (1x1 aluminum or polycarb)",
+        "notes": "24.0\" long",
+        "mechanism": "conveyor"
+      },
+      {
+        "qty": 1,
+        "item": "Hardware assortment",
+        "notes": "Bolts, spacers, belt tensioner",
+        "mechanism": "conveyor"
+      },
+      {
+        "qty": 2,
+        "item": "NEO Brushless motor",
+        "notes": "With SparkMax",
+        "mechanism": "climber"
+      },
+      {
+        "qty": 1,
+        "item": "MAXPlanetary gearbox (60.0:1)",
+        "notes": "High reduction for climb",
+        "mechanism": "climber"
+      },
+      {
+        "qty": 1,
+        "item": "Winch spool (1.25\" dia)",
+        "notes": "3D printed or machined",
+        "mechanism": "climber"
+      },
+      {
+        "qty": 1,
+        "item": "Dyneema rope (1/8\" dia, 200+ lb)",
+        "notes": "38.0\" length",
+        "mechanism": "climber"
+      },
+      {
+        "qty": 1,
+        "item": "Hook assembly",
+        "notes": "Bent 1/4\" steel plate or tube",
+        "mechanism": "climber"
+      },
+      {
+        "qty": 1,
+        "item": "Telescoping tube (1x1 or 1.5x1.5)",
+        "notes": "26.0\" travel",
+        "mechanism": "climber"
+      },
+      {
+        "qty": 1,
+        "item": "Hardware assortment",
+        "notes": "Bolts, shaft collars, bearings",
+        "mechanism": "climber"
+      }
+    ],
+    "software_constants": {},
+    "notes": [
+      "Weight margin: 40.39 lb \u2014 healthy"
+    ]
+  },
+  "scoring_analysis": {
+    "methods": [
+      {
+        "name": "Speaker",
+        "type": "UNCAPPED",
+        "pts_per_unit": 2,
+        "cap": "none"
+      },
+      {
+        "name": "Speaker (Amplified)",
+        "type": "UNCAPPED",
+        "pts_per_unit": 5,
+        "cap": "none"
+      },
+      {
+        "name": "Amp",
+        "type": "SEMI-CAPPED",
+        "pts_per_unit": 1,
+        "cap": "2 notes stored"
+      },
+      {
+        "name": "Stage (Single)",
+        "type": "SEMI-CAPPED",
+        "pts_per_unit": 3,
+        "cap": "1 per chain"
+      },
+      {
+        "name": "Stage (Harmony)",
+        "type": "SEMI-CAPPED",
+        "pts_per_unit": 4,
+        "cap": "2 per chain bonus"
+      },
+      {
+        "name": "Trap",
+        "type": "SEMI-CAPPED",
+        "pts_per_unit": 5,
+        "cap": "1 per trap"
+      },
+      {
+        "name": "Ensemble RP",
+        "type": "CAPPED",
+        "threshold": 10,
+        "cap": "binary"
+      },
+      {
+        "name": "Melody RP",
+        "type": "CAPPED",
+        "threshold": 18,
+        "cap": "binary"
+      }
+    ],
+    "primary_method": "Speaker throughput (UNCAPPED, amplified for 5 pts)",
+    "reasoning": "R19: Speaker is fully uncapped and primary differentiator. Amplification doubles+ value. Amp is semi-capped feeder mechanism. Stage is worth doing but secondary."
+  },
+  "auto_strategy": {
+    "primary": "3-piece auto",
+    "actions": [
+      "score_preload_speaker",
+      "intake_centerline_note",
+      "score_speaker",
+      "intake_second_note",
+      "score_speaker"
+    ]
+  },
+  "build_order": [
+    "drivetrain",
+    "scorer",
+    "intake",
+    "endgame",
+    "autonomous"
+  ]
+}

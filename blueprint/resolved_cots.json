@@ -1,0 +1,42 @@
+{
+  "REV NEO Motor": {
+    "document_id": "24dc4b87ad8f60ed432cf84e",
+    "version_id": "a020b03ec155974b72e0dad5",
+    "version_name": "V5",
+    "element_id": "a9b91ad14dcc8f6168a39803",
+    "element_type": "PARTSTUDIO",
+    "element_name": "NEO Brushless Motor (REV-21-1650)",
+    "part_id": "JFD",
+    "vendor": "REV Robotics"
+  },
+  "REV NEO 550": {
+    "document_id": "94cd842681559b5225d6a65d",
+    "version_id": "7058453d3c7a214bf9e7d458",
+    "version_name": "V4",
+    "element_id": "33552f0d44478b8c67625afe",
+    "element_type": "PARTSTUDIO",
+    "element_name": "NEO 550 Brushless Motor (REV-21-1651)",
+    "part_id": "JFD",
+    "vendor": "REV Robotics"
+  },
+  "Power Distribution Hub": {
+    "document_id": "7abd9d1f0938c06f65ca7ce7",
+    "version_id": "924ee07e3e508ccafd20d0a7",
+    "version_name": "V3",
+    "element_id": "aafdae5cadd3ed0a45f9bdd5",
+    "element_type": "ASSEMBLY",
+    "element_name": "Power Distribution Hub (REV-11-1850)",
+    "part_id": "",
+    "vendor": "REV Robotics"
+  },
+  "REV MAXPlanetary Gearbox": {
+    "document_id": "116670a318148214a3504b49",
+    "version_id": "19010f58968e2590c1fdd64f",
+    "version_name": "2.0 Input Fix",
+    "element_id": "0fbf6f21d691fa15a20f96f1",
+    "element_type": "PARTSTUDIO",
+    "element_name": "REV-21-2128",
+    "part_id": "JFD",
+    "vendor": "REV Robotics"
+  }
+}

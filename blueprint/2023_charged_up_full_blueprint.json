@@ -1,0 +1,1004 @@
+{
+  "game": "Charged Up",
+  "year": 2023,
+  "generated_by": "The Engine \u2014 Full Blueprint Pipeline",
+  "rules_applied": "CROSS_SEASON_PATTERNS R1-R19",
+  "frame": {
+    "name": "2950 Swerve Frame",
+    "version": "1.0",
+    "generator": "The Blueprint B.2",
+    "frame_length_in": 27.0,
+    "frame_width_in": 27.0,
+    "frame_height_in": 1.0,
+    "bumper_thickness_in": 3.5,
+    "perimeter_tube": "2x1",
+    "cross_tube": "1x1",
+    "tube_wall_in": 0.04,
+    "module_type": "sds_mk4i",
+    "module_inset_in": 2.5,
+    "bellypan": true,
+    "bellypan_material": "1/8 polycarbonate",
+    "bellypan_weight_lb": 3.44,
+    "tube_members": [
+      {
+        "name": "front_rail",
+        "length_in": 23.0,
+        "tube_size": "2x1",
+        "position": [
+          0,
+          12.5,
+          0
+        ],
+        "orientation": "x",
+        "quantity": 1,
+        "holes": 46,
+        "notes": "Front perimeter rail"
+      },
+      {
+        "name": "back_rail",
+        "length_in": 23.0,
+        "tube_size": "2x1",
+        "position": [
+          0,
+          -12.5,
+          0
+        ],
+        "orientation": "x",
+        "quantity": 1,
+        "holes": 46,
+        "notes": "Back perimeter rail"
+      },
+      {
+        "name": "left_rail",
+        "length_in": 27.0,
+        "tube_size": "2x1",
+        "position": [
+          -12.5,
+          0,
+          0
+        ],
+        "orientation": "y",
+        "quantity": 1,
+        "holes": 54,
+        "notes": "Left perimeter rail"
+      },
+      {
+        "name": "right_rail",
+        "length_in": 27.0,
+        "tube_size": "2x1",
+        "position": [
+          12.5,
+          0,
+          0
+        ],
+        "orientation": "y",
+        "quantity": 1,
+        "holes": 54,
+        "notes": "Right perimeter rail"
+      },
+      {
+        "name": "front_cross",
+        "length_in": 23.0,
+        "tube_size": "1x1",
+        "position": [
+          0,
+          11.0,
+          0
+        ],
+        "orientation": "x",
+        "quantity": 1,
+        "holes": 46,
+        "notes": "Front cross member (module support)"
+      },
+      {
+        "name": "back_cross",
+        "length_in": 23.0,
+        "tube_size": "1x1",
+        "position": [
+          0,
+          -11.0,
+          0
+        ],
+        "orientation": "x",
+        "quantity": 1,
+        "holes": 46,
+        "notes": "Back cross member (module support)"
+      },
+      {
+        "name": "center_cross",
+        "length_in": 23.0,
+        "tube_size": "1x1",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "orientation": "x",
+        "quantity": 1,
+        "holes": 46,
+        "notes": "Center cross member (electronics/battery support)"
+      }
+    ],
+    "module_placements": [
+      {
+        "name": "front_left",
+        "position": [
+          -11.0,
+          11.0
+        ],
+        "module_type": "sds_mk4i"
+      },
+      {
+        "name": "front_right",
+        "position": [
+          11.0,
+          11.0
+        ],
+        "module_type": "sds_mk4i"
+      },
+      {
+        "name": "back_left",
+        "position": [
+          -11.0,
+          -11.0
+        ],
+        "module_type": "sds_mk4i"
+      },
+      {
+        "name": "back_right",
+        "position": [
+          11.0,
+          -11.0
+        ],
+        "module_type": "sds_mk4i"
+      }
+    ],
+    "electronics_placements": [
+      {
+        "name": "battery",
+        "component": "battery",
+        "position": [
+          0,
+          -2
+        ],
+        "rotation_deg": 0
+      },
+      {
+        "name": "pdh",
+        "component": "pdh",
+        "position": [
+          0,
+          -6.75
+        ],
+        "rotation_deg": 0
+      },
+      {
+        "name": "roborio",
+        "component": "roborio",
+        "position": [
+          0,
+          4.5
+        ],
+        "rotation_deg": 0
+      },
+      {
+        "name": "radio",
+        "component": "radio",
+        "position": [
+          0,
+          6.75
+        ],
+        "rotation_deg": 0
+      },
+      {
+        "name": "main_breaker",
+        "component": "main_breaker",
+        "position": [
+          6.75,
+          0
+        ],
+        "rotation_deg": 0
+      }
+    ],
+    "cross_member_count": 3,
+    "frame_weight_lb": 11.83,
+    "module_weight_lb": 11.6,
+    "electronics_weight_lb": 14.94,
+    "total_weight_lb": 41.81,
+    "cut_list": [
+      {
+        "description": "1x1 @ 23.00in",
+        "quantity": 3
+      },
+      {
+        "description": "2x1 @ 23.00in",
+        "quantity": 2
+      },
+      {
+        "description": "2x1 @ 27.00in",
+        "quantity": 2
+      }
+    ],
+    "within_frame_perimeter": true,
+    "max_dimension_in": 27.0,
+    "bumper_perimeter_in": 108.0
+  },
+  "intake": {
+    "intake_type": "over_bumper",
+    "game_piece_diameter_in": 9.5,
+    "game_piece_shape": "cylinder",
+    "frame_width_in": 27.0,
+    "roller_material": "compliant_wheels",
+    "deploy_type": "pivot",
+    "drivetrain_speed_fps": 15.0,
+    "intake_width_in": 25.0,
+    "roller_count": 2,
+    "roller_spacing_in": 11.6,
+    "roller_speed_rpm": 1816.0,
+    "compression_in": 1.9,
+    "roller_od_in": 4.0,
+    "roller_motor_type": "neo",
+    "roller_motor_count": 1,
+    "roller_gear_ratio": 2.5,
+    "deploy_motor_type": "neo_550",
+    "deploy_gear_ratio": 50.0,
+    "surface_speed_fps": 31.7,
+    "acquire_time_sec": 0.06,
+    "cycle_contribution_sec": 0.66,
+    "roller_weight_lb": 3.0,
+    "frame_weight_lb": 0.3,
+    "motor_weight_lb": 1.43,
+    "deploy_weight_lb": 1.5,
+    "hardware_weight_lb": 0.5,
+    "total_weight_lb": 6.73,
+    "weight_ok": true,
+    "software_constants": {
+      "ROLLER_GEAR_RATIO": 2.5,
+      "ROLLER_MOTOR_COUNT": 1,
+      "ROLLER_DIAMETER_IN": 4.0,
+      "SURFACE_SPEED_FPS": 31.7,
+      "INTAKE_SPEED": 0.8,
+      "OUTTAKE_SPEED": -0.5,
+      "DEPLOY_GEAR_RATIO": 50.0,
+      "DEPLOY_ANGLE_DEG": 110.0,
+      "DEPLOY_SPEED": 0.5,
+      "RETRACT_SPEED": -0.3,
+      "DEPLOY_POSITION_TOLERANCE_DEG": 5.0
+    },
+    "parts_list": [
+      {
+        "qty": 18,
+        "item": "Compliant Wheels (AndyMark) (4.0\" OD)",
+        "notes": "Roller wheels, 2 rollers x 9 per shaft"
+      },
+      {
+        "qty": 2,
+        "item": "1/2\" hex shaft",
+        "notes": "Cut to 27.0\" (intake width + bearings)"
+      },
+      {
+        "qty": 4,
+        "item": "Flanged bearing (1/2\" hex bore)",
+        "notes": "One per shaft end"
+      },
+      {
+        "qty": 1,
+        "item": "NEO Brushless motor",
+        "notes": "With SparkMax, 2.5:1 reduction"
+      },
+      {
+        "qty": 2,
+        "item": "Side plates (1/4\" polycarb or 1/8\" aluminum)",
+        "notes": "Cut to intake profile, 25.0\" apart"
+      },
+      {
+        "qty": 1,
+        "item": "NEO 550 motor (deploy)",
+        "notes": "With SparkMax, 50.0:1 MAXPlanetary"
+      },
+      {
+        "qty": 2,
+        "item": "Pivot shaft + bearing blocks",
+        "notes": "1/2\" hex, mounted on robot frame cross member"
+      },
+      {
+        "qty": 1,
+        "item": "Hardware assortment (#10-32)",
+        "notes": "Bolts, nuts, spacers for assembly"
+      }
+    ],
+    "preset_name": "2023_charged_up",
+    "notes": [
+      "R2: Full-width intake (bumper-to-bumper) for maximum capture zone",
+      "ReCalc: surface speed = 2x drivetrain speed (15.0 fps \u2192 31.7 fps)"
+    ]
+  },
+  "elevator": {
+    "name": "2950 Charged Up Elevator",
+    "version": "1.0",
+    "generator": "The Blueprint B.3",
+    "travel_height_in": 50.0,
+    "end_effector_weight_lb": 8.0,
+    "motor_type": "kraken_x60",
+    "motor_count": 2,
+    "rigging_type": "continuous",
+    "tube_wall_in": 0.0625,
+    "stage_count": 2,
+    "tube_length_in": 29.0,
+    "bearing_block_height_in": 4.0,
+    "gear_ratio": 3.0,
+    "belt_type": "9mm_htd3",
+    "belt_length_in": 128.0,
+    "pulley_type": "18t_htd3",
+    "pulley_circumference_in": 2.125984251968504,
+    "current_limit_a": 40.0,
+    "efficiency": 0.85,
+    "max_speed_in_per_sec": 138.6,
+    "full_travel_time_sec": 0.449,
+    "max_acceleration_in_per_sec2": 803.0,
+    "peak_current_a": 40.0,
+    "stall_load_lb": 51.7,
+    "spring_force_lb": 11.6,
+    "spring_type": "WCP 12 lb constant force spring",
+    "tube_weight_lb": 6.09,
+    "bearing_block_weight_lb": 1.6,
+    "belt_pulley_weight_lb": 0.53,
+    "motor_gearbox_weight_lb": 3.4,
+    "spring_weight_lb": 0.6,
+    "carriage_weight_lb": 0.8,
+    "hardware_weight_lb": 0.5,
+    "total_weight_lb": 13.52,
+    "software_constants": {
+      "GEAR_RATIO": 3.0,
+      "MOTOR_COUNT": 2,
+      "CURRENT_LIMIT_A": 40.0,
+      "EFFICIENCY": 0.85,
+      "PULLEY_CIRCUMFERENCE_IN": 2.126,
+      "CONTINUOUS_RATIO": 2.0,
+      "INCHES_PER_MOTOR_ROTATION": 1.4173,
+      "MIN_HEIGHT_IN": 0.0,
+      "MAX_HEIGHT_IN": 50.0,
+      "MAX_VELOCITY_IN_PER_SEC": 124.7,
+      "MAX_ACCELERATION_IN_PER_SEC2": 642.4,
+      "kS": 0.12,
+      "kG": 0.295,
+      "kV": 0.00936,
+      "kA": 0.02,
+      "POSITION_TOLERANCE_IN": 0.5
+    },
+    "parts_list": [
+      {
+        "item": "2x1x0.0625\" 6061-T6 aluminum tube",
+        "quantity": 6,
+        "length_in": 29.0,
+        "notes": "Cut to length, deburr all edges"
+      },
+      {
+        "item": "Thrifty Elevator bearing block set",
+        "quantity": 4,
+        "notes": "2 per stage (top + bottom)"
+      },
+      {
+        "item": "9mm HTD3 Timing Belt",
+        "quantity": 1,
+        "length_in": 128.0,
+        "notes": "Order nearest standard length"
+      },
+      {
+        "item": "18T HTD3 drive pulley (1/2\" hex bore)",
+        "quantity": 1,
+        "notes": "Drive pulley on motor shaft"
+      },
+      {
+        "item": "HTD3 idler pulley (flanged bearing)",
+        "quantity": 3,
+        "notes": "Direction changes in belt path"
+      },
+      {
+        "item": "Kraken X60 motor",
+        "quantity": 2,
+        "notes": "With TalonFX (integrated)"
+      },
+      {
+        "item": "Gearbox (single stage planetary)",
+        "quantity": 1,
+        "notes": "3.0:1 ratio"
+      },
+      {
+        "item": "WCP 12 lb constant force spring",
+        "quantity": 2,
+        "notes": "Target force: 11.6 lb total"
+      },
+      {
+        "item": "Hall effect sensor + magnet",
+        "quantity": 1,
+        "notes": "Bottom of travel zero reference"
+      },
+      {
+        "item": "1/2\" hex shaft, 12\"",
+        "quantity": 1,
+        "notes": "Drive shaft"
+      },
+      {
+        "item": "1/4\" aluminum carriage plate",
+        "quantity": 1,
+        "notes": "Drill for end effector on kickoff day"
+      },
+      {
+        "item": "#10-32 hardware assortment",
+        "quantity": 50,
+        "notes": "Bolts, nuts, washers"
+      }
+    ],
+    "travel_time_ok": true,
+    "weight_ok": true
+  },
+  "arm": {
+    "arm_length_in": 8.0,
+    "com_distance_in": 4.0,
+    "arm_mass_lb": 1.5,
+    "end_effector_weight_lb": 2.0,
+    "motor_type": "neo_550",
+    "motor_count": 1,
+    "gear_ratio": 50.0,
+    "current_limit_a": 40.0,
+    "efficiency": 0.85,
+    "start_angle_deg": -45.0,
+    "end_angle_deg": 90.0,
+    "total_mass_lb": 3.5,
+    "max_gravity_torque_nm": 1.58,
+    "travel_time_sec": 0.118,
+    "max_angular_velocity_deg_s": 1324.5,
+    "holding_current_a": 3.8,
+    "peak_current_a": 40.0,
+    "spring_force_lb": 1.8,
+    "motor_weight_lb": 1.49,
+    "total_weight_lb": 3.49,
+    "software_constants": {
+      "ARM_GEAR_RATIO": 50.0,
+      "ARM_LENGTH_IN": 8.0,
+      "MIN_ANGLE_DEG": -45.0,
+      "MAX_ANGLE_DEG": 90.0,
+      "CURRENT_LIMIT_A": 40.0,
+      "kS": 0.1,
+      "kG": 0.391,
+      "kV": 0.00909,
+      "kA": 0.01,
+      "POSITION_TOLERANCE_DEG": 2.0
+    },
+    "parts_list": [
+      {
+        "qty": 1,
+        "item": "NEO 550 motor",
+        "notes": "With SparkMax"
+      },
+      {
+        "qty": 1,
+        "item": "MAXPlanetary gearbox (50.0:1)",
+        "notes": "High reduction for arm control"
+      },
+      {
+        "qty": 1,
+        "item": "Arm tube (1x1 or 2x1 aluminum)",
+        "notes": "8.0\" long"
+      },
+      {
+        "qty": 2,
+        "item": "Pivot bearing + shaft",
+        "notes": "1/2\" hex through pivot point"
+      },
+      {
+        "qty": 1,
+        "item": "Absolute encoder (through-bore)",
+        "notes": "REV Through Bore or equivalent"
+      },
+      {
+        "qty": 1,
+        "item": "Hardware assortment",
+        "notes": "Bolts, spacers, shaft collar"
+      }
+    ],
+    "notes": [],
+    "preset_name": "2023_wrist"
+  },
+  "bom_rollup": {
+    "mechanisms": {
+      "intake": {
+        "preset": "2023_charged_up",
+        "weight_lb": 6.73,
+        "motor_type": "neo",
+        "motor_count": 1,
+        "current_limit_a": 40.0,
+        "peak_current_a": 40.0,
+        "holding_current_a": 5.0,
+        "parts": [
+          {
+            "qty": 18,
+            "item": "Compliant Wheels (AndyMark) (4.0\" OD)",
+            "notes": "Roller wheels, 2 rollers x 9 per shaft"
+          },
+          {
+            "qty": 2,
+            "item": "1/2\" hex shaft",
+            "notes": "Cut to 27.0\" (intake width + bearings)"
+          },
+          {
+            "qty": 4,
+            "item": "Flanged bearing (1/2\" hex bore)",
+            "notes": "One per shaft end"
+          },
+          {
+            "qty": 1,
+            "item": "NEO Brushless motor",
+            "notes": "With SparkMax, 2.5:1 reduction"
+          },
+          {
+            "qty": 2,
+            "item": "Side plates (1/4\" polycarb or 1/8\" aluminum)",
+            "notes": "Cut to intake profile, 25.0\" apart"
+          },
+          {
+            "qty": 1,
+            "item": "NEO 550 motor (deploy)",
+            "notes": "With SparkMax, 50.0:1 MAXPlanetary"
+          },
+          {
+            "qty": 2,
+            "item": "Pivot shaft + bearing blocks",
+            "notes": "1/2\" hex, mounted on robot frame cross member"
+          },
+          {
+            "qty": 1,
+            "item": "Hardware assortment (#10-32)",
+            "notes": "Bolts, nuts, spacers for assembly"
+          }
+        ],
+        "software_constants": {
+          "ROLLER_GEAR_RATIO": 2.5,
+          "ROLLER_MOTOR_COUNT": 1,
+          "ROLLER_DIAMETER_IN": 4.0,
+          "SURFACE_SPEED_FPS": 31.7,
+          "INTAKE_SPEED": 0.8,
+          "OUTTAKE_SPEED": -0.5,
+          "DEPLOY_GEAR_RATIO": 50.0,
+          "DEPLOY_ANGLE_DEG": 110.0,
+          "DEPLOY_SPEED": 0.5,
+          "RETRACT_SPEED": -0.3,
+          "DEPLOY_POSITION_TOLERANCE_DEG": 5.0
+        }
+      },
+      "elevator": {
+        "preset": "elevator",
+        "weight_lb": 13.52,
+        "motor_type": "kraken_x60",
+        "motor_count": 2,
+        "current_limit_a": 40.0,
+        "peak_current_a": 40.0,
+        "holding_current_a": 5.0,
+        "parts": [
+          {
+            "item": "2x1x0.0625\" 6061-T6 aluminum tube",
+            "quantity": 6,
+            "length_in": 29.0,
+            "notes": "Cut to length, deburr all edges"
+          },
+          {
+            "item": "Thrifty Elevator bearing block set",
+            "quantity": 4,
+            "notes": "2 per stage (top + bottom)"
+          },
+          {
+            "item": "9mm HTD3 Timing Belt",
+            "quantity": 1,
+            "length_in": 128.0,
+            "notes": "Order nearest standard length"
+          },
+          {
+            "item": "18T HTD3 drive pulley (1/2\" hex bore)",
+            "quantity": 1,
+            "notes": "Drive pulley on motor shaft"
+          },
+          {
+            "item": "HTD3 idler pulley (flanged bearing)",
+            "quantity": 3,
+            "notes": "Direction changes in belt path"
+          },
+          {
+            "item": "Kraken X60 motor",
+            "quantity": 2,
+            "notes": "With TalonFX (integrated)"
+          },
+          {
+            "item": "Gearbox (single stage planetary)",
+            "quantity": 1,
+            "notes": "3.0:1 ratio"
+          },
+          {
+            "item": "WCP 12 lb constant force spring",
+            "quantity": 2,
+            "notes": "Target force: 11.6 lb total"
+          },
+          {
+            "item": "Hall effect sensor + magnet",
+            "quantity": 1,
+            "notes": "Bottom of travel zero reference"
+          },
+          {
+            "item": "1/2\" hex shaft, 12\"",
+            "quantity": 1,
+            "notes": "Drive shaft"
+          },
+          {
+            "item": "1/4\" aluminum carriage plate",
+            "quantity": 1,
+            "notes": "Drill for end effector on kickoff day"
+          },
+          {
+            "item": "#10-32 hardware assortment",
+            "quantity": 50,
+            "notes": "Bolts, nuts, washers"
+          }
+        ],
+        "software_constants": {
+          "GEAR_RATIO": 3.0,
+          "MOTOR_COUNT": 2,
+          "CURRENT_LIMIT_A": 40.0,
+          "EFFICIENCY": 0.85,
+          "PULLEY_CIRCUMFERENCE_IN": 2.126,
+          "CONTINUOUS_RATIO": 2.0,
+          "INCHES_PER_MOTOR_ROTATION": 1.4173,
+          "MIN_HEIGHT_IN": 0.0,
+          "MAX_HEIGHT_IN": 50.0,
+          "MAX_VELOCITY_IN_PER_SEC": 124.7,
+          "MAX_ACCELERATION_IN_PER_SEC2": 642.4,
+          "kS": 0.12,
+          "kG": 0.295,
+          "kV": 0.00936,
+          "kA": 0.02,
+          "POSITION_TOLERANCE_IN": 0.5
+        }
+      },
+      "arm": {
+        "preset": "2023_wrist",
+        "weight_lb": 3.49,
+        "motor_type": "neo_550",
+        "motor_count": 1,
+        "current_limit_a": 40.0,
+        "peak_current_a": 40.0,
+        "holding_current_a": 3.8,
+        "parts": [
+          {
+            "qty": 1,
+            "item": "NEO 550 motor",
+            "notes": "With SparkMax"
+          },
+          {
+            "qty": 1,
+            "item": "MAXPlanetary gearbox (50.0:1)",
+            "notes": "High reduction for arm control"
+          },
+          {
+            "qty": 1,
+            "item": "Arm tube (1x1 or 2x1 aluminum)",
+            "notes": "8.0\" long"
+          },
+          {
+            "qty": 2,
+            "item": "Pivot bearing + shaft",
+            "notes": "1/2\" hex through pivot point"
+          },
+          {
+            "qty": 1,
+            "item": "Absolute encoder (through-bore)",
+            "notes": "REV Through Bore or equivalent"
+          },
+          {
+            "qty": 1,
+            "item": "Hardware assortment",
+            "notes": "Bolts, spacers, shaft collar"
+          }
+        ],
+        "software_constants": {
+          "ARM_GEAR_RATIO": 50.0,
+          "ARM_LENGTH_IN": 8.0,
+          "MIN_ANGLE_DEG": -45.0,
+          "MAX_ANGLE_DEG": 90.0,
+          "CURRENT_LIMIT_A": 40.0,
+          "kS": 0.1,
+          "kG": 0.391,
+          "kV": 0.00909,
+          "kA": 0.01,
+          "POSITION_TOLERANCE_DEG": 2.0
+        }
+      }
+    },
+    "mechanism_weight_lb": 23.74,
+    "drivetrain_weight_lb": 41.81,
+    "bumper_weight_lb": 8.0,
+    "battery_weight_lb": 13.0,
+    "electronics_weight_lb": 5.0,
+    "total_weight_lb": 91.55,
+    "weight_margin_lb": 33.45,
+    "weight_ok": true,
+    "motors": [
+      {
+        "mechanism": "drivetrain_drive",
+        "motor_type": "kraken_x60",
+        "motor_name": "Kraken X60",
+        "count": 4,
+        "current_limit_a": 40.0,
+        "peak_current_a": 40.0,
+        "holding_current_a": 5.0
+      },
+      {
+        "mechanism": "drivetrain_steer",
+        "motor_type": "neo_550",
+        "motor_name": "NEO 550",
+        "count": 4,
+        "current_limit_a": 20.0,
+        "peak_current_a": 20.0,
+        "holding_current_a": 2.0
+      },
+      {
+        "mechanism": "intake",
+        "motor_type": "neo",
+        "motor_name": "NEO Brushless",
+        "count": 1,
+        "current_limit_a": 40.0,
+        "peak_current_a": 40.0,
+        "holding_current_a": 5.0
+      },
+      {
+        "mechanism": "elevator",
+        "motor_type": "kraken_x60",
+        "motor_name": "Kraken X60",
+        "count": 2,
+        "current_limit_a": 40.0,
+        "peak_current_a": 40.0,
+        "holding_current_a": 5.0
+      },
+      {
+        "mechanism": "arm",
+        "motor_type": "neo_550",
+        "motor_name": "NEO 550",
+        "count": 1,
+        "current_limit_a": 40.0,
+        "peak_current_a": 40.0,
+        "holding_current_a": 3.8
+      }
+    ],
+    "total_motor_count": 12,
+    "total_can_devices": 15,
+    "peak_current_total_a": 400.0,
+    "sustained_current_total_a": 46.8,
+    "combined_parts": [
+      {
+        "qty": 18,
+        "item": "Compliant Wheels (AndyMark) (4.0\" OD)",
+        "notes": "Roller wheels, 2 rollers x 9 per shaft",
+        "mechanism": "intake"
+      },
+      {
+        "qty": 2,
+        "item": "1/2\" hex shaft",
+        "notes": "Cut to 27.0\" (intake width + bearings)",
+        "mechanism": "intake"
+      },
+      {
+        "qty": 4,
+        "item": "Flanged bearing (1/2\" hex bore)",
+        "notes": "One per shaft end",
+        "mechanism": "intake"
+      },
+      {
+        "qty": 1,
+        "item": "NEO Brushless motor",
+        "notes": "With SparkMax, 2.5:1 reduction",
+        "mechanism": "intake"
+      },
+      {
+        "qty": 2,
+        "item": "Side plates (1/4\" polycarb or 1/8\" aluminum)",
+        "notes": "Cut to intake profile, 25.0\" apart",
+        "mechanism": "intake"
+      },
+      {
+        "qty": 1,
+        "item": "NEO 550 motor (deploy)",
+        "notes": "With SparkMax, 50.0:1 MAXPlanetary",
+        "mechanism": "intake"
+      },
+      {
+        "qty": 2,
+        "item": "Pivot shaft + bearing blocks",
+        "notes": "1/2\" hex, mounted on robot frame cross member",
+        "mechanism": "intake"
+      },
+      {
+        "qty": 1,
+        "item": "Hardware assortment (#10-32)",
+        "notes": "Bolts, nuts, spacers for assembly",
+        "mechanism": "intake"
+      },
+      {
+        "item": "2x1x0.0625\" 6061-T6 aluminum tube",
+        "quantity": 6,
+        "length_in": 29.0,
+        "notes": "Cut to length, deburr all edges",
+        "mechanism": "elevator"
+      },
+      {
+        "item": "Thrifty Elevator bearing block set",
+        "quantity": 4,
+        "notes": "2 per stage (top + bottom)",
+        "mechanism": "elevator"
+      },
+      {
+        "item": "9mm HTD3 Timing Belt",
+        "quantity": 1,
+        "length_in": 128.0,
+        "notes": "Order nearest standard length",
+        "mechanism": "elevator"
+      },
+      {
+        "item": "18T HTD3 drive pulley (1/2\" hex bore)",
+        "quantity": 1,
+        "notes": "Drive pulley on motor shaft",
+        "mechanism": "elevator"
+      },
+      {
+        "item": "HTD3 idler pulley (flanged bearing)",
+        "quantity": 3,
+        "notes": "Direction changes in belt path",
+        "mechanism": "elevator"
+      },
+      {
+        "item": "Kraken X60 motor",
+        "quantity": 2,
+        "notes": "With TalonFX (integrated)",
+        "mechanism": "elevator"
+      },
+      {
+        "item": "Gearbox (single stage planetary)",
+        "quantity": 1,
+        "notes": "3.0:1 ratio",
+        "mechanism": "elevator"
+      },
+      {
+        "item": "WCP 12 lb constant force spring",
+        "quantity": 2,
+        "notes": "Target force: 11.6 lb total",
+        "mechanism": "elevator"
+      },
+      {
+        "item": "Hall effect sensor + magnet",
+        "quantity": 1,
+        "notes": "Bottom of travel zero reference",
+        "mechanism": "elevator"
+      },
+      {
+        "item": "1/2\" hex shaft, 12\"",
+        "quantity": 1,
+        "notes": "Drive shaft",
+        "mechanism": "elevator"
+      },
+      {
+        "item": "1/4\" aluminum carriage plate",
+        "quantity": 1,
+        "notes": "Drill for end effector on kickoff day",
+        "mechanism": "elevator"
+      },
+      {
+        "item": "#10-32 hardware assortment",
+        "quantity": 50,
+        "notes": "Bolts, nuts, washers",
+        "mechanism": "elevator"
+      },
+      {
+        "qty": 1,
+        "item": "NEO 550 motor",
+        "notes": "With SparkMax",
+        "mechanism": "arm"
+      },
+      {
+        "qty": 1,
+        "item": "MAXPlanetary gearbox (50.0:1)",
+        "notes": "High reduction for arm control",
+        "mechanism": "arm"
+      },
+      {
+        "qty": 1,
+        "item": "Arm tube (1x1 or 2x1 aluminum)",
+        "notes": "8.0\" long",
+        "mechanism": "arm"
+      },
+      {
+        "qty": 2,
+        "item": "Pivot bearing + shaft",
+        "notes": "1/2\" hex through pivot point",
+        "mechanism": "arm"
+      },
+      {
+        "qty": 1,
+        "item": "Absolute encoder (through-bore)",
+        "notes": "REV Through Bore or equivalent",
+        "mechanism": "arm"
+      },
+      {
+        "qty": 1,
+        "item": "Hardware assortment",
+        "notes": "Bolts, spacers, shaft collar",
+        "mechanism": "arm"
+      }
+    ],
+    "software_constants": {},
+    "notes": [
+      "Weight margin: 33.45 lb \u2014 healthy"
+    ]
+  },
+  "scoring_analysis": {
+    "methods": [
+      {
+        "name": "Grid High",
+        "type": "SEMI-CAPPED",
+        "pts_per_unit_teleop": 5,
+        "pts_per_unit_auto": 6,
+        "cap": "9 slots shared by alliance"
+      },
+      {
+        "name": "Grid Mid",
+        "type": "SEMI-CAPPED",
+        "pts_per_unit_teleop": 3,
+        "pts_per_unit_auto": 4,
+        "cap": "9 slots shared by alliance"
+      },
+      {
+        "name": "Grid Low",
+        "type": "SEMI-CAPPED",
+        "pts_per_unit_teleop": 2,
+        "pts_per_unit_auto": 3,
+        "cap": "9 slots shared by alliance"
+      },
+      {
+        "name": "Link RP",
+        "type": "CAPPED",
+        "threshold": 5,
+        "cap": "binary (5 links)"
+      },
+      {
+        "name": "Charge Station (Dock)",
+        "type": "SEMI-CAPPED",
+        "pts_per_unit": 6,
+        "cap": "3 robots"
+      },
+      {
+        "name": "Charge Station (Engage)",
+        "type": "SEMI-CAPPED",
+        "pts_per_unit": 10,
+        "cap": "3 robots"
+      },
+      {
+        "name": "Charge Station RP",
+        "type": "CAPPED",
+        "threshold": 26,
+        "cap": "binary"
+      }
+    ],
+    "primary_method": "High row grid scoring (5 pts, SEMI-CAPPED at 9 slots)",
+    "reasoning": "R19: Grid is SEMI-CAPPED (27 total slots) but most matches don't fill it. High row dominates. Link RP at 5 links = 15 high-row pieces. Elevator + wrist to reach all rows is the architecture."
+  },
+  "auto_strategy": {
+    "primary": "1-piece auto",
+    "actions": [
+      "score_preload_high",
+      "drive_to_balance",
+      "engage_charge_station"
+    ]
+  },
+  "build_order": [
+    "drivetrain",
+    "scorer",
+    "intake",
+    "autonomous"
+  ]
+}

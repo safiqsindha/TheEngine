@@ -1,0 +1,77 @@
+{
+  "game_name": "Rapid React",
+  "season_year": 2022,
+  "confidence_overall": 0.88,
+  "drivetrain": {
+    "type": "swerve",
+    "module": "sds_mk4i",
+    "speed_fps": 16.0,
+    "gear_for": "speed",
+    "frame_length_in": 27.0,
+    "frame_width_in": 27.0,
+    "reasoning": "R1: Swerve is mandatory post-2019. 2022 is deep swerve era. Fast cycles around central HUB favor speed+maneuverability. SDS MK4i for proven performance."
+  },
+  "intake": {
+    "type": "over_bumper",
+    "width": "full",
+    "roller_material": "compliant_wheels",
+    "deploy": true,
+    "motors": 2,
+    "game_piece": "CARGO (9.5\" inflated ball, 9.5 oz, fuzzy surface)",
+    "reasoning": "R5: 9.5\" compressible ball — compliant wheels for grip on fuzzy surface. R10: Full-width over-bumper for fast ground pickup. Deploy to stay in frame perimeter."
+  },
+  "scorer": {
+    "method": "flywheel",
+    "height_in": 0,
+    "stages": 0,
+    "motors": 2,
+    "has_wrist": false,
+    "turret": "none",
+    "reasoning": "R4+R6: Upper Hub at 8'8\" with 4' opening — flywheel shooter is ideal. R19: Cargo scoring is UNCAPPED and the primary differentiator. Upper Hub = 2x Lower Hub points. Variable-distance shooting with vision on reflective tape. R19 analysis: Hangar is SEMI-CAPPED (max 45 pts, RP threshold 16), so cargo throughput is where elite teams separate."
+  },
+  "endgame": {
+    "type": "telescope",
+    "height_in": 60.0,
+    "motors": 2,
+    "reasoning": "R8: Traversal rung at 7'7\" = 15 pts per robot. Worth ~7.5 upper cargo. Telescope design to reach traversal from mid rung. R19: Hangar RP easily achievable (16 pts threshold), but traversal still worth 15 match points."
+  },
+  "autonomous": {
+    "priority_actions": ["score_preload_upper", "intake_staged_cargo", "score_second_upper", "intake_third", "score_third_upper"],
+    "cycle_time_target_s": 3.5,
+    "preload_score": true,
+    "estimated_pieces": 2,
+    "reasoning": "R7: Auto scoring doubled (4 pts/upper vs 2 teleop). R18: 2-ball auto reliable, stretch to 5-ball. Preload + 1 staged cargo for consistent 10-pt auto (2 taxi + 2×4 upper)."
+  },
+  "weight_budget": {
+    "drivetrain_lb": 42,
+    "intake_lb": 12,
+    "scorer_lb": 15,
+    "endgame_lb": 18,
+    "electronics_lb": 15,
+    "bumpers_lb": 10,
+    "margin_lb": 13,
+    "total_limit_lb": 125
+  },
+  "build_order": [
+    "drivetrain",
+    "scorer",
+    "intake",
+    "endgame",
+    "autonomous"
+  ],
+  "scoring_analysis": {
+    "methods": [
+      {"name": "Upper Hub", "type": "UNCAPPED", "pts_per_unit_teleop": 2, "pts_per_unit_auto": 4, "cap": "none"},
+      {"name": "Lower Hub", "type": "UNCAPPED", "pts_per_unit_teleop": 1, "pts_per_unit_auto": 2, "cap": "none"},
+      {"name": "Hangar (Low)", "type": "SEMI-CAPPED", "pts_per_unit": 4, "cap": "1 robot per rung"},
+      {"name": "Hangar (Mid)", "type": "SEMI-CAPPED", "pts_per_unit": 6, "cap": "1 robot per rung"},
+      {"name": "Hangar (High)", "type": "SEMI-CAPPED", "pts_per_unit": 10, "cap": "1 robot per rung"},
+      {"name": "Hangar (Traversal)", "type": "SEMI-CAPPED", "pts_per_unit": 15, "cap": "1 robot per rung"},
+      {"name": "Cargo RP", "type": "CAPPED", "threshold": 20, "cap": "binary"},
+      {"name": "Hangar RP", "type": "CAPPED", "threshold": 16, "cap": "binary"}
+    ],
+    "primary_method": "Upper Hub cargo throughput",
+    "reasoning": "R19: Cargo is fully uncapped — more balls always means more points. Hangar saturates at 45 pts max (3 traversal), and RP threshold (16) is hit with just 2 robots on mid+high. Cargo throughput is the Einstein differentiator. Build shooter first, climber second."
+  },
+  "notes": "R19 capped/uncapped analysis: Cargo shooting is the primary differentiator. Hangar is important but secondary — traversal climb for 15 pts, but don't sacrifice shooting capability for it. Vision tracking on Upper Hub reflective tape ring for variable-distance shooting."
+}

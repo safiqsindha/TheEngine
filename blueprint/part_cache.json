@@ -1,0 +1,54 @@
+{
+  "REV NEO Motor": {
+    "catalog_name": "REV NEO Motor",
+    "search_term": "NEO Motor",
+    "document_id": "24dc4b87ad8f60ed432cf84e",
+    "document_name": "NEO Brushless Motor (REV-21-1650)",
+    "element_id": "a9b91ad14dcc8f6168a39803",
+    "element_type": "PARTSTUDIO",
+    "part_id": "",
+    "configuration": "",
+    "microversion": "",
+    "resolved_at": "2026-04-09T04:17:55Z",
+    "source": "manual"
+  },
+  "REV NEO 550": {
+    "catalog_name": "REV NEO 550",
+    "search_term": "NEO 550",
+    "document_id": "94cd842681559b5225d6a65d",
+    "document_name": "NEO 550 Brushless Motor (REV-21-1651)",
+    "element_id": "33552f0d44478b8c67625afe",
+    "element_type": "PARTSTUDIO",
+    "part_id": "",
+    "configuration": "",
+    "microversion": "",
+    "resolved_at": "2026-04-09T04:17:55Z",
+    "source": "manual"
+  },
+  "Power Distribution Hub": {
+    "catalog_name": "Power Distribution Hub",
+    "search_term": "PDH",
+    "document_id": "7abd9d1f0938c06f65ca7ce7",
+    "document_name": "REV-11-1850",
+    "element_id": "e202207faaeba6630003544a",
+    "element_type": "PARTSTUDIO",
+    "part_id": "",
+    "configuration": "",
+    "microversion": "",
+    "resolved_at": "2026-04-09T04:17:55Z",
+    "source": "manual"
+  },
+  "REV MAXPlanetary Gearbox": {
+    "catalog_name": "REV MAXPlanetary Gearbox",
+    "search_term": "MAXPlanetary",
+    "document_id": "116670a318148214a3504b49",
+    "document_name": "REV-21-2128",
+    "element_id": "0fbf6f21d691fa15a20f96f1",
+    "element_type": "PARTSTUDIO",
+    "part_id": "",
+    "configuration": "",
+    "microversion": "",
+    "resolved_at": "2026-04-09T04:17:55Z",
+    "source": "manual"
+  }
+}

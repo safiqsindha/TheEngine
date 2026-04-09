@@ -1,8 +1,8 @@
 # THE ENGINE — Cross-Season Pattern Rules
 # Feed this document + KICKOFF_TEMPLATE.md to Claude on kickoff day
-# Last updated: April 2, 2026
+# Last updated: April 8, 2026
 # Source data: 50+ robots across 10 seasons from 13 tracked teams
-# Rules: 18 primary + 12 meta-rules
+# Rules: 18 primary + 12 meta-rules + 1 scoring analysis rule (R19)
 # ═══════════════════════════════════════════════════════════════════
 
 ## How to Use This Document
@@ -76,6 +76,7 @@ Each rule below has:
 
 **Evidence:** 254 used flywheel for 2022 (balls, range) and 2024 (notes, range). 254 used elevator + wrist for 2019 (hatch placement) and 2025 (coral placement). The scoring method is almost entirely determined by whether you THROW or PLACE the game piece.
 **Exceptions:** 2023 Charged Up was unusual — cubes could be thrown but cones had to be placed. Best robots handled both (1678's dual manipulator). When a game has two game piece types requiring different scoring methods, build for the higher-value piece and handle the lower-value piece adequately.
+**CRITICAL — Cross-reference with R19 (Capped vs Uncapped Scoring).** This rule tells you HOW to score. R19 tells you WHAT to prioritize scoring. If a game has both a capped scoring method (e.g., limited rotors) and an uncapped method (e.g., unlimited fuel), the uncapped method may be the better investment for an elite robot even if the capped method appears more points-per-second at first glance. See R19.
 **Spec:** Flywheel: 2 motors, 4-6 inch wheels, 2000-6000 RPM depending on range. Elevator + wrist: 2 motors elevator + 1 motor wrist, absolute encoders on both axes.
 
 ---
@@ -184,7 +185,10 @@ Most Einstein winners from 2012-2025 did NOT use neural game piece detection. Th
 **Confidence:** 95%
 **Evidence:** 1323+2910 beat 1690 in 2025 Einstein Finals despite 1690 having "the most sophisticated software in the world." Why? Faster cycles. 4414 wins with "simple and rigid" because simple mechanisms cycle faster. 254's intake deploy target is <0.15s and elevator travel is <0.3s — every tenth of a second is optimized.
 **Exceptions:** None. Even in games with complex scoring (2019 Deep Space with multiple scoring types), the winners were the teams that cycled fastest at their primary scoring method.
-**Spec:** Target cycle time (intake to score to intake): <5 seconds for championships. <4 seconds for Einstein winners. Measure cycle time with beam break timestamps. Every mechanism transition should target <0.3s.
+**Two forms of cycle speed:**
+1. **Discrete cycles** (most common): robot intakes one piece, drives, scores it, returns. Metric: seconds per cycle. Examples: 2019 hatches, 2023 cubes, 2025 coral.
+2. **Throughput cycles** (bulk scoring): robot collects many small pieces and scores them in bulk. Metric: pieces per second at the scoring location. Examples: 2017 fuel (balls per second into boiler), 2012 basketballs, 2022 cargo. For throughput games, the bottleneck shifts from drive time to **hopper capacity × firing rate**. A robot that holds 140 balls and fires 15/sec (254 in 2017) scores more per trip than one that cycles back and forth with 10 balls. **When throughput matters, optimize hopper volume and firing rate, not just drive speed.**
+**Spec:** Target cycle time (intake to score to intake): <5 seconds for championships. <4 seconds for Einstein winners. For throughput games: target >10 game pieces per second at the scoring location. Measure cycle time with beam break timestamps. Every mechanism transition should target <0.3s.
 
 ---
 
@@ -248,7 +252,9 @@ Most Einstein winners from 2012-2025 did NOT use neural game piece detection. Th
 **Recommendation:** Build ONE mechanism that handles the higher-value game piece optimally, then add minimal capability for the secondary piece using shared components. Do NOT build separate mechanisms for each piece type.
 **Confidence:** 85%
 **Evidence:** 254 in 2023 (Charged Up) used a single articulating roller claw for both cubes AND cones rather than dual mechanisms — they explicitly explored dual-mechanism approaches and rejected them because "it ballooned up the complexity of the robot and was just a hit to the Low CG and speed of the major DOFs." 254 in 2025 (Reefscape) used the same end effector for both Coral (flex wheel + Flying V) and Algae (stealth wheel + grippy studs) sharing a single Kraken X44 motor between both wheel paths. 1678 in 2023 built a single manipulator for both cubes and cones. The pattern is clear: one mechanism, two capabilities, shared motors.
-**Exceptions:** If the two game pieces have dramatically different sizes or completely incompatible handling physics (one must be thrown, one must be placed precisely), a shared mechanism may not be physically possible. In that case, build the primary scorer first, prove it works, then add the secondary piece handler as a bolt-on subsystem with its own motor. Never design both simultaneously — sequence the risk.
+**Exceptions:**
+1. If the two game pieces have dramatically different sizes or completely incompatible handling physics (one must be thrown, one must be placed precisely), a shared mechanism may not be physically possible. In that case, build the primary scorer first, prove it works, then add the secondary piece handler as a bolt-on subsystem with its own motor. Never design both simultaneously — sequence the risk.
+2. **When one piece feeds a CAPPED scoring method and the other feeds an UNCAPPED method (see R19), the "higher-value" piece is NOT always the one with more points per cycle.** If the capped method saturates across an alliance (e.g., 3 robots all delivering gears → rotors are activated quickly by any competent alliance), the uncapped method becomes the differentiator at the Einstein level. 254 in 2017 Steamworks prioritized fuel (uncapped kPa) over gears (capped at 4 rotors) because they predicted most alliances would handle gears adequately, making fuel the tiebreaker. **Run the R19 analysis before deciding which piece is "primary."**
 **Spec:** Shared motor wherever possible (254 uses 1 motor powering both Coral and Algae paths through different gear/belt ratios). Use compliant materials (flex wheels, stealth wheels) that grip multiple surface types. Separate beam breaks for each piece type at the same handoff point. State machine tracks which piece is held and adjusts scoring behavior accordingly.
 
 ---
@@ -276,6 +282,53 @@ Most Einstein winners from 2012-2025 did NOT use neural game piece detection. Th
 **Evidence:** 2016 Stronghold is the only modern FRC game with terrain obstacles. Champions had: high ground clearance, powerful drivetrains that could push through obstacles, and strategic obstacle selection. The low bar (permanent obstacle at 15.5" height) defined the maximum robot height for most teams. Teams that couldn't cross obstacles couldn't score.
 **Note:** This rule is DORMANT unless the game includes physical obstacles. Most FRC games since 2016 have had flat fields. If FIRST introduces terrain again, this rule activates. Check on kickoff day: "Does the field have any obstacles robots must physically cross?" If yes, this rule is priority #1. If no, skip it entirely.
 **Spec:** Mock obstacle should be built to exact manual dimensions within 24 hours of kickoff. Test with your actual drivetrain (or a previous year's drivetrain if available). Document which obstacles your robot can/cannot cross. Strategic defense selection should be practiced in driver practice sessions.
+
+---
+
+## RULE 19: Capped vs Uncapped Scoring Analysis
+**Condition:** Game has multiple scoring methods where at least one has a maximum cap (finite scoring opportunities) and another scales without limit
+**Recommendation:** Run this analysis on kickoff day BEFORE choosing your primary scoring method:
+
+**Step 1: Classify each scoring method.**
+
+| Type | Definition | Example |
+|---|---|---|
+| **CAPPED** | Finite maximum. Once all opportunities are used, no more points from this source. | 2017 Rotors (max 4), 2019 Rocket panels (fixed slots), 2025 Reef branches (limited positions) |
+| **UNCAPPED** | No maximum. Points scale linearly with throughput for the entire match. | 2017 Fuel (unlimited kPa), 2022 Cargo (unlimited), 2024 Notes in Speaker (unlimited) |
+| **SEMI-CAPPED** | High cap that most alliances won't reach. Treat as uncapped unless the cap is reachable by a good alliance. | 2024 Amp (capped per cycle but unlimited cycles) |
+
+**Step 2: Run the alliance saturation test.**
+
+Ask: "In a 3-robot alliance where all 3 robots are good, will the CAPPED method be saturated?"
+- If YES → the capped method's marginal value drops to zero once saturated. **The uncapped method becomes the differentiator.** Build for uncapped throughput.
+- If NO → the capped method still has room for contribution. Use standard points-per-second analysis from R4.
+
+**Step 3: Calculate the crossover.**
+
+For the CAPPED method: `total_cap_points / match_time = max_points_per_second (alliance level)`
+For the UNCAPPED method: `your_throughput × points_per_piece / match_time = your_points_per_second`
+
+If your uncapped throughput can exceed the capped method's max contribution, **invest in the uncapped method.**
+
+**Confidence:** 88%
+**Evidence:**
+- **2017 Steamworks:** Gears (CAPPED at 4 rotors = 160 teleop pts max) vs Fuel (UNCAPPED kPa). Most teams built gear-only bots. 254 calculated that a 3-robot alliance would saturate gears quickly, so fuel was the differentiator. They built a 15 ball/sec shooter with 140-ball hopper and prioritized fuel. They won St. Louis Einstein + Festival of Champions. Their strategy document explicitly says: fuel first, gears second.
+- **2022 Rapid React:** Cargo (UNCAPPED, 1-2 pts each) vs climbing (SEMI-CAPPED, 3 levels). Top alliances maxed climb quickly, so cargo throughput differentiated Einstein winners.
+- **2024 Crescendo:** Notes in Speaker (UNCAPPED) vs Notes in Amp (SEMI-CAPPED per cycle). Top teams optimized speaker throughput.
+- **Counter-example — 2025 Reefscape:** Reef branches (CAPPED at 12 per alliance) vs Processor/Barge (lower value). The cap was HIGH ENOUGH that most alliances couldn't saturate it. Therefore capped method (reef scoring) remained the priority. R19 correctly predicts "keep scoring reef" because the saturation test answer is NO.
+
+**Exceptions:**
+1. If the uncapped method has very low points-per-piece (e.g., 2017 low goal fuel = 1 pt per 9 balls), it may not be worth building an elite mechanism for it. The uncapped method must be scorable at a high enough RATE to matter. Calculate: can your robot realistically score >50% of the capped method's total value via the uncapped method? If not, focus on the capped method.
+2. If the game has a ranking point tied to the capped method (e.g., 2017's "all 4 rotors" RP), you still need alliance capability for the capped method — but ONE specialized robot handles the capped method while the other two optimize for uncapped.
+
+**Spec:** On kickoff day, fill in this table for each scoring method:
+
+| Scoring Method | Type | Max Points (Alliance) | Realistic Alliance Saturation Time | Points Remaining After Saturation |
+|---|---|---|---|---|
+| Method A | CAPPED / UNCAPPED | X pts | Y seconds | Z pts uncapped |
+| Method B | CAPPED / UNCAPPED | X pts | Y seconds | Z pts uncapped |
+
+If "Points Remaining After Saturation" is >0 for an uncapped method and the capped method saturates in <60% of match time, **prioritize the uncapped method for your primary robot design.**
 
 ---
 

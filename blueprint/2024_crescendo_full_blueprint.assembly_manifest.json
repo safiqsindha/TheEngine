@@ -1,0 +1,918 @@
+{
+  "game": "Crescendo",
+  "year": 2024,
+  "frame_length_in": 27.0,
+  "frame_width_in": 27.0,
+  "parts": [
+    {
+      "name": "swerve_front_left",
+      "catalog_name": "SDS MK4i Swerve Module",
+      "position_mm": [
+        -279.4,
+        279.4,
+        0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "drivetrain",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "swerve_front_right",
+      "catalog_name": "SDS MK4i Swerve Module",
+      "position_mm": [
+        279.4,
+        279.4,
+        0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "drivetrain",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "swerve_back_left",
+      "catalog_name": "SDS MK4i Swerve Module",
+      "position_mm": [
+        -279.4,
+        -279.4,
+        0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "drivetrain",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "swerve_back_right",
+      "catalog_name": "SDS MK4i Swerve Module",
+      "position_mm": [
+        279.4,
+        -279.4,
+        0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "drivetrain",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "drive_motor_front_left",
+      "catalog_name": "WCP Kraken X60",
+      "position_mm": [
+        -279.4,
+        279.4,
+        76.2
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "drivetrain",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "steer_motor_front_left",
+      "catalog_name": "REV NEO 550",
+      "position_mm": [
+        -249.39999999999998,
+        279.4,
+        76.2
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "drivetrain",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "drive_motor_front_right",
+      "catalog_name": "WCP Kraken X60",
+      "position_mm": [
+        279.4,
+        279.4,
+        76.2
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "drivetrain",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "steer_motor_front_right",
+      "catalog_name": "REV NEO 550",
+      "position_mm": [
+        309.4,
+        279.4,
+        76.2
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "drivetrain",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "drive_motor_back_left",
+      "catalog_name": "WCP Kraken X60",
+      "position_mm": [
+        -279.4,
+        -279.4,
+        76.2
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "drivetrain",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "steer_motor_back_left",
+      "catalog_name": "REV NEO 550",
+      "position_mm": [
+        -249.39999999999998,
+        -279.4,
+        76.2
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "drivetrain",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "drive_motor_back_right",
+      "catalog_name": "WCP Kraken X60",
+      "position_mm": [
+        279.4,
+        -279.4,
+        76.2
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "drivetrain",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "steer_motor_back_right",
+      "catalog_name": "REV NEO 550",
+      "position_mm": [
+        309.4,
+        -279.4,
+        76.2
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "drivetrain",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "gusset_0",
+      "catalog_name": "WCP 90\u00b0 Gusset (2x1 to 2x1)",
+      "position_mm": [
+        50.8,
+        50.8,
+        25.4
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "frame",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "gusset_1",
+      "catalog_name": "WCP 90\u00b0 Gusset (2x1 to 2x1)",
+      "position_mm": [
+        635.0,
+        50.8,
+        25.4
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "frame",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "gusset_2",
+      "catalog_name": "WCP 90\u00b0 Gusset (2x1 to 2x1)",
+      "position_mm": [
+        50.8,
+        635.0,
+        25.4
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "frame",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "gusset_3",
+      "catalog_name": "WCP 90\u00b0 Gusset (2x1 to 2x1)",
+      "position_mm": [
+        635.0,
+        635.0,
+        25.4
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "frame",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "gusset_4",
+      "catalog_name": "WCP 90\u00b0 Gusset (2x1 to 2x1)",
+      "position_mm": [
+        50.8,
+        171.45,
+        25.4
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "frame",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "gusset_5",
+      "catalog_name": "WCP 90\u00b0 Gusset (2x1 to 2x1)",
+      "position_mm": [
+        635.0,
+        171.45,
+        25.4
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "frame",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "gusset_6",
+      "catalog_name": "WCP 90\u00b0 Gusset (2x1 to 2x1)",
+      "position_mm": [
+        50.8,
+        342.9,
+        25.4
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "frame",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "gusset_7",
+      "catalog_name": "WCP 90\u00b0 Gusset (2x1 to 2x1)",
+      "position_mm": [
+        635.0,
+        342.9,
+        25.4
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "frame",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "gusset_8",
+      "catalog_name": "WCP 90\u00b0 Gusset (2x1 to 2x1)",
+      "position_mm": [
+        50.8,
+        514.3499999999999,
+        25.4
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "frame",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "gusset_9",
+      "catalog_name": "WCP 90\u00b0 Gusset (2x1 to 2x1)",
+      "position_mm": [
+        635.0,
+        514.3499999999999,
+        25.4
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "frame",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "elec_battery",
+      "catalog_name": "FRC Battery (MK ES17-12)",
+      "position_mm": [
+        342.9,
+        292.9,
+        0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "electronics",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "elec_pdh",
+      "catalog_name": "Power Distribution Hub",
+      "position_mm": [
+        422.9,
+        342.9,
+        0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "electronics",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "elec_roborio",
+      "catalog_name": "RoboRIO 2",
+      "position_mm": [
+        262.9,
+        342.9,
+        0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "electronics",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "elec_radio",
+      "catalog_name": "OpenMesh Radio (OM5P-AC)",
+      "position_mm": [
+        342.9,
+        422.9,
+        0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "electronics",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "elec_breaker",
+      "catalog_name": "Main Breaker (120A)",
+      "position_mm": [
+        262.9,
+        292.9,
+        0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "electronics",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "elec_imu",
+      "catalog_name": "CTRE Pigeon 2.0 IMU",
+      "position_mm": [
+        342.9,
+        342.9,
+        0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "electronics",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "intake_motor_0",
+      "catalog_name": "REV NEO Motor",
+      "position_mm": [
+        342.9,
+        368.29999999999995,
+        25.4
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "intake",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "intake_gearbox",
+      "catalog_name": "REV MAXPlanetary Gearbox",
+      "position_mm": [
+        342.9,
+        408.29999999999995,
+        25.4
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "intake",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "intake_bearing_0",
+      "catalog_name": "Flanged Bearing 1/2in Hex",
+      "position_mm": [
+        342.9,
+        368.29999999999995,
+        25.4
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "intake",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "intake_bearing_1",
+      "catalog_name": "Flanged Bearing 1/2in Hex",
+      "position_mm": [
+        422.9,
+        368.29999999999995,
+        25.4
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "intake",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "intake_shaft",
+      "catalog_name": "1/2in Hex Shaft",
+      "position_mm": [
+        342.9,
+        368.29999999999995,
+        25.4
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "intake",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "intake_controller_0",
+      "catalog_name": "REV Spark MAX",
+      "position_mm": [
+        342.9,
+        308.29999999999995,
+        25.4
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "electronics",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "conveyor_motor_0",
+      "catalog_name": "REV NEO 550",
+      "position_mm": [
+        342.9,
+        342.9,
+        25.4
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "conveyor",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "conveyor_controller_0",
+      "catalog_name": "REV Spark MAX",
+      "position_mm": [
+        342.9,
+        282.9,
+        25.4
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "electronics",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "flywheel_motor_0",
+      "catalog_name": "REV NEO Vortex",
+      "position_mm": [
+        342.9,
+        171.49999999999997,
+        431.8
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "flywheel",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "flywheel_motor_1",
+      "catalog_name": "REV NEO Vortex",
+      "position_mm": [
+        402.9,
+        171.49999999999997,
+        431.8
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "flywheel",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "flywheel_bearing_0",
+      "catalog_name": "Flanged Bearing 1/2in Hex",
+      "position_mm": [
+        342.9,
+        171.49999999999997,
+        431.8
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "flywheel",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "flywheel_bearing_1",
+      "catalog_name": "Flanged Bearing 1/2in Hex",
+      "position_mm": [
+        422.9,
+        171.49999999999997,
+        431.8
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "flywheel",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "flywheel_shaft",
+      "catalog_name": "1/2in Hex Shaft",
+      "position_mm": [
+        342.9,
+        171.49999999999997,
+        431.8
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "flywheel",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "flywheel_controller_0",
+      "catalog_name": "REV Spark MAX",
+      "position_mm": [
+        342.9,
+        111.49999999999997,
+        431.8
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "electronics",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "flywheel_controller_1",
+      "catalog_name": "REV Spark MAX",
+      "position_mm": [
+        382.9,
+        111.49999999999997,
+        431.8
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "electronics",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "climber_motor_0",
+      "catalog_name": "REV NEO Motor",
+      "position_mm": [
+        342.9,
+        101.59999999999997,
+        25.4
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "climber",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "climber_motor_1",
+      "catalog_name": "REV NEO Motor",
+      "position_mm": [
+        402.9,
+        101.59999999999997,
+        25.4
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "climber",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "climber_gearbox",
+      "catalog_name": "REV MAXPlanetary Gearbox",
+      "position_mm": [
+        342.9,
+        141.59999999999997,
+        25.4
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "climber",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "climber_shaft",
+      "catalog_name": "1/2in Hex Shaft",
+      "position_mm": [
+        342.9,
+        101.59999999999997,
+        25.4
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "climber",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "climber_controller_0",
+      "catalog_name": "REV Spark MAX",
+      "position_mm": [
+        342.9,
+        41.599999999999966,
+        25.4
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "electronics",
+      "source": "cots",
+      "resolved": false
+    },
+    {
+      "name": "climber_controller_1",
+      "catalog_name": "REV Spark MAX",
+      "position_mm": [
+        382.9,
+        41.599999999999966,
+        25.4
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "subassembly": "electronics",
+      "source": "cots",
+      "resolved": false
+    }
+  ],
+  "subassemblies": [
+    "climber",
+    "conveyor",
+    "drivetrain",
+    "electronics",
+    "flywheel",
+    "frame",
+    "intake"
+  ],
+  "generated_parts": [],
+  "total_cots_parts": 16,
+  "total_generated_parts": 0,
+  "total_instances": 49,
+  "resolution_status": {
+    "total_parts": 54,
+    "resolved": 0,
+    "unresolved": 54,
+    "resolution_rate": 0.0,
+    "unresolved_parts": [
+      "SDS MK4i Swerve Module",
+      "SDS MK4n Swerve Module",
+      "Thrifty Swerve Module",
+      "REV MAXSwerve",
+      "REV NEO Motor",
+      "REV NEO Vortex",
+      "REV NEO 550",
+      "WCP Kraken X60",
+      "VEXpro Falcon 500",
+      "REV MAXPlanetary Gearbox",
+      "VEX VersaPlanetary Gearbox",
+      "REV Spark MAX",
+      "REV Spark Flex",
+      "Power Distribution Hub",
+      "RoboRIO 2",
+      "FRC Battery (MK ES17-12)",
+      "OpenMesh Radio (OM5P-AC)",
+      "Main Breaker (120A)",
+      "CTRE Pigeon 2.0 IMU",
+      "Redux Canandgyro IMU",
+      "1x1 Aluminum Box Tube",
+      "2x1 Aluminum Box Tube",
+      "Thrifty Elevator Bearing Block",
+      "1/2in Hex Shaft",
+      "Flanged Bearing 1/2in Hex",
+      "Flanged Bearing 3/8in Round",
+      "#10-32 Button Head Bolt",
+      "1/4-20 Button Head Bolt",
+      "#10-32 Nylock Nut",
+      "WCP 90\u00b0 Gusset (2x1 to 2x1)",
+      "WCP 90\u00b0 Gusset (1x1 to 2x1)",
+      "WCP T-Gusset",
+      "WCP Churro (0.5in Hex Standoff)",
+      "REV 15mm Extrusion",
+      "REV 15mm 90\u00b0 Bracket",
+      "REV 15mm Inside Corner Connector",
+      "REV 15mm Pivot Bracket",
+      "TTB Gusset Plate",
+      "WCP Bearing Block (1/2in Hex)",
+      "WCP Clamping Bearing Block",
+      "WCP Falcon/Kraken Motor Mount Plate",
+      "REV NEO Motor Mount Plate",
+      "WCP Shaft Collar (1/2in)",
+      "HTD 5mm Belt (15mm wide)",
+      "HTD 5mm Pulley",
+      "#25 Chain",
+      "#25 Sprocket",
+      "VersaPlanetary Motor Mount",
+      "Polycarbonate Sheet (1/8in)",
+      "Aluminum Plate (1/8in)",
+      "Aluminum Plate (1/4in)",
+      "REV Through Bore Encoder",
+      "Limelight 3",
+      "PhotonVision Arducam OV9281"
+    ]
+  },
+  "assembly_url": "",
+  "created_at": "2026-04-09T03:37:32Z"
+}

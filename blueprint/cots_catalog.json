@@ -1,42 +1,56 @@
 {
   "_meta": {
-    "version": "0.1.0",
-    "description": "FRC COTS parts catalog for The Blueprint. OnShape refs populated via FRCDesignLib API.",
-    "sources": ["FRCDesignLib", "MKCad"],
+    "version": "0.3.0",
+    "description": "FRC COTS parts catalog for The Blueprint. Geometry envelopes for CAD placement. Parts inserted via FRCDesignApp plugin in OnShape.",
+    "sources": ["FRCDesignLib", "FRCDesignApp", "Vendor datasheets"],
+    "insertion_method": "FRCDesignApp (OnShape plugin) — subscribe at onshape.com appstore",
     "last_updated": "2026-04-08"
   },
 
-  "Thrifty Swerve Module": {
-    "category": "drivetrain",
-    "subcategory": "swerve",
-    "vendor": "TTB",
-    "vendor_full": "The Thrifty Bot",
-    "specs": { "gear_ratios": ["6.23:1"], "wheel_diameter": "4in", "steer_ratio": "25:1" },
-    "onshape": {}
-  },
   "SDS MK4i Swerve Module": {
     "category": "drivetrain",
     "subcategory": "swerve",
     "vendor": "SDS",
     "vendor_full": "Swerve Drive Specialties",
-    "specs": { "gear_ratios": ["L1 (8.14:1)", "L2 (6.75:1)", "L3 (6.12:1)", "L4 (5.50:1)"], "wheel_diameter": "4in" },
-    "onshape": {}
+    "specs": {
+      "gear_ratios": ["L1 (8.14:1)", "L2 (6.75:1)", "L3 (6.12:1)", "L4 (5.50:1)"],
+      "wheel_diameter_in": 4.0,
+      "weight_lb": 2.9,
+      "max_speed_fps": { "L1": 12.5, "L2": 15.1, "L3": 16.6, "L4": 18.5 }
+    },
+    "envelope_mm": { "x": 95.25, "y": 95.25, "z_above_frame": 76.2, "z_below_frame": 82.55 },
+    "mounting": { "bolt_pattern": "4x #10-32", "frame_cutout_in": 3.75 },
+    "onshape": { "method": "frcdesignapp", "search": "SDS MK4i" }
   },
   "SDS MK4n Swerve Module": {
     "category": "drivetrain",
     "subcategory": "swerve",
     "vendor": "SDS",
     "vendor_full": "Swerve Drive Specialties",
-    "specs": { "wheel_diameter": "4in" },
-    "onshape": {}
+    "specs": { "wheel_diameter_in": 4.0, "weight_lb": 2.8 },
+    "envelope_mm": { "x": 95.25, "y": 95.25, "z_above_frame": 70.0, "z_below_frame": 82.55 },
+    "mounting": { "bolt_pattern": "4x #10-32", "frame_cutout_in": 3.75 },
+    "onshape": { "method": "frcdesignapp", "search": "SDS MK4n" }
+  },
+  "Thrifty Swerve Module": {
+    "category": "drivetrain",
+    "subcategory": "swerve",
+    "vendor": "TTB",
+    "vendor_full": "The Thrifty Bot",
+    "specs": { "gear_ratios": ["6.23:1"], "wheel_diameter_in": 4.0, "steer_ratio": "25:1", "weight_lb": 2.7 },
+    "envelope_mm": { "x": 88.9, "y": 88.9, "z_above_frame": 69.85, "z_below_frame": 82.55 },
+    "mounting": { "bolt_pattern": "4x #10-32", "frame_cutout_in": 3.5 },
+    "onshape": { "method": "frcdesignapp", "search": "Thrifty Swerve" }
   },
   "REV MAXSwerve": {
     "category": "drivetrain",
     "subcategory": "swerve",
     "vendor": "REV",
     "vendor_full": "REV Robotics",
-    "specs": { "wheel_diameter": "3in" },
-    "onshape": {}
+    "specs": { "wheel_diameter_in": 3.0, "weight_lb": 2.6 },
+    "envelope_mm": { "x": 88.9, "y": 88.9, "z_above_frame": 63.5, "z_below_frame": 63.5 },
+    "mounting": { "bolt_pattern": "4x M3", "frame_cutout_in": 3.5 },
+    "onshape": { "method": "frcdesignapp", "search": "MAXSwerve" }
   },
 
   "REV NEO Motor": {
@@ -44,32 +58,50 @@
     "subcategory": "brushless",
     "vendor": "REV",
     "vendor_full": "REV Robotics",
-    "specs": { "free_speed_rpm": 5676, "stall_torque_nm": 2.6, "stall_current_a": 105, "mounting": "#10-32" },
-    "onshape": {}
+    "specs": { "free_speed_rpm": 5676, "stall_torque_nm": 2.6, "stall_current_a": 105, "weight_lb": 0.94 },
+    "envelope_mm": { "diameter": 60.0, "length": 71.4 },
+    "mounting": { "bolt_pattern": "#10-32 x2", "shaft": "0.500in hex" },
+    "onshape": { "method": "frcdesignapp", "search": "NEO Motor" }
   },
   "REV NEO Vortex": {
     "category": "motors",
     "subcategory": "brushless",
     "vendor": "REV",
     "vendor_full": "REV Robotics",
-    "specs": { "free_speed_rpm": 6784, "stall_torque_nm": 3.6, "stall_current_a": 211, "mounting": "#10-32" },
-    "onshape": {}
+    "specs": { "free_speed_rpm": 6784, "stall_torque_nm": 3.6, "stall_current_a": 211, "weight_lb": 0.88 },
+    "envelope_mm": { "diameter": 60.0, "length": 68.0 },
+    "mounting": { "bolt_pattern": "#10-32 x2", "shaft": "MAXSpline" },
+    "onshape": { "method": "frcdesignapp", "search": "NEO Vortex" }
   },
-  "VEXpro Falcon 500": {
+  "REV NEO 550": {
     "category": "motors",
     "subcategory": "brushless",
-    "vendor": "VEX",
-    "vendor_full": "VEXpro",
-    "specs": { "free_speed_rpm": 6380, "stall_torque_nm": 4.69, "stall_current_a": 257, "mounting": "#10-32" },
-    "onshape": {}
+    "vendor": "REV",
+    "vendor_full": "REV Robotics",
+    "specs": { "free_speed_rpm": 11000, "stall_torque_nm": 0.97, "stall_current_a": 100, "weight_lb": 0.49 },
+    "envelope_mm": { "diameter": 35.0, "length": 57.0 },
+    "mounting": { "bolt_pattern": "#10-32 x2", "shaft": "0.500in hex" },
+    "onshape": { "method": "frcdesignapp", "search": "NEO 550" }
   },
   "WCP Kraken X60": {
     "category": "motors",
     "subcategory": "brushless",
     "vendor": "WCP",
     "vendor_full": "West Coast Products",
-    "specs": { "free_speed_rpm": 6000, "stall_torque_nm": 7.09, "stall_current_a": 366, "mounting": "#10-32" },
-    "onshape": {}
+    "specs": { "free_speed_rpm": 6000, "stall_torque_nm": 7.09, "stall_current_a": 366, "weight_lb": 1.20 },
+    "envelope_mm": { "diameter": 60.0, "length": 85.0 },
+    "mounting": { "bolt_pattern": "#10-32 x2", "shaft": "0.500in hex / SplineXL" },
+    "onshape": { "method": "frcdesignapp", "search": "Kraken X60" }
+  },
+  "VEXpro Falcon 500": {
+    "category": "motors",
+    "subcategory": "brushless",
+    "vendor": "VEX",
+    "vendor_full": "VEXpro",
+    "specs": { "free_speed_rpm": 6380, "stall_torque_nm": 4.69, "stall_current_a": 257, "weight_lb": 1.10 },
+    "envelope_mm": { "diameter": 60.0, "length": 82.0 },
+    "mounting": { "bolt_pattern": "#10-32 x2", "shaft": "SplineXL" },
+    "onshape": { "method": "frcdesignapp", "search": "Falcon 500" }
   },
 
   "REV MAXPlanetary Gearbox": {
@@ -77,16 +109,24 @@
     "subcategory": "planetary",
     "vendor": "REV",
     "vendor_full": "REV Robotics",
-    "specs": { "stages": [3, 4, 5, 9, 12, 15, 16, 20, 25, 36, 45, 48, 60, 64, 75, 80, 100], "input_motors": ["NEO", "NEO Vortex", "NEO 550"] },
-    "onshape": {}
+    "specs": {
+      "ratios": [3, 4, 5, 9, 12, 15, 16, 20, 25, 36, 45, 48, 60, 64, 75, 80, 100],
+      "input_motors": ["NEO", "NEO Vortex", "NEO 550"],
+      "weight_per_stage_lb": 0.22
+    },
+    "envelope_mm": { "diameter": 60.0, "length_per_stage": 14.0, "base_length": 30.0 },
+    "mounting": { "bolt_pattern": "#10-32 x2", "output_shaft": "0.500in hex" },
+    "onshape": { "method": "frcdesignapp", "search": "MAXPlanetary" }
   },
   "VEX VersaPlanetary Gearbox": {
     "category": "gearboxes",
     "subcategory": "planetary",
     "vendor": "VEX",
     "vendor_full": "VEXpro",
-    "specs": { "stages": ["3:1", "4:1", "5:1", "7:1", "9:1", "10:1"] },
-    "onshape": {}
+    "specs": { "ratios": ["3:1", "4:1", "5:1", "7:1", "9:1", "10:1"] },
+    "envelope_mm": { "diameter": 57.0, "length_per_stage": 16.0, "base_length": 32.0 },
+    "mounting": { "bolt_pattern": "#10-32 x2", "output_shaft": "0.500in hex" },
+    "onshape": { "method": "frcdesignapp", "search": "VersaPlanetary" }
   },
 
   "REV Spark MAX": {
@@ -94,56 +134,88 @@
     "subcategory": "motor_controller",
     "vendor": "REV",
     "vendor_full": "REV Robotics",
-    "specs": { "protocol": "CAN/PWM", "max_current_a": 60, "compatible_motors": ["NEO", "NEO 550"] },
-    "onshape": {}
+    "specs": { "protocol": "CAN/PWM", "max_current_a": 60, "weight_lb": 0.24 },
+    "envelope_mm": { "x": 70.0, "y": 35.0, "z": 25.0 },
+    "mounting": { "bolt_pattern": "2x M4, 58mm spacing" },
+    "onshape": { "method": "frcdesignapp", "search": "SPARK MAX" }
   },
   "REV Spark Flex": {
     "category": "electronics",
     "subcategory": "motor_controller",
     "vendor": "REV",
     "vendor_full": "REV Robotics",
-    "specs": { "protocol": "CAN/PWM", "max_current_a": 60, "compatible_motors": ["NEO", "NEO Vortex", "NEO 550"] },
-    "onshape": {}
-  },
-  "CTRE Talon FX": {
-    "category": "electronics",
-    "subcategory": "motor_controller",
-    "vendor": "WCP",
-    "vendor_full": "West Coast Products / CTRE",
-    "specs": { "protocol": "CAN", "integrated_in": ["Falcon 500", "Kraken X60"] },
-    "onshape": {}
+    "specs": { "protocol": "CAN/PWM", "max_current_a": 60, "weight_lb": 0.26 },
+    "envelope_mm": { "x": 73.0, "y": 38.0, "z": 25.0 },
+    "mounting": { "bolt_pattern": "2x M4" },
+    "onshape": { "method": "frcdesignapp", "search": "SPARK Flex" }
   },
   "Power Distribution Hub": {
     "category": "electronics",
     "subcategory": "power",
     "vendor": "REV",
     "vendor_full": "REV Robotics",
-    "specs": { "channels": 20, "mounting": "#10-32" },
-    "onshape": {}
+    "specs": { "channels": 20, "weight_lb": 0.94 },
+    "envelope_mm": { "x": 152.4, "y": 101.6, "z": 38.1 },
+    "mounting": { "bolt_pattern": "4x #10-32" },
+    "onshape": { "method": "frcdesignapp", "search": "PDH" }
   },
   "RoboRIO 2": {
     "category": "electronics",
     "subcategory": "controller",
     "vendor": "NI",
     "vendor_full": "National Instruments",
-    "specs": { "mounting": "#4-40" },
-    "onshape": {}
+    "specs": { "weight_lb": 0.48 },
+    "envelope_mm": { "x": 177.8, "y": 88.9, "z": 38.1 },
+    "mounting": { "bolt_pattern": "4x #4-40" },
+    "onshape": { "method": "frcdesignapp", "search": "RoboRIO" }
+  },
+  "FRC Battery (MK ES17-12)": {
+    "category": "electronics",
+    "subcategory": "power",
+    "vendor": "MK",
+    "vendor_full": "MK Battery",
+    "specs": { "voltage": 12.0, "capacity_ah": 17, "weight_lb": 13.0 },
+    "envelope_mm": { "x": 181.0, "y": 76.0, "z": 167.0 },
+    "mounting": { "type": "battery_bracket" },
+    "onshape": { "method": "frcdesignapp", "search": "FRC Battery" }
+  },
+  "OpenMesh Radio (OM5P-AC)": {
+    "category": "electronics",
+    "subcategory": "network",
+    "vendor": "OpenMesh",
+    "specs": { "weight_lb": 0.18 },
+    "envelope_mm": { "x": 135.0, "y": 115.0, "z": 30.0 },
+    "mounting": { "type": "velcro or bracket" },
+    "onshape": { "method": "frcdesignapp", "search": "Radio" }
+  },
+  "Main Breaker (120A)": {
+    "category": "electronics",
+    "subcategory": "power",
+    "vendor": "CTRE",
+    "specs": { "rating_a": 120, "weight_lb": 0.22 },
+    "envelope_mm": { "x": 57.0, "y": 57.0, "z": 38.0 },
+    "mounting": { "bolt_pattern": "2x 1/4-20" },
+    "onshape": { "method": "frcdesignapp", "search": "Main Breaker" }
   },
   "CTRE Pigeon 2.0 IMU": {
     "category": "electronics",
     "subcategory": "sensor",
     "vendor": "WCP",
     "vendor_full": "West Coast Products / CTRE",
-    "specs": { "protocol": "CAN", "mounting": "#6-32" },
-    "onshape": {}
+    "specs": { "protocol": "CAN", "weight_lb": 0.04 },
+    "envelope_mm": { "x": 44.0, "y": 28.0, "z": 12.0 },
+    "mounting": { "bolt_pattern": "2x #6-32" },
+    "onshape": { "method": "frcdesignapp", "search": "Pigeon 2.0" }
   },
   "Redux Canandgyro IMU": {
     "category": "electronics",
     "subcategory": "sensor",
     "vendor": "REDUX",
     "vendor_full": "Redux Robotics",
-    "specs": { "protocol": "CAN", "mounting": "#8-32" },
-    "onshape": {}
+    "specs": { "protocol": "CAN", "weight_lb": 0.03 },
+    "envelope_mm": { "x": 35.0, "y": 35.0, "z": 10.0 },
+    "mounting": { "bolt_pattern": "2x #8-32" },
+    "onshape": { "method": "frcdesignapp", "search": "Canandgyro" }
   },
 
   "1x1 Aluminum Box Tube": {
@@ -151,78 +223,54 @@
     "subcategory": "tube",
     "vendor": "WCP",
     "vendor_full": "West Coast Products",
-    "specs": { "size": "1x1in", "wall": "0.040in", "hole_pattern": "0.5in spacing, 0.196in diameter" },
-    "onshape": {}
+    "specs": { "size_in": [1.0, 1.0], "wall_in": 0.040, "hole_spacing_in": 0.5, "hole_diameter_in": 0.196, "weight_per_in_lb": 0.018 },
+    "envelope_mm": { "x": 25.4, "y": 25.4 },
+    "onshape": { "method": "frcdesignapp", "search": "1x1 tube" }
   },
   "2x1 Aluminum Box Tube": {
     "category": "structure",
     "subcategory": "tube",
     "vendor": "WCP",
     "vendor_full": "West Coast Products",
-    "specs": { "size": "2x1in", "wall": "0.040in", "hole_pattern": "0.5in spacing, 0.196in diameter" },
-    "onshape": {}
-  },
-  "REV MAXTube": {
-    "category": "structure",
-    "subcategory": "tube",
-    "vendor": "REV",
-    "vendor_full": "REV Robotics",
-    "specs": { "size": "1x1in", "hole_pattern": "M3, 16mm spacing" },
-    "onshape": {}
-  },
-  "Thrifty Bot Extrusion": {
-    "category": "structure",
-    "subcategory": "tube",
-    "vendor": "TTB",
-    "vendor_full": "The Thrifty Bot",
-    "specs": { "size": "1x1in" },
-    "onshape": {}
+    "specs": { "size_in": [2.0, 1.0], "wall_in": 0.040, "hole_spacing_in": 0.5, "hole_diameter_in": 0.196, "weight_per_in_lb": 0.035 },
+    "envelope_mm": { "x": 50.8, "y": 25.4 },
+    "onshape": { "method": "frcdesignapp", "search": "2x1 tube" }
   },
 
-  "GT2 Timing Belt Pulley 36T": {
-    "category": "power_transmission",
-    "subcategory": "pulley",
-    "vendor": "various",
-    "specs": { "teeth": 36, "pitch": "GT2 (3mm)" },
-    "onshape": {}
+  "Thrifty Elevator Bearing Block": {
+    "category": "structure",
+    "subcategory": "elevator",
+    "vendor": "TTB",
+    "vendor_full": "The Thrifty Bot",
+    "specs": { "weight_lb": 0.2 },
+    "envelope_mm": { "x": 50.8, "y": 38.1, "z": 50.8 },
+    "mounting": { "bolt_pattern": "#10-32" },
+    "onshape": { "method": "frcdesignapp", "search": "Thrifty Elevator" }
   },
+
   "1/2in Hex Shaft": {
     "category": "power_transmission",
     "subcategory": "shaft",
     "vendor": "various",
-    "specs": { "size": "0.500in hex" },
-    "onshape": {}
+    "specs": { "size_in": 0.500, "type": "hex" },
+    "envelope_mm": { "diameter": 12.7 },
+    "onshape": { "method": "frcdesignapp", "search": "hex shaft" }
   },
-  "MAXSpline Hub": {
-    "category": "power_transmission",
-    "subcategory": "hub",
-    "vendor": "REV",
-    "vendor_full": "REV Robotics",
-    "specs": { "shaft_type": "MAXSpline" },
-    "onshape": {}
-  },
-  "SplineXL Hub": {
-    "category": "power_transmission",
-    "subcategory": "hub",
-    "vendor": "WCP",
-    "vendor_full": "West Coast Products",
-    "specs": { "shaft_type": "SplineXL" },
-    "onshape": {}
-  },
-
   "Flanged Bearing 1/2in Hex": {
     "category": "bearings",
     "subcategory": "flanged",
     "vendor": "various",
-    "specs": { "bore": "0.500in hex", "od": "1.125in" },
-    "onshape": {}
+    "specs": { "bore_in": 0.500, "bore_type": "hex", "od_in": 1.125, "weight_lb": 0.05 },
+    "envelope_mm": { "diameter": 28.6, "flange_diameter": 34.9, "length": 12.7 },
+    "onshape": { "method": "frcdesignapp", "search": "flanged bearing hex" }
   },
   "Flanged Bearing 3/8in Round": {
     "category": "bearings",
     "subcategory": "flanged",
     "vendor": "various",
-    "specs": { "bore": "0.375in round", "od": "0.875in" },
-    "onshape": {}
+    "specs": { "bore_in": 0.375, "bore_type": "round", "od_in": 0.875, "weight_lb": 0.03 },
+    "envelope_mm": { "diameter": 22.2, "flange_diameter": 28.6, "length": 9.5 },
+    "onshape": { "method": "frcdesignapp", "search": "flanged bearing round" }
   },
 
   "#10-32 Button Head Bolt": {
@@ -230,16 +278,16 @@
     "subcategory": "bolt",
     "vendor": "MCM",
     "vendor_full": "McMaster-Carr",
-    "specs": { "thread": "#10-32", "head": "button", "common_lengths": ["0.5in", "0.75in", "1.0in"] },
-    "onshape": {}
+    "specs": { "thread": "#10-32", "head": "button", "common_lengths_in": [0.5, 0.75, 1.0] },
+    "onshape": { "method": "frcdesignapp", "search": "#10-32 BHCS" }
   },
   "1/4-20 Button Head Bolt": {
     "category": "fasteners",
     "subcategory": "bolt",
     "vendor": "MCM",
     "vendor_full": "McMaster-Carr",
-    "specs": { "thread": "1/4-20", "head": "button", "common_lengths": ["0.5in", "0.75in", "1.0in"] },
-    "onshape": {}
+    "specs": { "thread": "1/4-20", "head": "button", "common_lengths_in": [0.5, 0.75, 1.0] },
+    "onshape": { "method": "frcdesignapp", "search": "1/4-20 BHCS" }
   },
   "#10-32 Nylock Nut": {
     "category": "fasteners",
@@ -247,6 +295,237 @@
     "vendor": "MCM",
     "vendor_full": "McMaster-Carr",
     "specs": { "thread": "#10-32", "type": "nylon insert lock" },
-    "onshape": {}
+    "onshape": { "method": "frcdesignapp", "search": "#10-32 nylock" }
+  },
+
+  "WCP 90° Gusset (2x1 to 2x1)": {
+    "category": "structure",
+    "subcategory": "gusset",
+    "vendor": "WCP",
+    "vendor_full": "West Coast Products",
+    "specs": { "angle_deg": 90, "tube_a": "2x1", "tube_b": "2x1", "weight_lb": 0.08, "material": "aluminum", "thickness_in": 0.090 },
+    "envelope_mm": { "x": 50.8, "y": 50.8, "z": 2.3 },
+    "mounting": { "bolt_pattern": "4x #10-32", "holes_per_side": 2 },
+    "onshape": { "method": "frcdesignapp", "search": "WCP gusset" }
+  },
+  "WCP 90° Gusset (1x1 to 2x1)": {
+    "category": "structure",
+    "subcategory": "gusset",
+    "vendor": "WCP",
+    "vendor_full": "West Coast Products",
+    "specs": { "angle_deg": 90, "tube_a": "1x1", "tube_b": "2x1", "weight_lb": 0.06, "material": "aluminum", "thickness_in": 0.090 },
+    "envelope_mm": { "x": 50.8, "y": 25.4, "z": 2.3 },
+    "mounting": { "bolt_pattern": "3x #10-32" },
+    "onshape": { "method": "frcdesignapp", "search": "WCP gusset" }
+  },
+  "WCP T-Gusset": {
+    "category": "structure",
+    "subcategory": "gusset",
+    "vendor": "WCP",
+    "vendor_full": "West Coast Products",
+    "specs": { "type": "T-junction", "tube": "2x1", "weight_lb": 0.10, "material": "aluminum", "thickness_in": 0.090 },
+    "envelope_mm": { "x": 50.8, "y": 76.2, "z": 2.3 },
+    "mounting": { "bolt_pattern": "6x #10-32", "holes_per_side": 2 },
+    "onshape": { "method": "frcdesignapp", "search": "WCP T gusset" }
+  },
+  "WCP Churro (0.5in Hex Standoff)": {
+    "category": "structure",
+    "subcategory": "standoff",
+    "vendor": "WCP",
+    "vendor_full": "West Coast Products",
+    "specs": { "size_in": 0.500, "type": "hex", "material": "aluminum", "common_lengths_in": [1, 2, 3, 4, 6], "weight_per_in_lb": 0.02 },
+    "envelope_mm": { "diameter": 12.7 },
+    "onshape": { "method": "frcdesignapp", "search": "churro" }
+  },
+  "REV 15mm Extrusion": {
+    "category": "structure",
+    "subcategory": "extrusion",
+    "vendor": "REV",
+    "vendor_full": "REV Robotics",
+    "specs": { "profile_mm": 15, "slot_type": "M3", "weight_per_in_lb": 0.018 },
+    "envelope_mm": { "x": 15, "y": 15 },
+    "onshape": { "method": "frcdesignapp", "search": "REV extrusion" }
+  },
+  "REV 15mm 90° Bracket": {
+    "category": "structure",
+    "subcategory": "bracket",
+    "vendor": "REV",
+    "vendor_full": "REV Robotics",
+    "specs": { "angle_deg": 90, "weight_lb": 0.03 },
+    "envelope_mm": { "x": 30, "y": 30, "z": 15 },
+    "mounting": { "bolt_pattern": "2x M3", "slot_compatible": true },
+    "onshape": { "method": "frcdesignapp", "search": "REV 90 bracket" }
+  },
+  "REV 15mm Inside Corner Connector": {
+    "category": "structure",
+    "subcategory": "bracket",
+    "vendor": "REV",
+    "vendor_full": "REV Robotics",
+    "specs": { "type": "inside_corner", "weight_lb": 0.02 },
+    "envelope_mm": { "x": 15, "y": 15, "z": 15 },
+    "mounting": { "bolt_pattern": "2x M3" },
+    "onshape": { "method": "frcdesignapp", "search": "REV inside corner" }
+  },
+  "REV 15mm Pivot Bracket": {
+    "category": "structure",
+    "subcategory": "bracket",
+    "vendor": "REV",
+    "vendor_full": "REV Robotics",
+    "specs": { "type": "pivot", "bore_mm": 5, "weight_lb": 0.04 },
+    "envelope_mm": { "x": 30, "y": 30, "z": 15 },
+    "mounting": { "bolt_pattern": "2x M3", "pivot_bore_mm": 5 },
+    "onshape": { "method": "frcdesignapp", "search": "REV pivot bracket" }
+  },
+  "TTB Gusset Plate": {
+    "category": "structure",
+    "subcategory": "gusset",
+    "vendor": "TTB",
+    "vendor_full": "The Thrifty Bot",
+    "specs": { "angle_deg": 90, "weight_lb": 0.06, "material": "aluminum", "thickness_in": 0.125 },
+    "envelope_mm": { "x": 38.1, "y": 38.1, "z": 3.2 },
+    "mounting": { "bolt_pattern": "4x #10-32" },
+    "onshape": { "method": "frcdesignapp", "search": "Thrifty gusset" }
+  },
+  "WCP Bearing Block (1/2in Hex)": {
+    "category": "structure",
+    "subcategory": "bearing_block",
+    "vendor": "WCP",
+    "vendor_full": "West Coast Products",
+    "specs": { "bore_in": 0.500, "bore_type": "hex", "weight_lb": 0.12 },
+    "envelope_mm": { "x": 38.1, "y": 25.4, "z": 38.1 },
+    "mounting": { "bolt_pattern": "2x #10-32", "bore_diameter_mm": 12.7 },
+    "onshape": { "method": "frcdesignapp", "search": "WCP bearing block" }
+  },
+  "WCP Clamping Bearing Block": {
+    "category": "structure",
+    "subcategory": "bearing_block",
+    "vendor": "WCP",
+    "vendor_full": "West Coast Products",
+    "specs": { "bore_in": 0.500, "bore_type": "round", "clamping": true, "weight_lb": 0.15 },
+    "envelope_mm": { "x": 44.5, "y": 31.8, "z": 38.1 },
+    "mounting": { "bolt_pattern": "2x #10-32", "clamp_bolt": "1x #10-32" },
+    "onshape": { "method": "frcdesignapp", "search": "WCP clamping bearing" }
+  },
+  "WCP Large Motor Mount Plate": {
+    "category": "structure",
+    "subcategory": "motor_mount",
+    "vendor": "WCP",
+    "vendor_full": "West Coast Products",
+    "specs": { "compatible_motors": ["falcon_500", "kraken_x60"], "weight_lb": 0.10, "material": "aluminum" },
+    "envelope_mm": { "x": 76.2, "y": 50.8, "z": 3.2 },
+    "mounting": { "motor_bolt_pattern": "4x #10-32 on 2\" bolt circle", "frame_bolt_pattern": "2x #10-32" },
+    "onshape": { "method": "frcdesignapp", "search": "WCP motor mount" }
+  },
+  "REV NEO Motor Mount Plate": {
+    "category": "structure",
+    "subcategory": "motor_mount",
+    "vendor": "REV",
+    "vendor_full": "REV Robotics",
+    "specs": { "compatible_motors": ["neo", "neo_vortex"], "weight_lb": 0.08, "material": "aluminum" },
+    "envelope_mm": { "x": 70, "y": 50, "z": 3 },
+    "mounting": { "motor_bolt_pattern": "2x M4 on NEO pattern", "frame_bolt_pattern": "2x #10-32" },
+    "onshape": { "method": "frcdesignapp", "search": "REV motor mount" }
+  },
+  "WCP Shaft Collar (1/2in)": {
+    "category": "power_transmission",
+    "subcategory": "collar",
+    "vendor": "WCP",
+    "vendor_full": "West Coast Products",
+    "specs": { "bore_in": 0.500, "weight_lb": 0.02 },
+    "envelope_mm": { "diameter": 25.4, "length": 12.7 },
+    "onshape": { "method": "frcdesignapp", "search": "shaft collar" }
+  },
+  "HTD 5mm Belt (15mm wide)": {
+    "category": "power_transmission",
+    "subcategory": "belt",
+    "vendor": "various",
+    "specs": { "pitch_mm": 5, "width_mm": 15, "type": "HTD", "common_tooth_counts": [50, 60, 70, 80, 100, 120] },
+    "envelope_mm": { "width": 15 },
+    "onshape": { "method": "frcdesignapp", "search": "HTD belt" }
+  },
+  "HTD 5mm Pulley": {
+    "category": "power_transmission",
+    "subcategory": "pulley",
+    "vendor": "various",
+    "specs": { "pitch_mm": 5, "bore_type": "hex", "bore_in": 0.500, "common_tooth_counts": [18, 24, 30, 36] },
+    "envelope_mm": { "width": 19 },
+    "onshape": { "method": "frcdesignapp", "search": "HTD pulley" }
+  },
+  "#25 Chain": {
+    "category": "power_transmission",
+    "subcategory": "chain",
+    "vendor": "various",
+    "specs": { "pitch_in": 0.250, "type": "#25", "tensile_strength_lb": 780 },
+    "envelope_mm": { "width": 6.35 },
+    "onshape": { "method": "frcdesignapp", "search": "#25 chain" }
+  },
+  "#25 Sprocket": {
+    "category": "power_transmission",
+    "subcategory": "sprocket",
+    "vendor": "various",
+    "specs": { "pitch_in": 0.250, "bore_type": "hex", "bore_in": 0.500, "common_tooth_counts": [16, 18, 22, 24, 32] },
+    "envelope_mm": { "width": 6.35 },
+    "onshape": { "method": "frcdesignapp", "search": "#25 sprocket" }
+  },
+  "VersaPlanetary Motor Mount": {
+    "category": "structure",
+    "subcategory": "motor_mount",
+    "vendor": "VEX",
+    "vendor_full": "VEX Robotics",
+    "specs": { "compatible_gearbox": "VersaPlanetary", "weight_lb": 0.06 },
+    "envelope_mm": { "x": 57, "y": 57, "z": 10 },
+    "mounting": { "bolt_pattern": "VersaPlanetary face mount" },
+    "onshape": { "method": "frcdesignapp", "search": "VersaPlanetary mount" }
+  },
+  "Polycarbonate Sheet (1/8in)": {
+    "category": "structure",
+    "subcategory": "sheet",
+    "vendor": "various",
+    "specs": { "thickness_in": 0.125, "material": "polycarbonate", "weight_per_sqin_lb": 0.0052 },
+    "envelope_mm": { "z": 3.175 },
+    "onshape": { "method": "frcdesignapp", "search": "polycarbonate sheet" }
+  },
+  "Aluminum Plate (1/8in)": {
+    "category": "structure",
+    "subcategory": "sheet",
+    "vendor": "various",
+    "specs": { "thickness_in": 0.125, "material": "6061 aluminum", "weight_per_sqin_lb": 0.014 },
+    "envelope_mm": { "z": 3.175 },
+    "onshape": { "method": "frcdesignapp", "search": "aluminum plate" }
+  },
+  "Aluminum Plate (1/4in)": {
+    "category": "structure",
+    "subcategory": "sheet",
+    "vendor": "various",
+    "specs": { "thickness_in": 0.250, "material": "6061 aluminum", "weight_per_sqin_lb": 0.028 },
+    "envelope_mm": { "z": 6.35 },
+    "onshape": { "method": "frcdesignapp", "search": "aluminum plate" }
+  },
+  "REV Through Bore Encoder": {
+    "category": "electronics",
+    "subcategory": "sensor",
+    "vendor": "REV",
+    "vendor_full": "REV Robotics",
+    "specs": { "type": "absolute + incremental", "bore_in": 0.500, "weight_lb": 0.05 },
+    "envelope_mm": { "diameter": 38, "length": 25 },
+    "mounting": { "bore_diameter_mm": 12.7 },
+    "onshape": { "method": "frcdesignapp", "search": "Through Bore Encoder" }
+  },
+  "Limelight 3": {
+    "category": "electronics",
+    "subcategory": "vision",
+    "vendor": "Limelight",
+    "specs": { "type": "vision_camera", "weight_lb": 0.26, "fov_deg": 59.6 },
+    "envelope_mm": { "x": 88, "y": 62, "z": 32 },
+    "mounting": { "bolt_pattern": "4x M3" },
+    "onshape": { "method": "frcdesignapp", "search": "Limelight" }
+  },
+  "PhotonVision Arducam OV9281": {
+    "category": "electronics",
+    "subcategory": "vision",
+    "vendor": "Arducam",
+    "specs": { "type": "vision_camera", "weight_lb": 0.04, "resolution": "1MP global shutter" },
+    "envelope_mm": { "x": 40, "y": 30, "z": 20 },
+    "onshape": { "method": "frcdesignapp", "search": "Arducam" }
   }
 }

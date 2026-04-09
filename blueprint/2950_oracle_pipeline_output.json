@@ -1,0 +1,402 @@
+{
+  "oracle_input": {
+    "game_name": "Rapid React",
+    "season_year": 2022,
+    "confidence_overall": 0.88,
+    "drivetrain": {
+      "type": "swerve",
+      "module": "sds_mk4i",
+      "speed_fps": 16.0,
+      "gear_for": "speed",
+      "frame_length_in": 28.0,
+      "frame_width_in": 28.0,
+      "reasoning": "R1: Swerve is mandatory post-2019. 2022 is deep swerve era. Fast cycles around central HUB favor speed+maneuverability. SDS MK4i for proven performance."
+    },
+    "intake": {
+      "type": "over_bumper",
+      "width": "full",
+      "roller_material": "compliant_wheels",
+      "deploy": true,
+      "motors": 2,
+      "game_piece": "CARGO (9.5\" inflated ball, 9.5 oz, fuzzy surface)",
+      "reasoning": "R5: 9.5\" compressible ball \u2014 compliant wheels for grip on fuzzy surface. R10: Full-width over-bumper for fast ground pickup. Deploy to stay in frame perimeter."
+    },
+    "scorer": {
+      "method": "flywheel",
+      "height_in": 0.0,
+      "stages": 0,
+      "motors": 2,
+      "has_wrist": false,
+      "turret": "none",
+      "reasoning": "R4+R6: Upper Hub at 8'8\" with 4' opening \u2014 flywheel shooter is ideal. R19: Cargo scoring is UNCAPPED and the primary differentiator. Upper Hub = 2x Lower Hub points. Variable-distance shooting with vision on reflective tape. R19 analysis: Hangar is SEMI-CAPPED (max 45 pts, RP threshold 16), so cargo throughput is where elite teams separate."
+    },
+    "endgame": {
+      "type": "telescope",
+      "height_in": 60.0,
+      "motors": 2,
+      "reasoning": "R8: Traversal rung at 7'7\" = 15 pts per robot. Worth ~7.5 upper cargo. Telescope design to reach traversal from mid rung. R19: Hangar RP easily achievable (16 pts threshold), but traversal still worth 15 match points."
+    },
+    "autonomous": {
+      "priority_actions": [
+        "score_preload_upper",
+        "intake_staged_cargo",
+        "score_second_upper",
+        "intake_third",
+        "score_third_upper"
+      ],
+      "cycle_time_target_s": 5.0,
+      "preload_score": true,
+      "estimated_pieces": 2,
+      "reasoning": "R7: Auto scoring doubled (4 pts/upper vs 2 teleop). R18: 2-ball auto reliable, stretch to 5-ball. Preload + 1 staged cargo for consistent 10-pt auto (2 taxi + 2\u00d74 upper)."
+    },
+    "weight_budget": {
+      "drivetrain_lb": 42,
+      "intake_lb": 12,
+      "scorer_lb": 15,
+      "endgame_lb": 18,
+      "electronics_lb": 15,
+      "bumpers_lb": 10,
+      "margin_lb": 13,
+      "total_limit_lb": 125
+    },
+    "build_order": [
+      "drivetrain",
+      "scorer",
+      "intake",
+      "endgame",
+      "autonomous"
+    ],
+    "scoring_analysis": {
+      "methods": [],
+      "primary_method": "",
+      "reasoning": ""
+    },
+    "notes": "R19 capped/uncapped analysis: Cargo shooting is the primary differentiator. Hangar is important but secondary \u2014 traversal climb for 15 pts, but don't sacrifice shooting capability for it. Vision tracking on Upper Hub reflective tape ring for variable-distance shooting."
+  },
+  "specs": {
+    "intake": {
+      "intake_type": "over_bumper",
+      "game_piece_diameter_in": 4.5,
+      "game_piece_shape": "cylinder",
+      "frame_width_in": 26.0,
+      "roller_material": "compliant_wheels",
+      "deploy_type": "pivot",
+      "drivetrain_speed_fps": 16.0,
+      "intake_width_in": 24.0,
+      "roller_count": 2,
+      "roller_spacing_in": 7.6,
+      "roller_speed_rpm": 1816.0,
+      "compression_in": 0.9,
+      "roller_od_in": 4.0,
+      "roller_motor_type": "neo",
+      "roller_motor_count": 1,
+      "roller_gear_ratio": 2.5,
+      "deploy_motor_type": "neo_550",
+      "deploy_gear_ratio": 50.0,
+      "surface_speed_fps": 31.7,
+      "acquire_time_sec": 0.04,
+      "cycle_contribution_sec": 0.64,
+      "roller_weight_lb": 2.7,
+      "frame_weight_lb": 0.3,
+      "motor_weight_lb": 1.43,
+      "deploy_weight_lb": 1.5,
+      "hardware_weight_lb": 0.5,
+      "total_weight_lb": 6.43,
+      "weight_ok": true,
+      "software_constants": {
+        "ROLLER_GEAR_RATIO": 2.5,
+        "ROLLER_MOTOR_COUNT": 1,
+        "ROLLER_DIAMETER_IN": 4.0,
+        "SURFACE_SPEED_FPS": 31.7,
+        "INTAKE_SPEED": 0.8,
+        "OUTTAKE_SPEED": -0.5,
+        "DEPLOY_GEAR_RATIO": 50.0,
+        "DEPLOY_ANGLE_DEG": 110.0,
+        "DEPLOY_SPEED": 0.5,
+        "RETRACT_SPEED": -0.3,
+        "DEPLOY_POSITION_TOLERANCE_DEG": 5.0
+      },
+      "parts_list": [
+        {
+          "qty": 16,
+          "item": "Compliant Wheels (AndyMark) (4.0\" OD)",
+          "notes": "Roller wheels, 2 rollers x 8 per shaft"
+        },
+        {
+          "qty": 2,
+          "item": "1/2\" hex shaft",
+          "notes": "Cut to 26.0\" (intake width + bearings)"
+        },
+        {
+          "qty": 4,
+          "item": "Flanged bearing (1/2\" hex bore)",
+          "notes": "One per shaft end"
+        },
+        {
+          "qty": 1,
+          "item": "NEO Brushless motor",
+          "notes": "With SparkMax, 2.5:1 reduction"
+        },
+        {
+          "qty": 2,
+          "item": "Side plates (1/4\" polycarb or 1/8\" aluminum)",
+          "notes": "Cut to intake profile, 24.0\" apart"
+        },
+        {
+          "qty": 1,
+          "item": "NEO 550 motor (deploy)",
+          "notes": "With SparkMax, 50.0:1 MAXPlanetary"
+        },
+        {
+          "qty": 2,
+          "item": "Pivot shaft + bearing blocks",
+          "notes": "1/2\" hex, mounted on robot frame cross member"
+        },
+        {
+          "qty": 1,
+          "item": "Hardware assortment (#10-32)",
+          "notes": "Bolts, nuts, spacers for assembly"
+        }
+      ],
+      "preset_name": "oracle_generated",
+      "notes": [
+        "R2: Full-width intake (bumper-to-bumper) for maximum capture zone",
+        "ReCalc: surface speed = 2x drivetrain speed (16.0 fps \u2192 31.7 fps)"
+      ]
+    },
+    "flywheel": {
+      "wheel_diameter_in": 4.0,
+      "wheel_count": 2,
+      "motor_type": "neo_vortex",
+      "motor_count": 2,
+      "gear_ratio": 1.0,
+      "target_rpm": 3000.0,
+      "current_limit_a": 40.0,
+      "efficiency": 0.9,
+      "piece_mass_lb": 0.5,
+      "piece_diameter_in": 4.5,
+      "wheel_moi_kg_m2": 0.0003510475370275229,
+      "stored_energy_j": 17.32,
+      "spinup_time_sec": 0.119,
+      "surface_speed_fps": 52.4,
+      "exit_velocity_fps": 10.6,
+      "energy_transfer_pct": 20.2,
+      "speed_drop_after_shot_rpm": 146.0,
+      "recovery_time_sec": 0,
+      "spinup_peak_current_a": 40.0,
+      "holding_current_a": 7.8,
+      "wheel_weight_lb": 0.6,
+      "motor_weight_lb": 1.76,
+      "total_weight_lb": 3.86,
+      "software_constants": {
+        "FLYWHEEL_GEAR_RATIO": 1.0,
+        "FLYWHEEL_MOTOR_COUNT": 2,
+        "TARGET_RPM": 3000.0,
+        "WHEEL_DIAMETER_IN": 4.0,
+        "CURRENT_LIMIT_A": 40.0,
+        "kS": 0.1,
+        "kV": 0.00177,
+        "kA": 0.01,
+        "RPM_TOLERANCE": 90.0,
+        "RECOVERY_TIME_SEC": 0
+      },
+      "parts_list": [
+        {
+          "qty": 2,
+          "item": "4.0\" shooter wheel",
+          "notes": "Colson or polycarb, balanced"
+        },
+        {
+          "qty": 2,
+          "item": "NEO Vortex motor",
+          "notes": "With SparkFlex"
+        },
+        {
+          "qty": 1,
+          "item": "Flywheel shaft (1/2\" hex)",
+          "notes": "Length = wheel stack + bearings"
+        },
+        {
+          "qty": 2,
+          "item": "Flanged bearing (1/2\" hex bore)",
+          "notes": "One per shaft end"
+        },
+        {
+          "qty": 1,
+          "item": "Flywheel housing plates (2x)",
+          "notes": "1/4\" aluminum or polycarb"
+        },
+        {
+          "qty": 1,
+          "item": "Hardware assortment (#10-32)",
+          "notes": "Bolts, nuts, spacers"
+        }
+      ],
+      "notes": [
+        "Low energy transfer \u2014 increase flywheel MOI (heavier wheels)"
+      ],
+      "preset_name": "oracle_generated"
+    },
+    "conveyor": {
+      "path_length_in": 18.0,
+      "game_piece_diameter_in": 4.5,
+      "staging_count": 1,
+      "belt_type": "belt",
+      "motor_type": "neo_550",
+      "motor_count": 1,
+      "gear_ratio": 5.0,
+      "roller_diameter_in": 2.0,
+      "current_limit_a": 20.0,
+      "efficiency": 0.85,
+      "sensor_type": "beam_break",
+      "sensor_count": 2,
+      "belt_speed_fps": 15.4,
+      "transit_time_sec": 0.097,
+      "belt_length_in": 42.3,
+      "roller_rpm": 1760.0,
+      "holding_current_a": 1.3,
+      "motor_weight_lb": 0.49,
+      "mechanism_weight_lb": 1.27,
+      "total_weight_lb": 2.06,
+      "software_constants": {
+        "CONVEYOR_GEAR_RATIO": 5.0,
+        "CONVEYOR_SPEED": 0.8,
+        "CONVEYOR_REVERSE_SPEED": -0.5,
+        "CONVEYOR_SLOW_SPEED": 0.3,
+        "SENSOR_COUNT": 2,
+        "STAGING_COUNT": 1,
+        "TRANSIT_TIME_SEC": 0.097
+      },
+      "parts_list": [
+        {
+          "qty": 1,
+          "item": "NEO 550 motor",
+          "notes": "With SparkMax"
+        },
+        {
+          "qty": 1,
+          "item": "Gearbox (5.0:1)",
+          "notes": "MAXPlanetary or belt reduction"
+        },
+        {
+          "qty": 1,
+          "item": "Polyurethane belt (42.3\")",
+          "notes": "1\" or 2\" wide"
+        },
+        {
+          "qty": 2,
+          "item": "Drive rollers (2.0\" dia)",
+          "notes": "One driven, one idler"
+        },
+        {
+          "qty": 2,
+          "item": "IR Beam Break",
+          "notes": "Most reliable, detects any game piece crossing the beam"
+        },
+        {
+          "qty": 2,
+          "item": "Side rails (1x1 aluminum or polycarb)",
+          "notes": "18.0\" long"
+        },
+        {
+          "qty": 1,
+          "item": "Hardware assortment",
+          "notes": "Bolts, spacers, belt tensioner"
+        }
+      ],
+      "notes": [
+        "Sensor placement: entry at 0\", exit at 18.0\""
+      ],
+      "preset_name": "oracle_generated"
+    },
+    "climber": {
+      "climb_height_in": 60.0,
+      "robot_weight_lb": 125.0,
+      "climb_style": "telescope",
+      "motor_type": "neo",
+      "motor_count": 2,
+      "gear_ratio": 50.0,
+      "spool_diameter_in": 1.0,
+      "current_limit_a": 40.0,
+      "efficiency": 0.8,
+      "climb_time_sec": 10.409,
+      "max_climb_speed_in_s": 5.8,
+      "peak_current_a": 40.0,
+      "holding_current_a": 3.6,
+      "stall_load_lb": 1402.632985213819,
+      "safety_factor": 11.22,
+      "motor_weight_lb": 2.88,
+      "mechanism_weight_lb": 5.0,
+      "total_weight_lb": 8.38,
+      "software_constants": {
+        "CLIMB_GEAR_RATIO": 50.0,
+        "CLIMB_MOTOR_COUNT": 2,
+        "SPOOL_DIAMETER_IN": 1.0,
+        "CLIMB_HEIGHT_IN": 60.0,
+        "CURRENT_LIMIT_A": 40.0,
+        "CLIMB_SPEED": 0.8,
+        "HOLD_SPEED": 0.1,
+        "CLIMB_POSITION_TOLERANCE_IN": 0.5
+      },
+      "parts_list": [
+        {
+          "qty": 2,
+          "item": "NEO Brushless motor",
+          "notes": "With SparkMax"
+        },
+        {
+          "qty": 1,
+          "item": "MAXPlanetary gearbox (50.0:1)",
+          "notes": "High reduction for climb"
+        },
+        {
+          "qty": 1,
+          "item": "Winch spool (1.0\" dia)",
+          "notes": "3D printed or machined"
+        },
+        {
+          "qty": 2,
+          "item": "Telescoping tube stages",
+          "notes": "1.5x1.5 \u2192 1x1, 60.0\" travel"
+        },
+        {
+          "qty": 1,
+          "item": "Continuous rigging (belt or rope)",
+          "notes": "Drives extension"
+        },
+        {
+          "qty": 1,
+          "item": "Hook assembly",
+          "notes": "Passive or motorized"
+        },
+        {
+          "qty": 1,
+          "item": "Hardware assortment",
+          "notes": "Bolts, shaft collars, bearings"
+        }
+      ],
+      "notes": [
+        "Safety factor 11.22x \u2014 excellent margin",
+        "Climb > 5s \u2014 consider lower gear ratio or more motors"
+      ],
+      "preset_name": "oracle_generated"
+    }
+  },
+  "bom": {
+    "mechanism_weight_lb": 20.73,
+    "drivetrain_weight_lb": 42,
+    "bumper_weight_lb": 10,
+    "battery_weight_lb": 13.0,
+    "electronics_weight_lb": 15,
+    "total_weight_lb": 100.73,
+    "margin_lb": 24.27,
+    "weight_ok": true
+  },
+  "log": [
+    "[OK] Intake: over_bumper, 31.7 fps, 6.43 lb",
+    "[OK] Flywheel: 3000.0 RPM, 10.6 fps, 3.86 lb",
+    "[OK] Conveyor: 0.097s transit, 2.06 lb",
+    "[OK] Climber: 10.409s, safety 11.22x, 8.38 lb",
+    "[OK] Weight: 100.7 lb, margin 24.3 lb"
+  ]
+}

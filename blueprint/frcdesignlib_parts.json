@@ -1,0 +1,82 @@
+{
+  "WCP Kraken X60": {
+    "doc": "1e490f667f2060acc06d66b0",
+    "ver": "53f9ad47189f3b4de77e81ba",
+    "elem": "f000b0eb12c83199847430dc",
+    "is_asm": true,
+    "part_id": "",
+    "elem_name": "Kraken X60 Brushless Motor"
+  },
+  "SDS MK4i Swerve Module": {
+    "doc": "698e922b5304f1d6a2b06339",
+    "ver": "2f9933801168ce166637b9c2",
+    "elem": "0b77427a2fa7aa10301851ac",
+    "is_asm": true,
+    "part_id": "",
+    "elem_name": "SDS MK4i"
+  },
+  "RoboRIO 2": {
+    "doc": "913294293c53429a987b0e72",
+    "ver": "d80f477ae17bfb450cdeb992",
+    "elem": "9ab551bdb91ea59eeb4479be",
+    "is_asm": false,
+    "part_id": "RkBD",
+    "elem_name": "roboRIO"
+  },
+  "FRC Battery (MK ES17-12)": {
+    "doc": "913294293c53429a987b0e72",
+    "ver": "d80f477ae17bfb450cdeb992",
+    "elem": "d4fb95979d4ad65e959318a5",
+    "is_asm": false,
+    "part_id": "JHD",
+    "elem_name": "Robot Battery"
+  },
+  "Main Breaker (120A)": {
+    "doc": "913294293c53429a987b0e72",
+    "ver": "d80f477ae17bfb450cdeb992",
+    "elem": "36a27db0718a30acff00a6b0",
+    "is_asm": false,
+    "part_id": "JRD",
+    "elem_name": "120A Main Breaker"
+  },
+  "OpenMesh Radio (OM5P-AC)": {
+    "doc": "913294293c53429a987b0e72",
+    "ver": "d80f477ae17bfb450cdeb992",
+    "elem": "30e4be275853cea93b1378f7",
+    "is_asm": false,
+    "part_id": "RdBD",
+    "elem_name": "Robot Radio (OM5P) (2016-2024)"
+  },
+  "CTRE Pigeon 2.0 IMU": {
+    "doc": "990a1de0f0e5dded8f3cec1b",
+    "ver": "50195c55d3747c32e80c3c83",
+    "elem": "c66c89d2f1fea1f4b1621f12",
+    "is_asm": false,
+    "part_id": "JtD",
+    "elem_name": "Pigeon 2.0"
+  },
+  "WCP 90\u00b0 Gusset (2x1 to 2x1)": {
+    "doc": "b0e317da377b0565c96fc265",
+    "ver": "cbe157a805604f06ccc5535d",
+    "elem": "d5d9651c0ee5e1170eaa7f5d",
+    "is_asm": false,
+    "part_id": "JPD",
+    "elem_name": "Bracket/Gusset (WCP)"
+  },
+  "Flanged Bearing 1/2in Hex": {
+    "doc": "836cd26e60025118646fa104",
+    "ver": "f80305b5989c0356c206b4b4",
+    "elem": "cfbd251bf34e4159e9b98da2",
+    "is_asm": false,
+    "part_id": "JTD",
+    "elem_name": "Flanged Radial Bearing"
+  },
+  "1/2in Hex Shaft": {
+    "doc": "360f7941a43b138116bd29b6",
+    "ver": "db0e96c3c7c6287fbbe1fef8",
+    "elem": "9f4aace5c3f38ced43b69179",
+    "is_asm": false,
+    "part_id": "JHD",
+    "elem_name": "Hex Shaft (WCP)"
+  }
+}

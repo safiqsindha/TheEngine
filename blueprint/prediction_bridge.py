@@ -122,6 +122,13 @@ class OracleOutput:
         "endgame",
     ])
 
+    # R19: Capped vs Uncapped scoring analysis
+    scoring_analysis: dict = field(default_factory=lambda: {
+        "methods": [],  # list of {name, type (capped/uncapped), max_points, saturation_time_s}
+        "primary_method": "",  # which method to build for (after R19 analysis)
+        "reasoning": "",
+    })
+
     notes: str = ""
 
 
