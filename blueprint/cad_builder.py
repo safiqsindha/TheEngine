@@ -110,10 +110,9 @@ def generate_full_featurescript(spec: dict) -> str:
             mx - wheel_w / 2, my - wheel_dia / 2, belly_z - wheel_dia,
             mx + wheel_w / 2, my + wheel_dia / 2, belly_z))
 
-    # ── MECHANISMS (from assembly composer placements) ──
+    # ── MECHANISMS (recognizable shapes per mechanism type) ──
     for placement in layout.placements:
         name = placement.name
-        # Convert position from center-origin inches to corner-origin mm
         px = L / 2 + _mm(placement.position_in[0])
         py = W / 2 + _mm(placement.position_in[1])
         pz = _mm(placement.position_in[2])
@@ -121,9 +120,8 @@ def generate_full_featurescript(spec: dict) -> str:
         ed = _mm(placement.envelope_in[1])
         eh = _mm(placement.envelope_in[2])
 
-        parts.append(_cuboid(f"mech_{name}",
-            px - ew / 2, py - ed / 2, pz,
-            px + ew / 2, py + ed / 2, pz + eh))
+        mech_spec = spec.get(name, {})
+        parts.extend(_mechanism_geometry(name, px, py, pz, ew, ed, eh, mech_spec))
 
     # ── ELECTRONICS (simplified bounding boxes) ──
     electronics = frame.get("electronics_placements", [])
@@ -166,6 +164,149 @@ export const blueprintRobot = defineFeature(function(context is Context, id is I
     }});
 """
     return fs
+
+
+def _mechanism_geometry(name: str, px: float, py: float, pz: float,
+                        ew: float, ed: float, eh: float,
+                        mech_spec: dict) -> list[str]:
+    """
+    Generate recognizable FeatureScript geometry for each mechanism type.
+    Returns a list of fCuboid call strings that together form the mechanism shape.
+
+    Instead of a single bounding box, each mechanism gets multiple parts that
+    visually represent its real structure (side plates, rollers, wheels, tubes, etc.)
+    """
+    parts = []
+    plate_t = 6.35  # 1/4" plate thickness
+
+    if name == "intake":
+        # Over-bumper pivoting intake:
+        # Two side plates + two roller shafts + back plate
+        roller_dia = _mm(mech_spec.get("roller_od_in", 4.0))
+        intake_w = ew
+
+        # Left side plate
+        parts.append(_cuboid(f"{name}_plate_L",
+            px - intake_w / 2, py - ed / 2, pz,
+            px - intake_w / 2 + plate_t, py + ed / 2, pz + eh))
+        # Right side plate
+        parts.append(_cuboid(f"{name}_plate_R",
+            px + intake_w / 2 - plate_t, py - ed / 2, pz,
+            px + intake_w / 2, py + ed / 2, pz + eh))
+        # Bottom roller (full width between plates)
+        roller_r = roller_dia / 2
+        parts.append(_cuboid(f"{name}_roller_bottom",
+            px - intake_w / 2 + plate_t, py + ed / 2 - roller_dia, pz,
+            px + intake_w / 2 - plate_t, py + ed / 2, pz + roller_dia))
+        # Top roller
+        parts.append(_cuboid(f"{name}_roller_top",
+            px - intake_w / 2 + plate_t, py + ed / 2 - roller_dia, pz + eh - roller_dia,
+            px + intake_w / 2 - plate_t, py + ed / 2, pz + eh))
+        # Back plate (connecting side plates at pivot end)
+        parts.append(_cuboid(f"{name}_back_plate",
+            px - intake_w / 2, py - ed / 2, pz,
+            px + intake_w / 2, py - ed / 2 + plate_t, pz + eh))
+        # Pivot shaft (at bottom rear)
+        shaft_r = 6.35  # 1/2" hex = ~12.7mm across
+        parts.append(_cuboid(f"{name}_pivot_shaft",
+            px - intake_w / 2, py - ed / 2, pz,
+            px + intake_w / 2, py - ed / 2 + shaft_r * 2, pz + shaft_r * 2))
+
+    elif name == "flywheel":
+        # Dual flywheel shooter:
+        # Two flywheel wheels (square approximation) + hood + side plates
+        wheel_dia = _mm(mech_spec.get("wheel_diameter_in", 4.0))
+        wheel_w = 38.1  # 1.5" wide
+        wheel_r = wheel_dia / 2
+        spacing = 50.8  # 2" between wheels
+
+        # Left side plate
+        parts.append(_cuboid(f"{name}_plate_L",
+            px - ew / 2, py - ed / 2, pz,
+            px - ew / 2 + plate_t, py + ed / 2, pz + eh))
+        # Right side plate
+        parts.append(_cuboid(f"{name}_plate_R",
+            px + ew / 2 - plate_t, py - ed / 2, pz,
+            px + ew / 2, py + ed / 2, pz + eh))
+        # Flywheel wheel 1 (bottom)
+        parts.append(_cuboid(f"{name}_wheel_1",
+            px - wheel_w / 2, py - wheel_r, pz,
+            px + wheel_w / 2, py + wheel_r, pz + wheel_dia))
+        # Flywheel wheel 2 (top, offset)
+        parts.append(_cuboid(f"{name}_wheel_2",
+            px - wheel_w / 2, py - wheel_r, pz + spacing,
+            px + wheel_w / 2, py + wheel_r, pz + spacing + wheel_dia))
+        # Hood (curved approximation — flat plate at angle, front face)
+        parts.append(_cuboid(f"{name}_hood",
+            px - ew / 2 + plate_t, py + wheel_r, pz,
+            px + ew / 2 - plate_t, py + wheel_r + plate_t, pz + eh))
+        # Back plate
+        parts.append(_cuboid(f"{name}_back",
+            px - ew / 2 + plate_t, py - ed / 2, pz,
+            px + ew / 2 - plate_t, py - ed / 2 + plate_t, pz + eh))
+
+    elif name == "conveyor":
+        # Belt conveyor / indexer:
+        # Two side rails + belt surface + end rollers
+        rail_w = 25.4  # 1" rail
+        belt_t = 3.175  # 1/8" belt
+
+        # Left rail
+        parts.append(_cuboid(f"{name}_rail_L",
+            px - ew / 2, py - ed / 2, pz,
+            px - ew / 2 + rail_w, py + ed / 2, pz + eh))
+        # Right rail
+        parts.append(_cuboid(f"{name}_rail_R",
+            px + ew / 2 - rail_w, py - ed / 2, pz,
+            px + ew / 2, py + ed / 2, pz + eh))
+        # Belt surface (flat, runs the length)
+        parts.append(_cuboid(f"{name}_belt",
+            px - ew / 2 + rail_w, py - ed / 2, pz + eh / 2 - belt_t,
+            px + ew / 2 - rail_w, py + ed / 2, pz + eh / 2 + belt_t))
+        # Front roller
+        roller_dia = _mm(mech_spec.get("roller_diameter_in", 2.0))
+        parts.append(_cuboid(f"{name}_roller_front",
+            px - ew / 2 + rail_w, py + ed / 2 - roller_dia, pz + eh / 2 - roller_dia / 2,
+            px + ew / 2 - rail_w, py + ed / 2, pz + eh / 2 + roller_dia / 2))
+        # Back roller
+        parts.append(_cuboid(f"{name}_roller_back",
+            px - ew / 2 + rail_w, py - ed / 2, pz + eh / 2 - roller_dia / 2,
+            px + ew / 2 - rail_w, py - ed / 2 + roller_dia, pz + eh / 2 + roller_dia / 2))
+
+    elif name == "climber":
+        # Telescope climber:
+        # Outer tube + inner tube (extended) + spool block at base
+        outer_w = 38.1  # 1.5" outer tube
+        inner_w = 25.4  # 1" inner tube
+        base_h = 76.2   # 3" base block for gearbox/spool
+
+        # Outer tube (bottom portion)
+        outer_h = min(eh * 0.4, _mm(24))  # outer tube is bottom 40%
+        parts.append(_cuboid(f"{name}_outer_tube",
+            px - outer_w / 2, py - outer_w / 2, pz,
+            px + outer_w / 2, py + outer_w / 2, pz + outer_h))
+        # Inner tube (extends from outer tube upward)
+        parts.append(_cuboid(f"{name}_inner_tube",
+            px - inner_w / 2, py - inner_w / 2, pz + base_h,
+            px + inner_w / 2, py + inner_w / 2, pz + eh))
+        # Base block (gearbox + spool housing)
+        parts.append(_cuboid(f"{name}_base",
+            px - outer_w, py - outer_w, pz,
+            px + outer_w, py + outer_w, pz + base_h))
+        # Hook at top (small block)
+        hook_w = 50.8  # 2" hook
+        hook_h = 25.4  # 1" tall
+        parts.append(_cuboid(f"{name}_hook",
+            px - hook_w / 2, py - 12.7, pz + eh,
+            px + hook_w / 2, py + 12.7, pz + eh + hook_h))
+
+    else:
+        # Fallback: bounding box for unknown mechanisms
+        parts.append(_cuboid(f"mech_{name}",
+            px - ew / 2, py - ed / 2, pz,
+            px + ew / 2, py + ed / 2, pz + eh))
+
+    return parts
 
 
 def _cuboid(name: str, x1: float, y1: float, z1: float,

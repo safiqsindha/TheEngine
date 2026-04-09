@@ -144,7 +144,7 @@ Monitor weekly during build season for mechanism choices and design rationale.
 |------|------|-------------|-------------------|
 | 157 | Aztechs | CD thread | OnShape CAD |
 | 525 | Swartdogs | CD thread | GitHub, YouTube |
-| 900 | Zebracorns | CD thread | Long-running OA participant |
+| 900 | Zebracorns | CD thread | frc900.github.io/labs/ — 7yr ROS papers, pre-season CAD+code, intake reports, electrical standards |
 | 1540 | Flaming Chickens | CD thread | GitHub, maintains frc-software-releases list |
 | 3061 | Huskie Robotics | CD thread | GitHub, published AdvantageKit swerve template |
 | 3284 | LASER | CD thread | GitHub, YouTube |

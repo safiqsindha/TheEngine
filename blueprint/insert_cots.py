@@ -203,6 +203,29 @@ COTS_REGISTRY = {
         "is_asm": False,
         "part_id": "JHD",
     },
+
+    # ── Wheels (Shooter / Intake) ──
+    "Stealth Wheel Flywheel": {
+        "doc": "8293a9c30ec90f3f3078fde2",  # FRCDesignLib Wheels
+        "ver": "b2220dedb3c57118f6000e40",
+        "elem": "f0fa9de941b9e13b5f950808",
+        "is_asm": False,
+        "part_id": "JHD",
+    },
+    "WCP Flex Wheel 4in": {
+        "doc": "8293a9c30ec90f3f3078fde2",  # FRCDesignLib Wheels
+        "ver": "b2220dedb3c57118f6000e40",
+        "elem": "11df92530e152e271ae08216",
+        "is_asm": False,
+        "part_id": "JHD",
+    },
+    "Colson Performa Wheel 6in": {
+        "doc": "8293a9c30ec90f3f3078fde2",  # FRCDesignLib Wheels
+        "ver": "b2220dedb3c57118f6000e40",
+        "elem": "e821ebed871beb8afdee9ef2",
+        "is_asm": True,
+        "part_id": "",
+    },
 }
 
 

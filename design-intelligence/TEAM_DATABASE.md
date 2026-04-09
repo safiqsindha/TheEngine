@@ -26,6 +26,7 @@
 | 2826 Wave Robotics | 2026 | YOLO Models + Open Alliance | GitHub WaveRobotics |
 | 118 Robonauts | 2016-2020 | Robot CAD | OnShape |
 | 971 Spartan Robotics | 2016-2019 | Full Robot CAD | GitHub, OnShape |
+| 900 Zebracorns | 2018-2025 | Pre-season Code + CAD + Technical Papers | frc900.github.io/labs/, GitHub frc900 |
 
 ## Season-by-Season Top 5
 

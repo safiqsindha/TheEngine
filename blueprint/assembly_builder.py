@@ -305,6 +305,36 @@ def _plan_mechanism_parts(placement: MechanismPlacement, spec: dict,
             subassembly=name,
         ))
 
+    # Flywheel/shooter wheels
+    if name == "flywheel":
+        wheel_count = mech_spec.get("wheel_count", 2)
+        wheel_dia_in = mech_spec.get("wheel_diameter_in", 4.0)
+        # Pick wheel based on diameter: 6" → Colson/Stealth, 4" → Stealth/Flex
+        if wheel_dia_in >= 5.0:
+            wheel_catalog = "Stealth Wheel Flywheel"
+        else:
+            wheel_catalog = "Stealth Wheel Flywheel"
+        for i in range(wheel_count):
+            parts.append(PartInstance(
+                name=f"{name}_wheel_{i}",
+                catalog_name=wheel_catalog,
+                position_mm=[px + i * 50, py, pz + 40],
+                subassembly=name,
+            ))
+
+    # Intake flex wheels (rollers)
+    if name == "intake":
+        roller_count = mech_spec.get("roller_count", 2)
+        for i in range(roller_count):
+            # Space rollers along the intake width
+            roller_spacing = mech_spec.get("roller_spacing_in", 12.0)
+            parts.append(PartInstance(
+                name=f"{name}_roller_wheel_{i}",
+                catalog_name="WCP Flex Wheel 4in",
+                position_mm=[px, py + i * _mm(roller_spacing), pz + 30],
+                subassembly=name,
+            ))
+
     # Elevator-specific: tube stock
     if name == "elevator":
         parts.append(PartInstance(
