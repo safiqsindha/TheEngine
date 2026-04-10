@@ -1,10 +1,6 @@
 {
   "name": "The Engine",
-  "image": "mcr.microsoft.com/devcontainers/python:3.11",
-  "features": {
-    "ghcr.io/devcontainers/features/github-cli:1": {},
-    "ghcr.io/devcontainers/features/common-utils:2": {}
-  },
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
   "postCreateCommand": "bash .devcontainer/postCreateCommand.sh",
   "postStartCommand": "python3 engine_budget.py || true",
   "remoteEnv": {
@@ -24,7 +20,7 @@
         "yzhang.markdown-all-in-one"
       ],
       "settings": {
-        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.defaultInterpreterPath": "/usr/local/python/current/bin/python",
         "python.formatting.provider": "black",
         "editor.formatOnSave": true,
         "files.exclude": {
