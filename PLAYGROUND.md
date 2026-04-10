@@ -99,10 +99,10 @@ If a command errors out, **copy the whole error message** (click and drag to hig
 
 In the file explorer on the **left side of your screen**, click each of these files to open them. Read each one (you don't have to memorize anything, just get the gist):
 
-- `MENTOR_BRIEFING.md` — what The Engine is and why it exists
-- `WHAT_WE_BUILT.md` — every subsystem listed with file pointers
-- `ARCHITECTURE.md` — how the pieces talk to each other
-- `design-intelligence/ENGINE_MASTER_ROADMAP.md` — the timeline showing every subsystem (built, in-progress, planned)
+- [`MENTOR_BRIEFING.md`](MENTOR_BRIEFING.md) — what The Engine is and why it exists
+- [`WHAT_WE_BUILT.md`](WHAT_WE_BUILT.md) — every subsystem listed with file pointers
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) — how the pieces talk to each other
+- [`design-intelligence/ENGINE_MASTER_ROADMAP.md`](design-intelligence/ENGINE_MASTER_ROADMAP.md) — the timeline showing every subsystem (built, in-progress, planned)
 
 These are markdown files. They look like nicely-formatted documents — VS Code shows them in a readable view by default. If yours opens as raw text instead, right-click the tab at the top of the editor and pick "Open Preview".
 
@@ -233,7 +233,7 @@ Reply to **[Mission 2 Discussion](https://github.com/safiqsindha/TheEngine/discu
 
 ### Step 1 — Read the algorithm
 
-In the **left sidebar**, click `scout/` to expand it, then click `pick_board.py`. Scroll down to **line 377** — there's a function called `recommend_pick()`. Read the docstring (the lines in triple quotes at the top of the function). It tells you exactly how a team gets scored:
+Open [`scout/pick_board.py`](scout/pick_board.py) (or expand `scout/` in the left sidebar and click `pick_board.py`). Scroll down to **line 377** — there's a function called `recommend_pick()`. Read the docstring (the lines in triple quotes at the top of the function). It tells you exactly how a team gets scored:
 
 | Factor | Weight (with EYE data) | Weight (without EYE) | What it measures |
 |---|---|---|---|
@@ -255,7 +255,7 @@ It'll print accuracy numbers. **Write the accuracy number down** somewhere — y
 
 ### Step 3 — Change a weight
 
-Go back to `pick_board.py` in the editor. Find the line in `recommend_pick()` that looks like this (around line 448):
+Go back to [`scout/pick_board.py`](scout/pick_board.py) in the editor. Find the line in `recommend_pick()` that looks like this (around line 448):
 
 ```python
 pick_score = (epa_norm * 0.35 + floor_norm * 0.15 +
@@ -369,7 +369,7 @@ python3 scout/stand_scout.py add --event 2024txhou --match qm15 --team 254 --tag
 
 **You can copy that whole command and just change three things:**
 - The team number (`254` → whichever team you picked)
-- The tags (pick 3–5 from the list — they're at the top of `scout/stand_scout.py`)
+- The tags (pick 3–5 from the list — they're at the top of [`scout/stand_scout.py`](scout/stand_scout.py))
 - The note (whatever you observed)
 
 Run that command three times, once per team, all in the same match. Scout three different teams.
@@ -392,7 +392,7 @@ This calls Haiku at the end to write the brief. Read the recommendation — does
 
 ### Step 5 — Change the defense decision and re-run
 
-Open `scout/match_strategy.py` in the editor. Press **Cmd+F** (Mac) or **Ctrl+F** (Windows) to open Find. Type `_defense_decision` and press Enter — it'll jump to the function definition (around line 478).
+Open [`scout/match_strategy.py`](scout/match_strategy.py) in the editor. Press **Cmd+F** (Mac) or **Ctrl+F** (Windows) to open Find. Type `_defense_decision` and press Enter — it'll jump to the function definition (around line 478).
 
 A few lines down, find this line:
 
@@ -517,11 +517,11 @@ You'll see how many posts are in the database, how many are tracked, when the la
 
 ### Step 4 — Look at how posts get scored
 
-In the **left sidebar**, expand `antenna/`, click `scorer.py`. Read the function `score_topic()`. You don't need to understand every line — just notice that it adds points for tracked teams, tracked mechanisms, and certain keywords.
+Open [`antenna/scorer.py`](antenna/scorer.py) (or expand `antenna/` in the left sidebar and click `scorer.py`). Read the function `score_topic()`. You don't need to understand every line — just notice that it adds points for tracked teams, tracked mechanisms, and certain keywords.
 
 ### Step 5 — Add a new keyword
 
-In the **left sidebar**, click `antenna/config.py`. Find the section called `MECHANISM_KEYWORDS`. It's a Python dictionary listing things like `"elevator"`, `"swerve"`, `"intake"`. Add one new keyword that matters to your team. For example, if your team is building a turret, add `"turret"`. Save the file.
+Open [`antenna/config.py`](antenna/config.py). Find the section called `MECHANISM_KEYWORDS`. It's a Python dictionary listing things like `"elevator"`, `"swerve"`, `"intake"`. Add one new keyword that matters to your team. For example, if your team is building a turret, add `"turret"`. Save the file.
 
 ### Step 6 — Re-scan with your new keyword
 
@@ -581,7 +581,7 @@ This runs the Oracle against every historical game in the database and prints ac
 
 ### Step 4 — Read the brain
 
-The rules the Oracle uses come from one document. In the **left sidebar**, expand `design-intelligence/`, click `CROSS_SEASON_PATTERNS.md`. **This is the source of every R1–R19 rule.** It's the most important markdown file in the entire repo.
+The rules the Oracle uses come from one document: [`design-intelligence/CROSS_SEASON_PATTERNS.md`](design-intelligence/CROSS_SEASON_PATTERNS.md). **This is the source of every R1–R19 rule.** It's the most important markdown file in the entire repo.
 
 Read at least the first 200 lines. You don't have to memorize the rules — just understand that this document is where the Oracle's intelligence comes from.
 
@@ -599,7 +599,7 @@ Go back to the 2025 prediction output (scroll up in the terminal, or re-run `pyt
 
 Reply to **[Mission 8 Discussion](https://github.com/safiqsindha/TheEngine/discussions/8)** with:
 
-> Which Oracle rule (R1–R19) fired most often in the 2025 Reefscape prediction? Quote the rule text from CROSS_SEASON_PATTERNS.md.
+> Which Oracle rule (R1–R19) fired most often in the 2025 Reefscape prediction? Quote the rule text from [`CROSS_SEASON_PATTERNS.md`](design-intelligence/CROSS_SEASON_PATTERNS.md).
 
 **API cost:** $0
 
@@ -731,16 +731,16 @@ Reply to **[Mission 10 Discussion](https://github.com/safiqsindha/TheEngine/disc
 Everything in the 10 missions above is **runnable today**. But the directory tree has four more slots that are empty on purpose. They're real planned subsystems with hours, costs, and target months in `design-intelligence/ENGINE_MASTER_ROADMAP.md`. If you finish all 10 missions and want to do something nobody else on the team has done before, this is where you go.
 
 ### The Whisper — Coach AI on a Jetson (Aug–Sept 2026, ~38h, ~$390 hardware)
-Lives in `whisper/`. Plan: order a Jetson Orin Nano, build a NetworkTables bridge, run a small LLM on-device that watches live match state and feeds the human drive coach prompts like "switch to defense, opponent 1 has a stuck conveyor." Spec lives at `design-intelligence/ARCH_COACH_AI.md`.
+Lives in `whisper/`. Plan: order a Jetson Orin Nano, build a NetworkTables bridge, run a small LLM on-device that watches live match state and feeds the human drive coach prompts like "switch to defense, opponent 1 has a stuck conveyor." Spec: [`design-intelligence/ARCH_COACH_AI.md`](design-intelligence/ARCH_COACH_AI.md).
 
 ### The Vault — Parts inventory (Sept 2026, ~12h)
-Lives in `vault/`. Plan: full shop audit, parts spreadsheet, and an API the Blueprint can call to cross-reference every part in a generated BOM against what's actually on the shelf. Spec at `design-intelligence/ARCH_PARTS_INVENTORY.md`.
+Lives in `vault/`. Plan: full shop audit, parts spreadsheet, and an API the Blueprint can call to cross-reference every part in a generated BOM against what's actually on the shelf. Spec: [`design-intelligence/ARCH_PARTS_INVENTORY.md`](design-intelligence/ARCH_PARTS_INVENTORY.md).
 
 ### The Grid — Electrical standards (Sept–Oct 2026, ~18h)
-Lives in `grid/`. Plan: wiring standards card, CAN topology map, pre-built swerve harnesses that swap in during competition, brownout-recovery kit, inspection checklist. Spec at `design-intelligence/ARCH_ELECTRICAL_SYSTEMS.md`.
+Lives in `grid/`. Plan: wiring standards card, CAN topology map, pre-built swerve harnesses that swap in during competition, brownout-recovery kit, inspection checklist. Spec: [`design-intelligence/ARCH_ELECTRICAL_SYSTEMS.md`](design-intelligence/ARCH_ELECTRICAL_SYSTEMS.md).
 
 ### The Clock — Build management (Oct–Nov 2026, ~30h, depends on Vault + Blueprint)
-Lives in `clock/`. Plan: task generator that consumes Blueprint output, a standup bot that pings Discord for daily progress, a parts tracker that checks Vault inventory, and BOM import. Spec at `design-intelligence/ARCH_BUILD_MANAGEMENT.md`.
+Lives in `clock/`. Plan: task generator that consumes Blueprint output, a standup bot that pings Discord for daily progress, a parts tracker that checks Vault inventory, and BOM import. Spec: [`design-intelligence/ARCH_BUILD_MANAGEMENT.md`](design-intelligence/ARCH_BUILD_MANAGEMENT.md).
 
 If one of those sounds interesting, talk to your mentor and ask which one is unblocked. They depend on each other in a specific order — that's the whole point of the master roadmap.
 
