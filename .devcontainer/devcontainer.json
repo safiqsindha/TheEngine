@@ -1,0 +1,47 @@
+{
+  "name": "The Engine",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/common-utils:2": {}
+  },
+  "postCreateCommand": "bash .devcontainer/postCreateCommand.sh",
+  "postStartCommand": "python3 engine_budget.py || true",
+  "remoteEnv": {
+    "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_PROXY_TOKEN}:${localEnv:GITHUB_USER}",
+    "ANTHROPIC_BASE_URL": "${localEnv:ANTHROPIC_BASE_URL}",
+    "ENGINE_DEFAULT_MODEL": "claude-haiku-4-5-20251001",
+    "ENGINE_PROXY_URL": "${localEnv:ANTHROPIC_BASE_URL}",
+    "ENGINE_USER": "${localEnv:GITHUB_USER}"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.black-formatter",
+        "ms-python.vscode-pylance",
+        "tamasfe.even-better-toml",
+        "yzhang.markdown-all-in-one"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.formatting.provider": "black",
+        "editor.formatOnSave": true,
+        "files.exclude": {
+          "**/__pycache__": true,
+          "**/.pytest_cache": true
+        }
+      }
+    }
+  },
+  "forwardPorts": [8000, 8080],
+  "portsAttributes": {
+    "8000": { "label": "Engine Web", "onAutoForward": "notify" },
+    "8080": { "label": "Pick Board", "onAutoForward": "notify" }
+  },
+  "hostRequirements": {
+    "cpus": 2,
+    "memory": "4gb",
+    "storage": "32gb"
+  }
+}
