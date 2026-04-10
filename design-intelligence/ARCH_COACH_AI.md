@@ -24,18 +24,18 @@ The Engine's autonomous intelligence into a teleop strategic advisor.
 
 ### Why This Is Legal
 
-1. The Jetson connects to the Operator Console via Ethernet cable (wired).
+1. The coprocessor connects to the Operator Console via Ethernet cable (wired).
    Per the FRC manual, any device connected to the OPERATOR CONSOLE is
-   considered part of the ROBOT. The Jetson IS part of the Operator Console.
+   considered part of the ROBOT. The coprocessor IS part of the Operator Console.
 
-2. The coach display connects to the Jetson via HDMI or USB-C cable (wired).
+2. The coach display connects to the coprocessor via HDMI or USB-C cable (wired).
    Items held or worn by DRIVE TEAM members are allowed on the field.
 
 3. No wireless communication. No external connections. No remote sensing.
    The system reads only NetworkTables data — the same data Shuffleboard reads.
 
-4. The OPERATOR CONSOLE size limit is 60" × 16" × 78" high. The Jetson
-   adds approximately 5" × 4" to the shelf footprint. Well within limits.
+4. The OPERATOR CONSOLE size limit is 60" × 16" × 78" high. The coprocessor
+   footprint is well within limits (exact size check TBD per target hardware).
 
 5. Items may be used to "plan or track strategy for the purposes of
    communication of that strategy to other ALLIANCE members."
@@ -60,7 +60,7 @@ COACH, compliant with G302 and R904?" This pre-clears any referee concerns.
 ┌─────────────────────────────────────────────────────┐
 │                   ON THE ROBOT                       │
 │                                                      │
-│  roboRIO                                             │
+│  Robot controller (SystemCore 2027+)                 │
 │  ├── AutonomousStrategy.java                        │
 │  │   └── publishes: /Strategy/Utilities/*           │
 │  │       /Strategy/RecommendedAction                │
@@ -79,14 +79,14 @@ COACH, compliant with G302 and R904?" This pre-clears any referee concerns.
 │              DRIVER STATION SHELF                    │
 │                                                      │
 │  ┌──────────────────────┐  ┌──────────────────────┐ │
-│  │  Driver Station       │  │  Jetson Orin Nano    │ │
-│  │  Laptop               │  │  "The Whisper"       │ │
+│  │  Driver Station       │  │  "The Whisper"       │ │
+│  │  Laptop               │  │  (coprocessor TBD)   │ │
 │  │                        │  │                      │ │
 │  │  ONLY runs:            │  │  Runs:               │ │
-│  │  - DS software         │  │  - Ollama            │ │
-│  │  - FMS connection      │  │  - Llama 3.2 3B Q4   │ │
-│  │                        │  │  - NT client         │ │
-│  │  NO additional load    │  │  - FastAPI server    │ │
+│  │  - DS software         │  │  - Local LLM runtime │ │
+│  │  - FMS connection      │  │  - Small instruct    │ │
+│  │                        │  │    model (~3B Q4)    │ │
+│  │  NO additional load    │  │  - NT client         │ │
 │  │                        │  │  - Strategy bridge   │ │
 │  └──────────┬─────────────┘  └──────┬───────────────┘ │
 │             │                       │                  │
@@ -110,59 +110,24 @@ COACH, compliant with G302 and R904?" This pre-clears any referee concerns.
 
 ## Hardware Bill of Materials
 
-| Item | Purpose | Est. Cost | Source |
-|------|---------|-----------|-------|
-| NVIDIA Jetson Orin Nano 8GB Dev Kit | LLM inference + NT client | $249 | NVIDIA / Amazon |
-| 7" HDMI IPS monitor (1024×600) | Coach display | $55 | Amazon |
-| HDMI cable (3ft, thin) | Jetson → coach display | $8 | Amazon |
-| Ethernet cable (3ft) | Jetson → DS Ethernet switch | $5 | Amazon |
-| USB-C PD power bank (65W, 20000mAh) | Powers Jetson 6-10 hrs | $40 | Amazon |
-| USB-C PD cable (1ft) | Power bank → Jetson | $8 | Amazon |
-| 3D-printed enclosure | Protects Jetson on shelf | $5 | Print in-house |
-| 8-port Ethernet switch (if not already owned) | Network hub on shelf | $20 | Amazon |
-| **TOTAL** | | **~$390** | |
-
-### Size Check (OPERATOR CONSOLE limits: 60" × 16")
-| Component | Width | Depth |
-|-----------|-------|-------|
-| DS Laptop | ~15" | ~10" |
-| Jetson in case | ~5" | ~4" |
-| Ethernet switch | ~6" | ~3" |
-| Power bank | ~6" | ~3" |
-| **Total shelf footprint** | **~32"** | **~10"** |
-| **Remaining** | **28"** | **6"** |
-
-Plenty of room. The shelf is 69" wide and 12.25" deep.
+> **TBD — target hardware under evaluation (SystemCore-native vs Coral TPU vs Android tablet). This section will be rewritten once the decision is made.**
 
 ---
 
 ## Software Stack
-
-### Jetson Setup (one-time)
-```
-JetPack 6.0 (Ubuntu 22.04 + CUDA 12)
-├── Ollama (LLM runtime)
-│   └── llama3.2:3b-instruct-q4_K_M (2.0 GB model file)
-├── Python 3.11
-│   ├── pynetworktables (reads robot data from NT server)
-│   ├── fastapi + uvicorn (serves coach dashboard)
-│   └── strategy_bridge.py (orchestration script)
-└── Chromium (kiosk mode on HDMI display)
-    └── Coach dashboard (full-screen, auto-refreshing)
-```
 
 ### strategy_bridge.py (core loop)
 ```python
 # Pseudocode — the main orchestration script
 
 import ntcore
-import requests  # to Ollama local API
+import requests  # to local LLM runtime (llama.cpp server, LiteRT, Ollama, etc.)
 import time
 
 # Connect to NetworkTables (robot publishes, we read)
 nt = ntcore.NetworkTableInstance.getDefault()
 nt.startClient4("whisper")
-nt.setServer("10.29.50.2")  # roboRIO IP for team 2950
+nt.setServer("10.29.50.2")  # Robot controller IP for team 2950
 
 strategy_table = nt.getTable("Strategy")
 cycle_table = nt.getTable("CycleTracker")
@@ -202,10 +167,11 @@ while True:
                           if state["our_score"] >= state["their_score"]
                           else str(state["our_score"] - state["their_score"])
 
-    # Generate recommendation via Ollama
+    # Generate recommendation via local LLM runtime
+    # (endpoint depends on backend — Ollama, llama.cpp server, LiteRT, etc.)
     prompt = PROMPT_TEMPLATE.format(**state)
     response = requests.post("http://localhost:11434/api/generate", json={
-        "model": "llama3.2:3b-instruct-q4_K_M",
+        "model": "whisper-coach-3b-q4",
         "prompt": prompt,
         "stream": False,
         "options": {"temperature": 0.3, "num_predict": 50}
@@ -259,28 +225,29 @@ while True:
 
 ## LLM Performance Specifications
 
-| Metric | Requirement | Measured on Jetson Orin Nano |
-|--------|-------------|---------------------------|
-| Model | Llama 3.2 3B Instruct Q4_K_M | 2.0 GB model file |
-| Inference latency | < 1 second | ~300ms for 50 tokens |
-| Memory usage | < 4 GB | ~2.5 GB (model + runtime) |
-| Power draw | < 15W | 7-15W depending on load |
-| Update frequency | Every 2 seconds | Achievable with margin |
+| Metric | Requirement | Notes |
+|--------|-------------|-------|
+| Model | Small instruct LLM (~3B class) | ~2 GB Q4 model file |
+| Inference latency | < 1 second per recommendation | Target-dependent, TBD |
+| Memory usage | < 4 GB | Model + runtime |
+| Power draw | < 15W | Target-dependent |
+| Update frequency | Every 2 seconds | |
 | Recommendation length | < 25 words | Enforced via num_predict |
 | Temperature | 0.3 (low creativity, high consistency) | Deterministic enough for strategy |
 
 ### Model Selection Rationale
-| Model | Params | Size (Q4) | Speed (Orin Nano) | Quality | Pick? |
-|-------|--------|-----------|-------------------|---------|-------|
-| Phi-3 Mini | 3.8B | 2.3 GB | ~350ms | Good | Backup |
-| Llama 3.2 3B | 3.2B | 2.0 GB | ~300ms | Very good | PRIMARY |
-| Llama 3.2 1B | 1.2B | 0.8 GB | ~150ms | Adequate | Fallback |
-| Mistral 7B | 7.2B | 4.1 GB | ~800ms | Excellent | Too slow |
-| Gemma 2 2B | 2.5B | 1.5 GB | ~250ms | Good | Alternative |
+| Model | Params | Size (Q4) | Quality | Pick? |
+|-------|--------|-----------|---------|-------|
+| Phi-3 Mini | 3.8B | 2.3 GB | Good | Backup |
+| Llama 3.2 3B | 3.2B | 2.0 GB | Very good | PRIMARY candidate |
+| Llama 3.2 1B | 1.2B | 0.8 GB | Adequate | Fallback |
+| Gemma 2 2B | 2.5B | 1.5 GB | Good | Alternative |
+| Gemma 3 270M | 270M | ~0.2 GB | Surprising | Ultra-low-end fallback |
 
-Llama 3.2 3B is the sweet spot — fast enough for real-time updates,
-smart enough for nuanced recommendations, small enough for the Jetson's
-8GB unified memory.
+The 3B class is the sweet spot — fast enough for real-time updates,
+smart enough for nuanced recommendations, small enough to fit in 4 GB
+RAM alongside the runtime. Final model choice depends on target
+hardware's inference backend (llama.cpp, LiteRT, Coral TFLite, etc.).
 
 ---
 
@@ -327,108 +294,9 @@ Most already exist in The Engine codebase. New keys marked with *.
 
 ## Development Roadmap
 
-### Phase W.1: Hardware Setup (Week 1, 4 hours)
-- Flash JetPack 6.0 on Jetson Orin Nano
-- Install Ollama, pull Llama 3.2 3B Q4 model
-- Verify inference speed: < 500ms for 50 tokens
-- Connect HDMI monitor, verify display output
-
-### Phase W.2: NetworkTables Bridge (Week 2, 8 hours)
-- Install pynetworktables on Jetson
-- Write strategy_bridge.py: reads NT → formats prompt → calls Ollama
-- Add 4 new NT keys to robot code (HubStatus, HubTimer, scores)
-- Test with simulated robot (maple-sim publishing to NT)
-
-### Phase W.3: Coach Dashboard (Week 3, 8 hours)
-- Build FastAPI web server serving HTML dashboard
-- Color-coded recommendation display (48px action, 24px context)
-- Auto-refreshing every 2 seconds via JavaScript fetch
-- Chromium kiosk mode on Jetson HDMI output
-- Test readability at arm's length (coach holding display)
-
-### Phase W.4: Wiring & Packaging (Week 4, 2 hours)
-- 3D print Jetson enclosure with ventilation
-- Wire: Ethernet to switch, HDMI to coach display, USB-C to power bank
-- Secure all cables with velcro and strain relief
-- Verify everything fits within OPERATOR CONSOLE size limits
-- Label all cables
-
-### Phase W.5: Simulation Testing (Week 5, 8 hours)
-- Run 20+ simulated matches via maple-sim
-- Log every LLM recommendation + game state at time of recommendation
-- Grade each recommendation: helpful / neutral / wrong
-- Tune prompt template based on results
-- Tune temperature and num_predict for consistency
-- Test edge cases: what happens when NT disconnects? When hub status
-  is unknown? When the match ends?
-
-### Phase W.6: Prompt Refinement (Week 6, 4 hours)
-- Identify the 5 most common game situations
-- Verify recommendations are correct for each
-- Add few-shot examples to prompt if needed
-- Test with a student acting as drive coach — is the display
-  readable and useful under simulated match stress?
-
-### Phase W.7: Live Testing (Week 7, 4 hours)
-- Deploy at practice event or scrimmage
-- Drive coach uses the system for real matches
-- Debrief after each match: "Was the recommendation helpful?
-  Did you follow it? Would you have done something different?"
-- Record: recommendations followed that helped, recommendations
-  followed that hurt, recommendations ignored that would have helped
-
-### Total: 38 hours across 7 weeks
+> **Development Roadmap and "What To Tell Judges" are below in the rev-2 section — those are the current authoritative versions pending SystemCore rewrite.**
 
 ---
-
-## Fallback Modes
-
-| Failure | Detection | Fallback |
-|---------|-----------|----------|
-| Jetson won't boot | No HDMI output | Coach operates without display (normal FRC) |
-| Ollama crashes | Dashboard shows "LLM OFFLINE" | Dashboard still shows raw game state data |
-| NetworkTables disconnects | No data for 5+ seconds | Dashboard shows "NO ROBOT DATA" + last known state |
-| LLM generates gibberish | Recommendation > 30 words or contains non-strategy text | Display raw utility scores instead |
-| Power bank dies | Jetson shuts down | Plug into field outlet if available, or operate without |
-| HDMI cable disconnects | Coach display goes black | Coach looks at DS laptop dashboard (D.2) as backup |
-
-The system is designed to degrade gracefully. Every failure mode
-results in "operate like a normal FRC team" — which is still
-competitive. The Whisper is a bonus, never a dependency.
-
----
-
-## Future Enhancements
-
-| Enhancement | Description | When |
-|-------------|-------------|------|
-| Pre-match strategy | Feed scouting data → LLM generates match plan → print on paper | After first event |
-| Voice output | Text-to-speech through a bone conduction earpiece (rules TBD) | Evaluate rules first |
-| Multi-match learning | Log recommendations + outcomes → fine-tune prompt between events | Second season |
-| Alliance coordination | Share Whisper recommendations with alliance partners' coaches | Requires alliance agreement |
-| Smart glasses | Replace handheld display with AR glasses (Vuzix, etc.) | When cost drops below $200 |
-
----
-
-## What To Tell Judges
-
-"Our Operator Console includes a dedicated AI processor — an NVIDIA Jetson
-Orin Nano — hardwired to our driver station via Ethernet. It reads game state
-data from our robot through NetworkTables, runs a local language model, and
-displays real-time strategic recommendations to our drive coach on a wired
-display. The entire system operates locally with no wireless communication
-and no external connections. It's like having a data analyst on the drive
-team who can process game state faster than any human."
-
-This supports: Innovation in Control Award, Autonomous Award (autonomous
-strategic intelligence extending into teleop), and Excellence in Engineering
-Award (novel application of AI in competitive robotics).
-
----
-
-*Architecture document — The Whisper | THE ENGINE | Team 2950 The Devastators*
-
-Assistant response: COLLECT. Hub activates in 9 seconds. Position near Hub to dump all 5.
 
 ### Color Coding
 
