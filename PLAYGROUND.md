@@ -613,25 +613,36 @@ Reply to **[Mission 8 Discussion](https://github.com/safiqsindha/TheEngine/discu
 
 ### Step 1 — Read these six files (in this order)
 
-In the **left sidebar**, expand each folder and click each file. You don't have to understand every line — focus on the comments and method names.
+**Click each file name below** to jump straight to it. (If the link doesn't open, you can also expand `src/` in the left sidebar and navigate by hand, OR run the `code` command shown under each row in your terminal.)
 
-| Click this file | What to look for |
+| Click to open | What to look for |
 |---|---|
-| `src/main/java/frc/robot/RobotContainer.java` | All the button bindings + the auto chooser at the bottom (lists 7 autonomous routines) |
-| `src/main/java/frc/robot/subsystems/SwerveSubsystem.java` | The `drive()` method and the vision fusion code |
-| `src/main/java/frc/robot/subsystems/SuperstructureStateMachine.java` | The 5-state machine: IDLE → INTAKING → STAGING → SCORING → CLIMBING |
-| `src/main/java/frc/robot/commands/FullAutonomousCommand.java` | **The most important file.** Read the `execute()` method top to bottom |
-| `src/main/java/frc/robot/autos/AutonomousStrategy.java` | How the robot scores potential targets (SCORE / COLLECT / CLIMB) |
-| `src/main/java/frc/lib/pathfinding/AStarPathfinder.java` | A* search on a 164×82 grid |
+| [`RobotContainer.java`](src/main/java/frc/robot/RobotContainer.java) | All the button bindings + the auto chooser at the bottom (lists 7 autonomous routines) |
+| [`SwerveSubsystem.java`](src/main/java/frc/robot/subsystems/SwerveSubsystem.java) | The `drive()` method and the vision fusion code |
+| [`SuperstructureStateMachine.java`](src/main/java/frc/robot/subsystems/SuperstructureStateMachine.java) | The 5-state machine: IDLE → INTAKING → STAGING → SCORING → CLIMBING |
+| [`FullAutonomousCommand.java`](src/main/java/frc/robot/commands/FullAutonomousCommand.java) | **The most important file.** Read the `execute()` method top to bottom |
+| [`AutonomousStrategy.java`](src/main/java/frc/robot/autos/AutonomousStrategy.java) | How the robot scores potential targets (SCORE / COLLECT / CLIMB) |
+| [`AStarPathfinder.java`](src/main/java/frc/lib/pathfinding/AStarPathfinder.java) | A* search on a 164×82 grid |
+
+If clicking links doesn't work in your editor, paste this in the terminal to open all six files at once:
+
+```bash
+code src/main/java/frc/robot/RobotContainer.java \
+     src/main/java/frc/robot/subsystems/SwerveSubsystem.java \
+     src/main/java/frc/robot/subsystems/SuperstructureStateMachine.java \
+     src/main/java/frc/robot/commands/FullAutonomousCommand.java \
+     src/main/java/frc/robot/autos/AutonomousStrategy.java \
+     src/main/java/frc/lib/pathfinding/AStarPathfinder.java
+```
 
 ### Step 2 — Read the operations specs
 
-These are the contracts the Cockpit and Pit Crew subsystems will eventually be built against. Click each one in the left sidebar:
+These are the contracts the Cockpit and Pit Crew subsystems will eventually be built against. Click each one to open it:
 
-- `cockpit/D1_CONTROLLER_MAPPING.md` — exactly which button does what on the driver and operator controllers
-- `cockpit/D2_DASHBOARD_LAYOUT.md` — what every widget on the driver-station dashboard means
-- `cockpit/D3_CONSOLE_HARDWARE_STANDARD.md` — the physical driver console build spec
-- `pit-crew/ROBOT_REPORT_TEMPLATE.md` — the template the pit crew fills out between matches
+- [`cockpit/D1_CONTROLLER_MAPPING.md`](cockpit/D1_CONTROLLER_MAPPING.md) — exactly which button does what on the driver and operator controllers
+- [`cockpit/D2_DASHBOARD_LAYOUT.md`](cockpit/D2_DASHBOARD_LAYOUT.md) — what every widget on the driver-station dashboard means
+- [`cockpit/D3_CONSOLE_HARDWARE_STANDARD.md`](cockpit/D3_CONSOLE_HARDWARE_STANDARD.md) — the physical driver console build spec
+- [`pit-crew/ROBOT_REPORT_TEMPLATE.md`](pit-crew/ROBOT_REPORT_TEMPLATE.md) — the template the pit crew fills out between matches
 
 ### Step 3 — Bonus: read the unit tests
 
