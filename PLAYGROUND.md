@@ -2,7 +2,7 @@
 
 Welcome. You don't need to know how to code to do these missions. You just need to follow the steps. Each mission walks you through one piece of The Engine — the system Team 2950 uses to scout, predict, and run robots.
 
-There are **10 missions** in this guide. Each one takes about 30 minutes. Doing all 10 costs about **18 cents** of API budget — well under the $0.50/day and $5.00/lifetime caps your account has.
+There are **10 missions** in this guide. Each one takes about 30 minutes. Doing all 10 costs about **18 cents** of API budget — well under the $0.25/day and $2.00/lifetime caps your account has.
 
 When you finish each mission you post a short reply in the matching GitHub Discussion thread. That's how a mentor knows you finished. Links are at the bottom of every mission.
 
@@ -73,7 +73,7 @@ VS Code will show a little white dot next to the file name when you have unsaved
 
 ### Your budget (how much money you have left)
 
-You have **$0.50 per day** and **$5.00 total** to spend on Anthropic API calls. Most missions cost less than a cent. To check your budget any time, type this in the terminal:
+You have **$0.25 per day** and **$2.00 total** to spend on Anthropic API calls. Most missions cost less than a cent. To check your budget any time, type this in the terminal:
 
 ```bash
 python3 engine_budget.py

@@ -7,8 +7,8 @@ A tiny FastAPI service that sits between student Codespaces and `api.anthropic.c
 - **Authenticates each request** via a fake API key shaped `<shared_token>:<github_user>`. The proxy parses out the username and validates the shared token.
 - **Tracks spend per user** in SQLite. Every request's token usage is parsed (streaming or not) and converted to USD using current Anthropic pricing.
 - **Enforces two limits** (configurable):
-  - `$0.50` per day per student → returns `429` with a friendly message
-  - `$5.00` lifetime per student → returns `402 OUT OF CREDITS`
+  - `$0.25` per day per student → returns `429` with a friendly message
+  - `$2.00` lifetime per student → returns `402 OUT OF CREDITS`
 - **Forwards** all requests to real Anthropic with the real API key, swapping in the proper `x-api-key` header.
 - **Streaming-aware**: tees SSE chunks to the client while parsing `message_start` and `message_delta` events to extract token counts.
 
@@ -110,8 +110,8 @@ Output:
 ```
   Engine API budget — alex-student
   ─────────────────────────────────────────────────────
-  Today    [#######---------------------]  $0.1234 / $0.50
-  Lifetime [###-------------------------]  $0.5612 / $5.00
+  Today    [#######---------------------]  $0.0612 / $0.25
+  Lifetime [###-------------------------]  $0.2245 / $2.00
   Requests 47
 ```
 
@@ -124,15 +124,15 @@ The script hits `GET /budget/{user}` on the proxy. No API call to Anthropic, no 
 When a student exceeds their daily limit, the next Anthropic call raises:
 
 ```
-anthropic.RateLimitError: DAILY LIMIT HIT: you've used your $0.50 for today
-($0.5012 spent). Remaining lifetime budget: $4.49. Try again tomorrow.
+anthropic.RateLimitError: DAILY LIMIT HIT: you've used your $0.25 for today
+($0.2512 spent). Remaining lifetime budget: $1.74. Try again tomorrow.
 ```
 
 When they hit the lifetime cap:
 
 ```
-anthropic.PermissionDeniedError: OUT OF CREDITS: you've used all $5.00 of your
-Engine budget ($5.0023 spent). Talk to your mentor to top up.
+anthropic.PermissionDeniedError: OUT OF CREDITS: you've used all $2.00 of your
+Engine budget ($2.0023 spent). Talk to your mentor to top up.
 ```
 
 These errors come back in standard Anthropic error format so the SDK surfaces them as normal exceptions, not cryptic HTTP errors.
@@ -159,8 +159,8 @@ Edit `fly.toml`, bump `TOTAL_LIMIT_USD`, redeploy.
 
 | Env var | Default | What it controls |
 |---|---|---|
-| `DAILY_LIMIT_USD` | `0.50` | Per-user per-calendar-day spend cap (UTC) |
-| `TOTAL_LIMIT_USD` | `5.00` | Per-user lifetime spend cap |
+| `DAILY_LIMIT_USD` | `0.25` | Per-user per-calendar-day spend cap (UTC) |
+| `TOTAL_LIMIT_USD` | `2.00` | Per-user lifetime spend cap |
 | `DB_PATH` | `/data/spend.db` | SQLite path (must be on the persistent volume) |
 
 Update via `fly secrets set` and re-deploy. No code changes needed.
@@ -172,10 +172,10 @@ Update via `fly secrets set` and re-deploy. No code changes needed.
 At Haiku 4.5 rates ($1/$5 per MTok):
 
 - A typical Engine Advisor query is ~2k input + 500 output tokens = `$0.0045`
-- $0.50/day = ~110 advisor queries per student
-- $5.00 lifetime = ~1,100 advisor queries per student
+- $0.25/day = ~55 advisor queries per student
+- $2.00 lifetime = ~440 advisor queries per student
 
-If a student switches to Sonnet 4.5/4.6 ($3/$15 per MTok), each query costs ~3x more, so they hit the limit faster. If they go Opus 4.6 ($15/$75), each query is ~15x more expensive — they'll burn $0.50 in ~7 queries. Encourage Haiku unless they're explicitly experimenting with the advisor escalation pattern.
+If a student switches to Sonnet 4.5/4.6 ($3/$15 per MTok), each query costs ~3x more, so they hit the limit faster. If they go Opus 4.6 ($15/$75), each query is ~15x more expensive — they'll burn $0.25 in ~3 queries. Encourage Haiku unless they're explicitly experimenting with the advisor escalation pattern.
 
 ---
 
@@ -185,6 +185,6 @@ This proxy is designed for high school students who are curious, not adversarial
 
 - The shared token is **not** treated as cryptographic auth — kids can extract it from `$ANTHROPIC_API_KEY`. The token only blocks random internet traffic.
 - A student who wants to spoof another student's username can do so. Worst case: they spend that other student's budget. We accept this.
-- The proxy has no rate limiting beyond the spend cap. If a student writes a tight loop, they'll hit `$0.50` in seconds, then get blocked for the rest of the day.
+- The proxy has no rate limiting beyond the spend cap. If a student writes a tight loop, they'll hit `$0.25` in seconds, then get blocked for the rest of the day.
 
 If you need stricter isolation later, give each student a unique secret (rotate `PROXY_SHARED_TOKEN` per repo, store as a per-user Codespace secret).

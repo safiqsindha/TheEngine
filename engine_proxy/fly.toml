@@ -9,10 +9,10 @@ primary_region = 'ord'
 [build]
 
 [env]
-  DAILY_LIMIT_USD = '0.50'
+  DAILY_LIMIT_USD = '0.25'
   DB_PATH = '/data/spend.db'
   PORT = '8000'
-  TOTAL_LIMIT_USD = '5.00'
+  TOTAL_LIMIT_USD = '2.00'
 
 [[mounts]]
   source = 'engine_proxy_data'

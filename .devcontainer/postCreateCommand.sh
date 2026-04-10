@@ -50,8 +50,8 @@ cat <<'EOF'
 ╠════════════════════════════════════════════════════════════════╣
 ║                                                                ║
 ║  Default model:  claude-haiku-4-5 (cheap)                      ║
-║  Daily budget:   $0.50                                         ║
-║  Total budget:   $5.00                                         ║
+║  Daily budget:   $0.25                                         ║
+║  Total budget:   $2.00                                         ║
 ║                                                                ║
 ║  Commands to try:                                              ║
 ║    python3 engine_budget.py        — see your remaining budget ║

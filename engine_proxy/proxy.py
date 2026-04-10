@@ -5,8 +5,8 @@ identified by their GitHub username (encoded in their API key as
 "<shared_token>:<github_user>"). Spend is tracked per user in SQLite.
 
 Limits (configurable via env):
-  DAILY_LIMIT_USD = 0.50
-  TOTAL_LIMIT_USD = 5.00
+  DAILY_LIMIT_USD = 0.25
+  TOTAL_LIMIT_USD = 2.00
 
 Required environment:
   ANTHROPIC_API_KEY      — the REAL Anthropic key (server-side only)
@@ -38,8 +38,8 @@ ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 PROXY_SHARED_TOKEN = os.environ.get("PROXY_SHARED_TOKEN", "")
 DB_PATH = os.environ.get("DB_PATH", "/data/spend.db")
 
-DAILY_LIMIT_USD = float(os.environ.get("DAILY_LIMIT_USD", "0.50"))
-TOTAL_LIMIT_USD = float(os.environ.get("TOTAL_LIMIT_USD", "5.00"))
+DAILY_LIMIT_USD = float(os.environ.get("DAILY_LIMIT_USD", "0.25"))
+TOTAL_LIMIT_USD = float(os.environ.get("TOTAL_LIMIT_USD", "2.00"))
 
 if not ANTHROPIC_API_KEY:
     raise RuntimeError("ANTHROPIC_API_KEY env var is required (the real key)")
