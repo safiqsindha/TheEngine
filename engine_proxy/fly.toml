@@ -1,37 +1,38 @@
-# Fly.io deployment for the Engine Anthropic proxy.
-# Free-tier sized: 256MB RAM, shared CPU, single region, 1GB persistent volume
-# for the SQLite spend database.
+# fly.toml app configuration file generated for engine-proxy on 2026-04-10T09:40:34-07:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
-app = "engine-proxy"
-primary_region = "ord"
+app = 'engine-proxy'
+primary_region = 'ord'
 
 [build]
 
 [env]
-  DB_PATH = "/data/spend.db"
-  PORT = "8000"
-  DAILY_LIMIT_USD = "0.50"
-  TOTAL_LIMIT_USD = "5.00"
+  DAILY_LIMIT_USD = '0.50'
+  DB_PATH = '/data/spend.db'
+  PORT = '8000'
+  TOTAL_LIMIT_USD = '5.00'
 
-[mounts]
-  source = "engine_proxy_data"
-  destination = "/data"
+[[mounts]]
+  source = 'engine_proxy_data'
+  destination = '/data'
 
 [http_service]
   internal_port = 8000
   force_https = true
-  auto_stop_machines = "stop"
+  auto_stop_machines = 'stop'
   auto_start_machines = true
   min_machines_running = 0
-  processes = ["app"]
+  processes = ['app']
 
   [[http_service.checks]]
-    interval = "30s"
-    timeout = "5s"
-    grace_period = "10s"
-    method = "GET"
-    path = "/health"
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '10s'
+    method = 'GET'
+    path = '/health'
 
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = "256mb"
+  size = 'shared-cpu-1x'
+  memory = '256mb'
