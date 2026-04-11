@@ -46,6 +46,7 @@ from database import (
     mark_post_reviewed,
 )
 from digest import format_weekly_digest, format_critical_alert, split_for_discord
+import live_scout_commands as lsc
 
 logger = logging.getLogger("antenna.bot")
 
@@ -1135,20 +1136,23 @@ async def cmd_strategy(ctx, match_key: str = "", *, extra: str = ""):
         await ctx.send(f"Error: {e}")
 
 
+# ═══════════════════════════════════════════════════════════════════
+# LIVE SCOUT — DRAFT DAY COMMANDS
+# ═══════════════════════════════════════════════════════════════════
+#
+# Every handler below delegates to antenna/live_scout_commands.py,
+# which calls the pick_board Python API directly (no subprocess).
+# See live_scout_commands.py module docstring for the full rationale.
+# The pattern is:  text = await asyncio.to_thread(lsc.cmd_xxx, *args)
+# Errors are returned as formatted strings — they never raise into the
+# bot loop.
+
 @bot.command(name="rec")
 async def cmd_rec(ctx):
     """Show current pick recommendation from the pick board."""
-    def _get_rec():
-        import subprocess
-        result = subprocess.run(
-            ["python3", str(SCOUT_PATH / "pick_board.py"), "rec"],
-            capture_output=True, text=True, timeout=30,
-        )
-        return result.stdout or result.stderr
-
     try:
-        text = await asyncio.to_thread(_get_rec)
-        for chunk in split_for_discord(f"```\n{text}\n```"):
+        text = await asyncio.to_thread(lsc.cmd_rec)
+        for chunk in split_for_discord(text):
             await ctx.send(chunk)
     except Exception as e:
         await ctx.send(f"Error: {e}")
@@ -1157,21 +1161,10 @@ async def cmd_rec(ctx):
 @bot.command(name="pick")
 async def cmd_pick_draft(ctx, alliance: str = "", team: str = ""):
     """Record a pick in the live draft. Usage: !pick <alliance#> <team#>"""
-    if not alliance or not team:
-        await ctx.send("Usage: `!pick <alliance#> <team#>`\nExample: `!pick 1 148`")
-        return
-
-    def _record_pick():
-        import subprocess
-        result = subprocess.run(
-            ["python3", str(SCOUT_PATH / "pick_board.py"), "pick", alliance, team],
-            capture_output=True, text=True, timeout=15,
-        )
-        return result.stdout or result.stderr
-
     try:
-        text = await asyncio.to_thread(_record_pick)
-        await ctx.send(f"```\n{text}\n```")
+        text = await asyncio.to_thread(lsc.cmd_pick, alliance, team)
+        for chunk in split_for_discord(text):
+            await ctx.send(chunk)
     except Exception as e:
         await ctx.send(f"Error: {e}")
 
@@ -1179,17 +1172,9 @@ async def cmd_pick_draft(ctx, alliance: str = "", team: str = ""):
 @bot.command(name="board")
 async def cmd_board(ctx):
     """Show the current pick board."""
-    def _get_board():
-        import subprocess
-        result = subprocess.run(
-            ["python3", str(SCOUT_PATH / "pick_board.py"), "board"],
-            capture_output=True, text=True, timeout=15,
-        )
-        return result.stdout or result.stderr
-
     try:
-        text = await asyncio.to_thread(_get_board)
-        for chunk in split_for_discord(f"```\n{text}\n```"):
+        text = await asyncio.to_thread(lsc.cmd_board)
+        for chunk in split_for_discord(text):
             await ctx.send(chunk)
     except Exception as e:
         await ctx.send(f"Error: {e}")
@@ -1197,22 +1182,86 @@ async def cmd_board(ctx):
 
 @bot.command(name="lookup")
 async def cmd_lookup(ctx, team: str = ""):
-    """Look up a team's EPA and stats."""
-    if not team:
-        await ctx.send("Usage: `!lookup <team_number>`")
-        return
-
-    def _lookup():
-        import subprocess
-        result = subprocess.run(
-            ["python3", str(SCOUT_PATH / "the_scout.py"), "lookup", team],
-            capture_output=True, text=True, timeout=15,
-        )
-        return result.stdout or result.stderr
-
+    """Look up a team's EPA and stats (hits Statbotics)."""
     try:
-        text = await asyncio.to_thread(_lookup)
-        for chunk in split_for_discord(f"```\n{text}\n```"):
+        text = await asyncio.to_thread(lsc.cmd_lookup, team)
+        for chunk in split_for_discord(text):
+            await ctx.send(chunk)
+    except Exception as e:
+        await ctx.send(f"Error: {e}")
+
+
+@bot.command(name="undo")
+async def cmd_undo(ctx):
+    """Undo the most recent pick. Pops state.history."""
+    try:
+        text = await asyncio.to_thread(lsc.cmd_undo)
+        await ctx.send(text)
+    except Exception as e:
+        await ctx.send(f"Error: {e}")
+
+
+@bot.command(name="dnp")
+async def cmd_dnp(ctx, team: str = ""):
+    """Toggle Do-Not-Pick for a team. No arg = list current DNPs."""
+    try:
+        text = await asyncio.to_thread(lsc.cmd_dnp, team)
+        for chunk in split_for_discord(text):
+            await ctx.send(chunk)
+    except Exception as e:
+        await ctx.send(f"Error: {e}")
+
+
+@bot.command(name="alliances")
+async def cmd_alliances(ctx):
+    """Show the current alliances with EPA totals."""
+    try:
+        text = await asyncio.to_thread(lsc.cmd_alliances)
+        for chunk in split_for_discord(text):
+            await ctx.send(chunk)
+    except Exception as e:
+        await ctx.send(f"Error: {e}")
+
+
+@bot.command(name="sim")
+async def cmd_sim(ctx, n_sims: str = "5000"):
+    """Run a Monte Carlo playoff simulation. Defaults to 5000 sims."""
+    try:
+        text = await asyncio.to_thread(lsc.cmd_sim, n_sims)
+        for chunk in split_for_discord(text):
+            await ctx.send(chunk)
+    except Exception as e:
+        await ctx.send(f"Error: {e}")
+
+
+@bot.command(name="captains")
+async def cmd_captains(ctx):
+    """Predict which captains get picked up and who backfills."""
+    try:
+        text = await asyncio.to_thread(lsc.cmd_captains)
+        for chunk in split_for_discord(text):
+            await ctx.send(chunk)
+    except Exception as e:
+        await ctx.send(f"Error: {e}")
+
+
+@bot.command(name="brief")
+async def cmd_brief(ctx, event_key: str = ""):
+    """Show the most recent synthesis brief for an event."""
+    try:
+        text = await asyncio.to_thread(lsc.cmd_brief, event_key)
+        for chunk in split_for_discord(text):
+            await ctx.send(chunk)
+    except Exception as e:
+        await ctx.send(f"Error: {e}")
+
+
+@bot.command(name="preview")
+async def cmd_preview(ctx, team: str = ""):
+    """Show a pre-event excerpt for a specific team at the active event."""
+    try:
+        text = await asyncio.to_thread(lsc.cmd_preview, team)
+        for chunk in split_for_discord(text):
             await ctx.send(chunk)
     except Exception as e:
         await ctx.send(f"Error: {e}")
