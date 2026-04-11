@@ -197,6 +197,51 @@ def test_winner_from_scores_blue():
     assert m.winner_from_scores() == "blue"
 
 
+# ─── Phase 2 vision fields ───
+
+
+def test_vision_fields_default_to_empty_containers():
+    m = _valid_match()
+    assert m.vision_events == []
+    assert m.cycle_counts == {}
+    assert m.climb_results == {}
+
+
+def test_vision_fields_round_trip_through_json():
+    m = _valid_match(
+        vision_events=[
+            {"frame_idx": 30, "event_type": "cycle", "team_num": 2950, "confidence": 0.91},
+            {"frame_idx": 45, "event_type": "climb_success", "team_num": 1678, "confidence": 0.88},
+        ],
+        cycle_counts={"2950": 7, "1234": 5, "1678": 6},
+        climb_results={"2950": "success", "1234": "attempt", "1678": "success"},
+    )
+    restored = LiveMatch.from_json(m.to_json())
+    assert restored.vision_events == m.vision_events
+    assert restored.cycle_counts == m.cycle_counts
+    assert restored.climb_results == m.climb_results
+
+
+def test_invalid_vision_event_type_rejected():
+    with pytest.raises(ValueError, match="invalid vision event_type"):
+        _valid_match(vision_events=[{"event_type": "teleporting"}])
+
+
+def test_vision_events_must_be_list_of_dicts():
+    with pytest.raises(ValueError, match="vision_events entries must be dict"):
+        _valid_match(vision_events=["not a dict"])
+
+
+def test_cycle_counts_must_be_str_to_int():
+    with pytest.raises(ValueError, match="cycle_counts entry"):
+        _valid_match(cycle_counts={"2950": -1})
+
+
+def test_climb_results_must_use_valid_categories():
+    with pytest.raises(ValueError, match="climb_results entry"):
+        _valid_match(climb_results={"2950": "yeeted into space"})
+
+
 def test_winner_from_scores_tie():
     m = _valid_match(red_score=80, blue_score=80, winning_alliance="tie")
     assert m.winner_from_scores() == "tie"

@@ -9,10 +9,14 @@ match. Records are idempotent: re-processing a match overwrites the prior
 record (matches finalize as more frames are processed).
 
 Phase 1 fields cover OCR-derivable data only (scores, team sets, timer).
-Phase 2 will populate red_breakdown / blue_breakdown with cycle counts +
-climb + defense events from the vision worker.
+Phase 2 adds typed vision fields populated by the T2 vision worker:
+`vision_events` (raw frame-level YOLO detections), `cycle_counts`
+(per-team), `climb_results` (per-team). The legacy `red_breakdown` /
+`blue_breakdown` dicts remain for game-specific OCR subscores; the
+typed fields are the canonical Phase 2 vision surface.
 
-Schema is locked in design-intelligence/LIVE_SCOUT_PHASE1_BUILD.md §F2.
+Schema is locked in design-intelligence/LIVE_SCOUT_PHASE1_BUILD.md §F2
+(Phase 1) and the Phase 2 scoping doc §V2.
 """
 
 from __future__ import annotations
@@ -41,6 +45,13 @@ VALID_TIMER_STATES = {"auto", "teleop", "endgame", "post"}
 VALID_SOURCE_TIERS = {"live", "vod", "backfill"}
 VALID_WINNERS = {"red", "blue", "tie", None}
 
+# Phase 2 — T2 vision event types produced by the YOLO model.
+VALID_VISION_EVENT_TYPES = {
+    "cycle", "climb_attempt", "climb_success", "climb_failure", "defense",
+}
+# Phase 2 — climb result categories used in cycle/climb roll-ups.
+VALID_CLIMB_RESULTS = {"success", "attempt", "failure", "none"}
+
 
 @dataclass
 class LiveMatch:
@@ -54,7 +65,7 @@ class LiveMatch:
     blue_teams: list[int]
     red_score: Optional[int]                # None until match ends
     blue_score: Optional[int]
-    red_breakdown: dict = field(default_factory=dict)   # OCR + Phase 2 vision
+    red_breakdown: dict = field(default_factory=dict)   # OCR game-specific subscores
     blue_breakdown: dict = field(default_factory=dict)
     winning_alliance: Optional[str] = None  # "red" | "blue" | "tie" | None
     timer_state: str = "post"               # "auto" | "teleop" | "endgame" | "post"
@@ -62,6 +73,10 @@ class LiveMatch:
     source_video_id: str = ""               # YouTube video ID
     source_tier: str = "vod"                # "live" | "vod" | "backfill"
     confidence: float = 1.0                 # 0..1, OCR cross-frame consensus
+    # ─── Phase 2 — T2 vision worker output ───
+    vision_events: list[dict] = field(default_factory=list)  # raw YOLO detections
+    cycle_counts: dict[str, int] = field(default_factory=dict)  # team_str → count
+    climb_results: dict[str, str] = field(default_factory=dict)  # team_str → result
 
     def __post_init__(self):
         self.validate()
@@ -112,6 +127,28 @@ class LiveMatch:
                 isinstance(t, int) and 1 <= t <= 99999 for t in teams
             ):
                 raise ValueError(f"{label} must be list of int team numbers, got {teams!r}")
+
+        # ─── Phase 2 vision field validation ───
+        if not isinstance(self.vision_events, list):
+            raise ValueError(f"vision_events must be a list, got {type(self.vision_events).__name__}")
+        for ev in self.vision_events:
+            if not isinstance(ev, dict):
+                raise ValueError(f"vision_events entries must be dict, got {ev!r}")
+            evt_type = ev.get("event_type")
+            if evt_type is not None and evt_type not in VALID_VISION_EVENT_TYPES:
+                raise ValueError(f"invalid vision event_type: {evt_type!r}")
+
+        if not isinstance(self.cycle_counts, dict):
+            raise ValueError(f"cycle_counts must be a dict, got {type(self.cycle_counts).__name__}")
+        for k, v in self.cycle_counts.items():
+            if not isinstance(k, str) or not isinstance(v, int) or v < 0:
+                raise ValueError(f"cycle_counts entry must be str→non-negative int, got {k!r}: {v!r}")
+
+        if not isinstance(self.climb_results, dict):
+            raise ValueError(f"climb_results must be a dict, got {type(self.climb_results).__name__}")
+        for k, v in self.climb_results.items():
+            if not isinstance(k, str) or v not in VALID_CLIMB_RESULTS:
+                raise ValueError(f"climb_results entry must be str→{VALID_CLIMB_RESULTS}, got {k!r}: {v!r}")
 
     # ─── Serialization ───
 
