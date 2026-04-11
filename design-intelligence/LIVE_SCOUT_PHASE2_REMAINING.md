@@ -148,10 +148,10 @@ Auto-publish post-match video links to TBA so other teams (and our Mode B backfi
 
 These don't block writing the code (everything above stubs them), but they have to be resolved before Phase 2 actually runs in prod:
 
-- **V0a** — Pick a Roboflow Universe FRC YOLO model. Need: model ID, class map, confidence threshold. Wire into `eye/vision_yolo.py::_load_real_model`, then flip `MODEL_NAME` env from `"fake"` to the real ID in the vision-worker job.
-- **V0b** — Pick an Azure GPU SKU for the vision worker (or accept CPU latency). Set `visionGpuSku` Bicep param.
-- **T3 prereq** — Get an Anthropic API key into the Azure Key Vault entry the synthesis-worker job pulls from.
-- **U prereq** — Register the team's TBA Trusted User account, get `auth_id` + `auth_secret` into Key Vault.
+- ~~**V0a** — Pick a Roboflow Universe FRC YOLO model.~~ **RESOLVED 2026-04-11 → Path C** (see `V0a_MODEL_SELECTION.md`). No single Roboflow model emits our 5-class taxonomy with team_num, and every compound pipeline we'd wire up in-season gets thrown away when the 2027 Gemma+SAM3.1 data engine ships. Decision: **stay `MODEL_NAME=fake` through the 2026 season**; replace during summer 2026 via the off-season data engine (§6) trained on **our** taxonomy. `_load_real_model` stays as `NotImplementedError` so prod never silently falls back to fake. Follow-up: refactor `eye/vision_yolo.py` to a pluggable model registry so new 2026-era and 2027-era models can be swapped in with a one-line `register_model(...)` call — no core code changes.
+- ~~**V0b** — Pick an Azure GPU SKU for the vision worker.~~ **RESOLVED 2026-04-11 → CPU only** (see `V0b_GPU_SELECTION.md`). YOLOv8n/v11n CPU inference fits comfortably in the 10-minute cron budget for all three V0a paths; the T4 SKU saves ~15 seconds per invocation for ~$7/month extra, which nearly triples the infrastructure line item for near-zero operational benefit. Decision: `visionGpuSku=""` (already the default) in both dev + prod parameter files. Revisit only if Mode A cadence moves to `* * * * *` or a >25M-param custom model ships.
+- ~~**T3 prereq** — Get an Anthropic API key into Key Vault.~~ **Tooling ready** — `scripts/provision_anthropic_key.sh` stores + verifies + runs a live smoke test of the synthesis worker against the key. Just needs Safiq to mint the key at console.anthropic.com, export it, and run the script. See `GATE_2_HANDOFF.md §8`.
+- ~~**U prereq** — Register the team's TBA Trusted account, get creds into Key Vault.~~ **Tooling ready** — `scripts/provision_tba_trusted.sh` stores both secrets and runs `workers.tba_uploader --dry-run` to validate the HMAC-MD5 signing path. Just needs Safiq to complete the TBA Trusted registration (1–3 day approval) and run the script. See `GATE_2_HANDOFF.md §7`.
 
 ---
 

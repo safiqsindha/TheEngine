@@ -125,14 +125,78 @@ def test_vision_yolo_default_fake_model():
     assert y.infer_frames([Path("frame_0001.jpg")]) == []
 
 
-def test_vision_yolo_real_model_raises_until_v0a():
-    with pytest.raises(NotImplementedError, match="V0a"):
-        VisionYolo(model_name="some-real-model-id")
+def test_vision_yolo_unknown_model_raises_registry_miss():
+    # An unregistered name is a registry miss, not a silent fallback.
+    from vision_yolo import VisionModelNotFoundError
+    with pytest.raises(VisionModelNotFoundError, match="no vision model handler"):
+        VisionYolo(model_name="some-unregistered-id")
 
 
-def test_load_real_model_raises_with_helpful_message():
-    with pytest.raises(NotImplementedError, match="MODEL_NAME"):
+def test_load_real_model_routes_through_registry():
+    # Unknown prefix → registry miss.
+    from vision_yolo import VisionModelNotFoundError
+    with pytest.raises(VisionModelNotFoundError, match="roboflow/frc-2024"):
         _load_real_model("roboflow/frc-2024")
+
+
+def test_registered_prefix_handler_stub_raises_not_implemented():
+    # Built-in prefix handlers exist but are intentionally stubs until
+    # a real factory is registered. Make sure they raise the V0a-aware
+    # NotImplementedError so prod fails loudly on accidental wiring.
+    with pytest.raises(NotImplementedError, match="ultralytics:"):
+        _load_real_model("ultralytics:yolov8n.pt")
+    with pytest.raises(NotImplementedError, match="roboflow:"):
+        _load_real_model("roboflow:workspace/project/1")
+    with pytest.raises(NotImplementedError, match="onnx:"):
+        _load_real_model("onnx:/weights/robot.onnx")
+    with pytest.raises(NotImplementedError, match="mlx:"):
+        _load_real_model("mlx:mlx-community/some-vlm")
+
+
+def test_register_model_adds_exact_handler():
+    from vision_yolo import MODEL_REGISTRY, register_model
+    called = []
+
+    def _factory(name: str):
+        called.append(name)
+        return FakeYOLOModel()
+
+    register_model("test-exact-handler", _factory)
+    try:
+        y = VisionYolo(model_name="test-exact-handler")
+        assert called == ["test-exact-handler"]
+        assert y.infer_frames([Path("frame_0001.jpg")]) == []
+    finally:
+        MODEL_REGISTRY.pop("test-exact-handler", None)
+
+
+def test_register_model_prefix_is_idempotent_replacement():
+    from vision_yolo import MODEL_PREFIX_REGISTRY, register_model_prefix
+    seen = []
+
+    def _first(name: str):
+        seen.append(("first", name))
+        return FakeYOLOModel()
+
+    def _second(name: str):
+        seen.append(("second", name))
+        return FakeYOLOModel()
+
+    register_model_prefix("testprefix:", _first)
+    register_model_prefix("testprefix:", _second)
+    try:
+        VisionYolo(model_name="testprefix:anything")
+        # Second registration must have replaced the first — one entry,
+        # second factory wins.
+        assert seen == [("second", "testprefix:anything")]
+        prefix_names = [p for p, _ in MODEL_PREFIX_REGISTRY]
+        assert prefix_names.count("testprefix:") == 1
+    finally:
+        # Cleanup so other tests don't see our stub.
+        for i, (p, _) in enumerate(list(MODEL_PREFIX_REGISTRY)):
+            if p == "testprefix:":
+                MODEL_PREFIX_REGISTRY.pop(i)
+                break
 
 
 def test_vision_yolo_preserves_frame_order():

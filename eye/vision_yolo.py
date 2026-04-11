@@ -1,30 +1,48 @@
 #!/usr/bin/env python3
 """
-The Engine — Live Scout T2 Vision Wrapper (V1)
+The Engine — Live Scout T2 Vision Wrapper (V1 → V2 pluggable registry)
 Team 2950 — The Devastators
 
-Thin wrapper around a Roboflow Universe FRC YOLO model. Runs per-frame
-inference and emits typed `VisionEvent` records that downstream workers
-aggregate into per-team cycle counts, climb outcomes, and defense tags
-on a `LiveMatch` record.
+Thin wrapper around whatever YOLO-ish model is in vogue this week. Runs
+per-frame inference and emits typed `VisionEvent` records that downstream
+workers aggregate into per-team cycle counts, climb outcomes, and defense
+tags on a `LiveMatch` record.
 
-Lazy SDK import pattern: the module imports cleanly without
-`roboflow`, `ultralytics`, or any other vision SDK installed. The real
-model loader is gated behind a `NotImplementedError` until V0a (human
-picks a Roboflow model) is resolved. Until then, tests and the Phase 2
-cron job both run against `FakeYOLOModel`, a scripted stub that returns
-deterministic `VisionEvent` lists keyed on frame filename.
+PLUGGABLE REGISTRY (new as of V0a resolution, 2026-04-11)
+──────────────────────────────────────────────────────────
+Vision models in the FRC ecosystem are dropping weekly — YOLO26,
+YOLOv11, RF-DETR, MLX-exported Gemma/SAM variants, custom ONNX exports
+from the 2027 auto-label data engine, ... — and committing to one
+hard-coded loader means every new model needs a core code edit. Instead,
+this module exposes a tiny registry so a new model is a one-line
+`register_model(...)` or `register_model_prefix(...)` call made at
+import time from `eye/vision_models/`.
 
-V0 prerequisites (BLOCKED on human):
-  - V0a: pick a Roboflow Universe FRC YOLO model (weights URL, class
-         map, confidence threshold). Wire it into `_load_real_model`.
-  - V0b: pick an Azure GPU SKU. Until then the Bicep template leaves
-         `visionGpuSku` empty and the vision worker runs CPU-only.
-  - V0c: confirm cached frame filename format. Mode A/B both use
-         `frame_%04d.jpg` — we consume that shape directly.
+  - `VisionModel` (Protocol): anything with `infer(frame_path) -> list[VisionEvent]`
+  - `MODEL_REGISTRY`: dict mapping exact `model_name` strings to factories
+  - `MODEL_PREFIX_REGISTRY`: list of (prefix, factory) handlers for
+    `"ultralytics:yolov8n.pt"` / `"roboflow:workspace/project/1"` /
+    `"onnx:/path/to/weights.onnx"` / `"mlx:mlx-community/..."` patterns
+  - `register_model(name, factory)`: drop-in a new exact-match handler
+  - `register_model_prefix(prefix, factory)`: drop-in a new prefix handler
+  - `load_vision_model(model_name)`: consults exact registry → prefix
+    registry → raises `VisionModelNotFoundError` if neither matches
+
+This is the same pattern we use in `scout/state_backend.py::get_*_backend`
+and `antenna/`: the core code never has to know what exists, modules
+wire themselves in at import time.
+
+Lazy SDK import pattern: the module itself still imports cleanly with
+no vision SDKs installed. Each registered factory is free to lazy-import
+its own SDK so only the handler actually being used pays the import cost.
+
+The `"fake"` handler is always registered and is the default when no
+`model_name` is supplied — safe no-op for tests and for prod when Safiq
+hasn't wired in a real model yet.
 
 Schema reference: LIVE_SCOUT_PHASE1_BUILD.md Phase 2 §T2, and
 `scout/live_match.py` §Phase 2 vision field validation.
+Decision reference: `design-intelligence/V0a_MODEL_SELECTION.md`.
 """
 
 from __future__ import annotations
@@ -32,7 +50,7 @@ from __future__ import annotations
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Protocol, runtime_checkable
 
 # ─── Path bootstrap so we can pull schema constants from scout/ ───
 _ROOT = Path(__file__).resolve().parents[1]
@@ -98,6 +116,112 @@ class VisionEvent:
         )
 
 
+# ─── VisionModel protocol ───
+
+
+@runtime_checkable
+class VisionModel(Protocol):
+    """Structural type every registered model must satisfy.
+
+    One method: `infer(frame_path: Path) -> list[VisionEvent]`. That's
+    the only contract. Models are free to cache, batch, warm up, or
+    short-circuit however they want — the wrapper doesn't care.
+    """
+
+    def infer(self, frame_path: Path) -> list[VisionEvent]:  # pragma: no cover
+        ...
+
+
+class VisionModelNotFoundError(KeyError):
+    """Raised when `load_vision_model(model_name)` finds no handler.
+
+    Uses KeyError so callers that already catch `KeyError` from dict
+    lookups keep working, but the class name makes the failure mode
+    obvious in tracebacks.
+    """
+
+
+# ─── Registry ───
+
+
+# `MODEL_REGISTRY`: exact-match handlers. `model_name == key` wins.
+# Factories take the model_name string and return a VisionModel.
+MODEL_REGISTRY: dict[str, Callable[[str], VisionModel]] = {}
+
+# `MODEL_PREFIX_REGISTRY`: ordered list of (prefix, factory) handlers.
+# First prefix that `model_name.startswith()` matches wins. Ordering is
+# insertion order; later registrations win only if earlier prefixes
+# didn't match. Keep prefixes disjoint to avoid surprises.
+MODEL_PREFIX_REGISTRY: list[tuple[str, Callable[[str], VisionModel]]] = []
+
+
+def register_model(
+    name: str,
+    factory: Callable[[str], VisionModel],
+) -> None:
+    """Register an exact-match model handler.
+
+    Idempotent — re-registering the same name silently replaces the
+    previous factory. That's deliberate: it lets tests swap in fakes
+    without hitting "already registered" errors.
+
+    Example:
+        register_model("fake", lambda _: FakeYOLOModel())
+        register_model("frc2026-compound", _build_frc2026_compound)
+    """
+    MODEL_REGISTRY[name] = factory
+
+
+def register_model_prefix(
+    prefix: str,
+    factory: Callable[[str], VisionModel],
+) -> None:
+    """Register a prefix-match model handler.
+
+    Prefix match is `model_name.startswith(prefix)`. Use this for SDK
+    families where the suffix is the actual model identifier:
+
+        register_model_prefix("ultralytics:", _load_ultralytics)
+        # Then "ultralytics:yolov8n.pt" routes to _load_ultralytics.
+
+        register_model_prefix("roboflow:", _load_roboflow)
+        # Then "roboflow:2026-wiredcat-fuel-detection/..." routes there.
+
+    Later registrations of the same prefix REPLACE the older one
+    (same idempotent semantics as `register_model`).
+    """
+    for i, (existing, _) in enumerate(MODEL_PREFIX_REGISTRY):
+        if existing == prefix:
+            MODEL_PREFIX_REGISTRY[i] = (prefix, factory)
+            return
+    MODEL_PREFIX_REGISTRY.append((prefix, factory))
+
+
+def load_vision_model(model_name: str) -> VisionModel:
+    """Resolve a model_name to a VisionModel via the registry.
+
+    Resolution order:
+      1. Exact match in MODEL_REGISTRY
+      2. First matching prefix in MODEL_PREFIX_REGISTRY (insertion order)
+      3. VisionModelNotFoundError
+
+    This is the function `VisionYolo` calls when given a model_name
+    string. Tests can monkeypatch either registry to inject a fake.
+    """
+    if model_name in MODEL_REGISTRY:
+        return MODEL_REGISTRY[model_name](model_name)
+    for prefix, factory in MODEL_PREFIX_REGISTRY:
+        if model_name.startswith(prefix):
+            return factory(model_name)
+    raise VisionModelNotFoundError(
+        f"no vision model handler registered for {model_name!r}. "
+        f"Known exact matches: {sorted(MODEL_REGISTRY)}; "
+        f"known prefixes: {[p for p, _ in MODEL_PREFIX_REGISTRY]}. "
+        "Register one with eye.vision_yolo.register_model() or "
+        "register_model_prefix() at import time."
+    )
+
+
 # ─── FakeYOLOModel — scripted stub ───
 
 
@@ -130,26 +254,94 @@ class FakeYOLOModel:
         return list(self._scripted.get(Path(frame_path).name, []))
 
 
-# ─── Real model loader — BLOCKED on V0a ───
+# ─── Built-in handler: "fake" (always available) ───
 
 
-def _load_real_model(model_name: str) -> Any:
-    """Placeholder for the real Roboflow / ultralytics loader.
-
-    V0a hook: replace this function body with the actual weights fetch
-    and return a wrapper that exposes `.infer(frame_path) -> list[VisionEvent]`.
-
-    Until V0a is resolved, every call raises NotImplementedError so any
-    accidental prod wiring surfaces loudly instead of silently falling
-    back to fake inference.
+def _build_fake_model(model_name: str) -> VisionModel:
+    """Default factory for the "fake" model name. Returns an empty
+    FakeYOLOModel (no scripted events) that emits nothing for every
+    frame. Tests that need scripted behavior construct FakeYOLOModel
+    directly and pass it as `model=` to VisionYolo.
     """
-    raise NotImplementedError(
-        f"V0a — Roboflow model not selected yet (requested model_name={model_name!r}). "
-        "Pick a Roboflow Universe FRC YOLO model, wire the weights fetch + "
-        "inference translator into eye/vision_yolo._load_real_model, then "
-        "flip the MODEL_NAME env var in the vision-worker job from 'fake' "
-        "to the real model id."
-    )
+    return FakeYOLOModel()
+
+
+register_model("fake", _build_fake_model)
+
+
+# ─── Built-in prefix handlers: lazy, SDK-gated, V0a-deferred ───
+#
+# These are stubs that raise NotImplementedError until Safiq picks a
+# real model. They exist so that:
+#
+#   1. The prefix namespace is reserved — `ultralytics:`, `roboflow:`,
+#      `onnx:`, `mlx:` — and a future PR can just swap the factory body
+#      without moving any keys around.
+#   2. A misconfigured `MODEL_NAME=ultralytics:yolov8n.pt` in prod fails
+#      loudly with a prefix-specific error message instead of the
+#      generic registry miss.
+#   3. The 2027 off-season data engine can register a real handler via
+#      `register_model_prefix("onnx:", _load_onnx_model)` at import time
+#      without touching this file.
+
+
+def _not_yet_implemented(prefix: str, hint: str) -> Callable[[str], VisionModel]:
+    def _factory(model_name: str) -> VisionModel:
+        raise NotImplementedError(
+            f"{prefix} prefix handler is registered but not yet implemented "
+            f"(requested model_name={model_name!r}). {hint} "
+            "See design-intelligence/V0a_MODEL_SELECTION.md for the "
+            "resolution plan (Path C → 2027 off-season data engine)."
+        )
+    return _factory
+
+
+register_model_prefix(
+    "ultralytics:",
+    _not_yet_implemented(
+        "ultralytics:",
+        "To enable: `pip install ultralytics`, then register a real factory "
+        "that returns a wrapper exposing .infer(frame_path).",
+    ),
+)
+register_model_prefix(
+    "roboflow:",
+    _not_yet_implemented(
+        "roboflow:",
+        "To enable: `pip install inference` or `pip install roboflow`, "
+        "then register a real factory. See V0a §Path A for the compound "
+        "pipeline shape.",
+    ),
+)
+register_model_prefix(
+    "onnx:",
+    _not_yet_implemented(
+        "onnx:",
+        "To enable: `pip install onnxruntime`, then register a factory "
+        "that loads the .onnx file at the suffix path.",
+    ),
+)
+register_model_prefix(
+    "mlx:",
+    _not_yet_implemented(
+        "mlx:",
+        "To enable: `pip install mlx mlx-vlm`, then register a factory "
+        "for MLX-exported vision models (off-season auto-label engine).",
+    ),
+)
+
+
+# ─── Backward-compatible _load_real_model shim ───
+
+
+def _load_real_model(model_name: str) -> VisionModel:
+    """Backward-compat wrapper around `load_vision_model`.
+
+    Kept for the V1-era call sites and for tests that patch this
+    symbol directly. New code should call `load_vision_model` or
+    just pass `model_name=` to `VisionYolo`.
+    """
+    return load_vision_model(model_name)
 
 
 # ─── VisionYolo — public wrapper ───
@@ -159,15 +351,18 @@ class VisionYolo:
     """Wrapper around whichever YOLO-ish model is loaded.
 
     Construct with either an injected `model` (tests) or a `model_name`
-    string (prod). `model_name="fake"` builds a `FakeYOLOModel` with no
-    scripted events (returns empty lists for every frame — safe no-op).
-    Any other `model_name` routes to `_load_real_model`, which currently
-    raises NotImplementedError pending V0a.
+    string (prod). The default `model_name="fake"` builds an empty
+    `FakeYOLOModel` via the registry — safe no-op for every frame.
+
+    Any other `model_name` routes through `load_vision_model`, which
+    consults `MODEL_REGISTRY` and then `MODEL_PREFIX_REGISTRY`. A new
+    model = one `register_model(...)` or `register_model_prefix(...)`
+    call; no changes to this class.
     """
 
     def __init__(
         self,
-        model: Optional[Any] = None,
+        model: Optional[VisionModel] = None,
         *,
         model_name: str = "fake",
     ) -> None:
@@ -176,14 +371,7 @@ class VisionYolo:
             self.model_name = model_name or type(model).__name__
             return
 
-        if model_name == "fake":
-            self._model = FakeYOLOModel()
-            self.model_name = "fake"
-            return
-
-        # Every non-fake path goes through the real loader, which is a
-        # NotImplementedError stub until V0a is resolved.
-        self._model = _load_real_model(model_name)
+        self._model = load_vision_model(model_name)
         self.model_name = model_name
 
     @property
