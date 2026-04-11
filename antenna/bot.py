@@ -1267,6 +1267,16 @@ async def cmd_preview(ctx, team: str = ""):
         await ctx.send(f"Error: {e}")
 
 
+@bot.command(name="status")
+async def cmd_status(ctx):
+    """Show a compact health snapshot of the live scout system."""
+    try:
+        text = await asyncio.to_thread(lsc.cmd_status)
+        await ctx.send(text)
+    except Exception as e:
+        await ctx.send(f"Error: {e}")
+
+
 # ═══════════════════════════════════════════════════════════════════
 # SCHEDULED TASKS
 # ═══════════════════════════════════════════════════════════════════

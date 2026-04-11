@@ -360,6 +360,68 @@ def save_report(profiles: list[TeamProfile], event_key: str):
 # CLI
 # ═══════════════════════════════════════════════════════════════════
 
+def build_report_for_team(event_key: str, team_num: int,
+                          year: Optional[int] = None) -> str:
+    """Return a compact pre-event report for a single team as a string.
+
+    This is the function `antenna/live_scout_commands.cmd_preview` uses.
+    It builds the full event profile list (which is cached by Statbotics
+    so the first call is network-bound, subsequent calls in the same
+    process are fast) and extracts + formats the one team's profile.
+
+    Returns an empty string if the team is not found at the event.
+    Raises nothing — all exceptions are caught and returned as error lines.
+    """
+    if year is None:
+        year = int(event_key[:4]) if event_key[:4].isdigit() else 2025
+
+    try:
+        profiles = build_profiles(event_key, year=year)
+    except Exception as e:
+        return f"[pre_event_report error: {e}]"
+
+    if not profiles:
+        return ""
+
+    p = next((x for x in profiles if x.team == team_num), None)
+    if p is None:
+        return ""
+
+    epa_values = [x.epa_total for x in profiles]
+    avg_epa = sum(epa_values) / len(epa_values) if epa_values else 0
+
+    lines = [
+        f"TEAM {p.team} — {p.name}",
+        f"Location: {p.location}" if p.location else "",
+        f"Rank at {event_key}: #{p.epa_rank_at_event} of {len(profiles)}",
+        f"EPA: {p.epa_total:.1f}  (avg {avg_epa:.1f})",
+        f"  Auto:    {p.epa_auto:.1f}",
+        f"  Teleop:  {p.epa_teleop:.1f}",
+        f"  Endgame: {p.epa_endgame:.1f}",
+        f"Trend: {p.trend}  ({p.epa_change_pct:+.0f}% vs prev event)",
+        f"Events this season: {p.events_this_season}",
+        f"Scouting priority: {p.priority} — {p.priority_reason}",
+    ]
+    lines = [l for l in lines if l]  # strip empty location line if missing
+
+    if p.anomalies:
+        lines.append("")
+        lines.append("ANOMALIES:")
+        for a in p.anomalies:
+            icon = {"high": "!! ", "medium": "!  ", "low": "   "}.get(a.severity, "   ")
+            lines.append(f"  {icon}{a.description}")
+            if a.pit_question:
+                lines.append(f"     Q: {a.pit_question}")
+
+    if p.game_breakdown:
+        lines.append("")
+        lines.append("GAME BREAKDOWN (Statbotics):")
+        for k, v in sorted(p.game_breakdown.items()):
+            lines.append(f"  {k}: {v}")
+
+    return "\n".join(lines)
+
+
 def main():
     if len(sys.argv) < 2:
         print("The Scout — Pre-Event Report Generator")

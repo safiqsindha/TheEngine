@@ -711,6 +711,92 @@ def cmd_brief(event_key: str = "") -> str:
     return "\n".join(lines)
 
 
+def cmd_status() -> str:
+    """Return a compact health snapshot of the live scout system.
+
+    Reads from the file system only — no network calls — so it's
+    safe to run at any time. Covers:
+      - Draft state file (age + round + pick count)
+      - Synthesis brief (event key + generated_at)
+      - Eye bridge state (team count + last update)
+      - Pick board: picked / available / DNP counts
+    """
+    import time
+    import os
+
+    lines = ["**LIVE SCOUT STATUS**", "```"]
+
+    # ── Draft state ──────────────────────────────────────────────
+    try:
+        import pick_board as pb
+        if pb.STATE_FILE.exists():
+            age_s = time.time() - os.path.getmtime(pb.STATE_FILE)
+            age_str = (
+                f"{int(age_s)}s" if age_s < 120
+                else f"{int(age_s // 60)}m" if age_s < 7200
+                else f"{int(age_s // 3600)}h"
+            )
+            state = json.loads(pb.STATE_FILE.read_text())
+            event = state.get("event_key", "?")
+            pos, rd = pb.current_pick_position(state)
+            n_picks = len(state.get("picks", []))
+            n_teams = len(state.get("teams", {}))
+            n_captains = len(state.get("captains", []))
+            n_dnp = len(state.get("dnp", []))
+            n_avail = n_teams - n_captains - n_picks - n_dnp
+            lines.append(f"DRAFT  {event}  R{rd}  pick#{n_picks}")
+            lines.append(f"       {n_teams} teams  {n_avail} avail  {n_dnp} DNP  (state {age_str} ago)")
+        else:
+            lines.append("DRAFT  no state file — run pick_board.py setup first")
+    except Exception as e:
+        lines.append(f"DRAFT  error reading state: {e}")
+
+    # ── Synthesis brief ───────────────────────────────────────────
+    try:
+        brief_dir = _REPO_ROOT / "workers" / ".state" / "briefs"
+        briefs = sorted(brief_dir.glob("brief_*.json")) if brief_dir.exists() else []
+        if briefs:
+            latest = briefs[-1]
+            age_s = time.time() - os.path.getmtime(latest)
+            age_str = (
+                f"{int(age_s)}s" if age_s < 120
+                else f"{int(age_s // 60)}m" if age_s < 7200
+                else f"{int(age_s // 3600)}h"
+            )
+            data = json.loads(latest.read_text())
+            dry = " [DRY-RUN]" if data.get("dry_run") else ""
+            gen_at = data.get("generated_at", "?")
+            lines.append(f"BRIEF  {latest.stem.replace('brief_', '')}  {gen_at}{dry}  ({age_str} ago)")
+        else:
+            lines.append("BRIEF  none yet — synthesis worker hasn't run")
+    except Exception as e:
+        lines.append(f"BRIEF  error: {e}")
+
+    # ── Eye bridge ────────────────────────────────────────────────
+    try:
+        eye_state = _REPO_ROOT / "eye" / ".cache" / "results"
+        if eye_state.exists():
+            reports = list(eye_state.glob("**/*.json"))
+            if reports:
+                newest = max(reports, key=lambda p: os.path.getmtime(p))
+                age_s = time.time() - os.path.getmtime(newest)
+                age_str = (
+                    f"{int(age_s)}s" if age_s < 120
+                    else f"{int(age_s // 60)}m" if age_s < 7200
+                    else f"{int(age_s // 3600)}h"
+                )
+                lines.append(f"EYE    {len(reports)} reports  (newest {age_str} ago)")
+            else:
+                lines.append("EYE    cache dir exists but no reports yet")
+        else:
+            lines.append("EYE    no cache dir — vision worker hasn't run")
+    except Exception as e:
+        lines.append(f"EYE    error: {e}")
+
+    lines.append("```")
+    return "\n".join(lines)
+
+
 def cmd_preview(team: str) -> str:
     """Show a pre-event excerpt for an opponent team at the current
     event. Wraps scout/pre_event_report.py for a single team."""

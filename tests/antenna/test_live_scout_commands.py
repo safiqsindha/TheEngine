@@ -459,6 +459,36 @@ def test_cmd_brief_real_brief(tmp_path, monkeypatch):
 # ── cmd_preview ─────────────────────────────────────────────────────
 
 
+# ── cmd_status ──────────────────────────────────────────────────────
+
+
+def test_cmd_status_no_draft(tmp_state):
+    # No state file → reports "no state file" without crashing.
+    out = lsc.cmd_status()
+    assert "LIVE SCOUT STATUS" in out
+    assert "no state file" in out
+
+
+def test_cmd_status_with_draft(tmp_state):
+    _write(tmp_state, _make_state())
+    out = lsc.cmd_status()
+    assert "LIVE SCOUT STATUS" in out
+    assert "2026txbel" in out
+    assert "DRAFT" in out
+
+
+def test_cmd_status_shows_pick_counts(tmp_state):
+    # After recording a pick the status should reflect it.
+    _write(tmp_state, _make_state())
+    lsc.cmd_pick("4", "1538")  # record one pick
+    out = lsc.cmd_status()
+    # State was updated: 1 pick should be visible somewhere in output
+    assert "pick#1" in out
+
+
+# ── cmd_preview ─────────────────────────────────────────────────────
+
+
 def test_cmd_preview_missing_team(tmp_state):
     _write(tmp_state, _make_state())
     out = lsc.cmd_preview("")
@@ -471,16 +501,31 @@ def test_cmd_preview_no_event(tmp_state):
     assert "Error" in out and "no active event" in out
 
 
-def test_cmd_preview_team_not_at_event(tmp_state):
+def test_cmd_preview_team_not_at_event(tmp_state, monkeypatch):
     _write(tmp_state, _make_state())
+    # Mock build_report_for_team to return "" (team not found at event).
+    import pre_event_report as per
+    monkeypatch.setattr(per, "build_report_for_team", lambda event, team, **kw: "")
     out = lsc.cmd_preview("7777")
-    # Falls into the fallback path which reports team not in event.
-    assert "Error" in out and "not in event" in out
+    assert "Error" in out and "no pre-event report" in out
 
 
-def test_cmd_preview_fallback_snapshot(tmp_state):
+def test_cmd_preview_real_report(tmp_state, monkeypatch):
     _write(tmp_state, _make_state())
+    # Mock build_report_for_team to return a realistic one-team report.
+    import pre_event_report as per
+    fake_report = (
+        "TEAM 1538 — RoboJackets\n"
+        "Rank at 2026txbel: #9 of 40\n"
+        "EPA: 58.0  (avg 50.0)\n"
+        "  Auto:    14.5\n"
+        "  Teleop:  31.9\n"
+        "  Endgame: 11.6\n"
+        "Trend: stable  (+2%)\n"
+        "Scouting priority: HIGH — Top EPA — potential alliance pick"
+    )
+    monkeypatch.setattr(per, "build_report_for_team", lambda event, team, **kw: fake_report)
     out = lsc.cmd_preview("1538")
-    # Fallback path renders an EPA snapshot line.
-    assert "Team 1538" in out
+    assert "PREVIEW — 1538" in out
+    assert "RoboJackets" in out
     assert "EPA" in out

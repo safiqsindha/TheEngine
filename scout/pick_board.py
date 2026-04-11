@@ -654,15 +654,22 @@ def sim_playoffs(state: dict, n_sims: int = 5000):
 
 
 def cmd_setup(args):
-    """Setup draft board from event data."""
+    """Setup draft board from event data.
+
+    --force: overwrite event_key / our_team / our_seed / captains / teams
+             but PRESERVE picks, history, dnp, and live_matches from any
+             existing state file.  Use this after quals end to correct our
+             seed without losing picks already logged during the event.
+    """
     if not args:
-        print("Usage: pick_board.py setup <event_key> --team N --seed N [--captains 1,2,3,...]")
+        print("Usage: pick_board.py setup <event_key> --team N --seed N [--captains 1,2,3,...] [--force]")
         return
 
     event_key = args[0]
     our_team = None
     our_seed = None
     manual_captains = None
+    force = False
 
     i = 1
     while i < len(args):
@@ -673,6 +680,8 @@ def cmd_setup(args):
         elif args[i] == "--captains" and i + 1 < len(args):
             manual_captains = [int(t) for t in args[i + 1].split(",")]
             i += 2
+        elif args[i] == "--force":
+            force = True; i += 1
         else:
             i += 1
 
@@ -683,7 +692,15 @@ def cmd_setup(args):
     print(f"\n  THE SCOUT — PICK BOARD SETUP")
     print(f"  Event: {event_key}")
     print(f"  Our team: {our_team} | Seed: Alliance {our_seed}")
+    if force:
+        print(f"  --force: preserving picks/history/dnp/live_matches from existing state")
     print(f"  {'─' * 50}")
+
+    # Refuse to overwrite an existing state unless --force is passed
+    if STATE_FILE.exists() and not force:
+        print(f"  ERROR: State file already exists at {STATE_FILE}")
+        print(f"  Use --force to overwrite (picks/history/dnp are preserved).")
+        return
 
     # Fetch EPA data
     print(f"  Fetching EPA data...")
@@ -715,7 +732,21 @@ def cmd_setup(args):
         print(f"  WARNING: {our_team} is in captain list but not at seed {our_seed}")
         print(f"  Captain at seed {our_seed}: {captains[our_seed - 1]}")
 
-    state = _blank_state()
+    # Build new state, preserving live data when --force
+    if force and STATE_FILE.exists():
+        try:
+            existing = json.loads(STATE_FILE.read_text())
+        except (OSError, json.JSONDecodeError):
+            existing = _blank_state()
+        state = _blank_state()
+        # Carry over the mutable in-event state
+        state["picks"] = existing.get("picks", [])
+        state["history"] = existing.get("history", [])
+        state["dnp"] = existing.get("dnp", [])
+        state["live_matches"] = existing.get("live_matches", {})
+    else:
+        state = _blank_state()
+
     state["event_key"] = event_key
     state["our_team"] = our_team
     state["our_seed"] = our_seed
@@ -725,6 +756,9 @@ def cmd_setup(args):
 
     n_avail = len(teams_db) - len(captains)
     print(f"  {len(teams_db)} teams loaded, {n_avail} available for picking")
+    if force:
+        preserved = len(state["picks"])
+        print(f"  Preserved: {preserved} picks, {len(state['dnp'])} DNP, {len(state['live_matches'])} live matches")
     print(f"\n  Draft state saved. Ready for picks!")
     print(f"  Run 'pick_board.py board' to see the full board.")
     print(f"  Run 'pick_board.py pick <alliance#> <team#>' to record picks.\n")
