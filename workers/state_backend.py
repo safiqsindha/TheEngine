@@ -27,6 +27,15 @@ and inside an Azure Container Apps Job with zero code changes:
   AZURE_STATE_TABLE               → table name (default: livescoutstate)
   AZURE_STATE_BLOB_CONTAINER      → blob container (default: livescoutstate)
   AZURE_PICK_BOARD_BLOB           → blob name (default: pick_board.json)
+  AZURE_BACKFILL_BLOB_CONTAINER   → backfill blob container (default: livescoutbackfill)
+
+Backfill namespace isolation (Gate 5 / W6):
+  The backfill worker writes one state document per (season, event_key)
+  tuple, strictly segregated from live dispatcher / pick_board state.
+  Locally this lives under `workers/.state/backfill/{season}/{event_key}.json`;
+  in Azure it lives in a dedicated container `livescoutbackfill` at
+  `backfill/{season}/{event_key}.json`. The factory is
+  `get_backfill_backend(event_key=..., season=...)`.
 
 Lazy SDK imports: `azure-data-tables` and `azure-storage-blob` are only
 imported on first use so this module is import-safe in dev environments
@@ -241,6 +250,7 @@ class AzureBlobBackend:
 
 _DEFAULT_DISPATCHER_LOCAL_PATH = Path(__file__).parent / ".state" / "dispatcher.json"
 _DEFAULT_PICK_BOARD_LOCAL_PATH = Path.home() / ".scout" / "state.json"
+_DEFAULT_BACKFILL_LOCAL_ROOT = Path(__file__).parent / ".state" / "backfill"
 
 
 def _selected_backend() -> str:
@@ -292,3 +302,48 @@ def get_pick_board_backend(
             blob_name=blob_name,
         )
     return LocalFileBackend(local_path or _DEFAULT_PICK_BOARD_LOCAL_PATH)
+
+
+def get_backfill_backend(
+    *,
+    event_key: str,
+    season: int,
+    local_path: Optional[Path] = None,
+) -> JsonStateBackend:
+    """Return a backfill-namespaced state backend for one (season, event_key).
+
+    Gate 5 / W6 writes one document per historical event. The namespace
+    is kept completely separate from live dispatcher and pick_board state
+    so a long-running backfill job cannot pollute the live draft tool.
+
+    Local layout:
+        workers/.state/backfill/{season}/{event_key}.json
+
+    Azure layout:
+        container = AZURE_BACKFILL_BLOB_CONTAINER (default "livescoutbackfill")
+        blob name = backfill/{season}/{event_key}.json
+
+    The container defaults to a NEW container ("livescoutbackfill"), not
+    the live state container, so backfill data can be managed (lifecycle
+    policies, deletion, cold storage) independently of live state.
+    """
+    if not event_key:
+        raise ValueError("get_backfill_backend requires an event_key")
+    if not isinstance(season, int):
+        raise ValueError("get_backfill_backend requires an integer season")
+
+    if _selected_backend() == "azure":
+        conn = os.environ.get("AZURE_STORAGE_CONNECTION_STRING", "")
+        container = os.environ.get(
+            "AZURE_BACKFILL_BLOB_CONTAINER", "livescoutbackfill",
+        )
+        blob_name = f"backfill/{season}/{event_key}.json"
+        return AzureBlobBackend(
+            connection_string=conn,
+            container_name=container,
+            blob_name=blob_name,
+        )
+
+    if local_path is None:
+        local_path = _DEFAULT_BACKFILL_LOCAL_ROOT / str(season) / f"{event_key}.json"
+    return LocalFileBackend(local_path)

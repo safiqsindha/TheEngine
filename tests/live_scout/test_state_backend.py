@@ -22,6 +22,7 @@ from workers.state_backend import (  # noqa: E402
     AzureBlobBackend,
     AzureTableBackend,
     LocalFileBackend,
+    get_backfill_backend,
     get_dispatcher_backend,
     get_pick_board_backend,
 )
@@ -409,6 +410,43 @@ def test_get_pick_board_backend_azure_uses_defaults(monkeypatch):
     backend = get_pick_board_backend()
     assert backend._container == "livescoutstate"
     assert backend._blob == "pick_board.json"
+
+
+# ─── Backfill factory (Gate 5 / W6) ───
+
+
+def test_get_backfill_backend_local_default_path(monkeypatch, tmp_path):
+    """Default local backend lands under workers/.state/backfill/{season}/{event}.json."""
+    monkeypatch.delenv("STATE_BACKEND", raising=False)
+    backend = get_backfill_backend(event_key="2025txbel", season=2025)
+    assert isinstance(backend, LocalFileBackend)
+    p = str(backend.path)
+    assert p.endswith("/backfill/2025/2025txbel.json")
+
+
+def test_get_backfill_backend_requires_event_key():
+    with pytest.raises(ValueError, match="event_key"):
+        get_backfill_backend(event_key="", season=2025)
+
+
+def test_get_backfill_backend_azure_uses_backfill_container(monkeypatch, stub_azure_blobs):
+    monkeypatch.setenv("STATE_BACKEND", "azure")
+    monkeypatch.setenv("AZURE_STORAGE_CONNECTION_STRING", "UseDevelopmentStorage=true")
+    monkeypatch.delenv("AZURE_BACKFILL_BLOB_CONTAINER", raising=False)
+    backend = get_backfill_backend(event_key="2025txbel", season=2025)
+    assert isinstance(backend, AzureBlobBackend)
+    # New dedicated container by default — NOT the live state container
+    assert backend._container == "livescoutbackfill"
+    assert backend._blob == "backfill/2025/2025txbel.json"
+
+
+def test_get_backfill_backend_azure_respects_container_override(monkeypatch, stub_azure_blobs):
+    monkeypatch.setenv("STATE_BACKEND", "azure")
+    monkeypatch.setenv("AZURE_STORAGE_CONNECTION_STRING", "UseDevelopmentStorage=true")
+    monkeypatch.setenv("AZURE_BACKFILL_BLOB_CONTAINER", "customcorpus")
+    backend = get_backfill_backend(event_key="2024txhou", season=2024)
+    assert backend._container == "customcorpus"
+    assert backend._blob == "backfill/2024/2024txhou.json"
 
 
 # ─── Discovery integration: prove the W1 worker can talk to the backend ───
