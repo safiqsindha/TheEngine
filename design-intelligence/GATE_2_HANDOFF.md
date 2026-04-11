@@ -280,3 +280,131 @@ scripts/run_worker_local.sh mode_a --event 2026txbel
 
 Useful for debugging a production issue without re-deploying — same
 code, same data, your local logs.
+
+---
+
+## §7 — Phase 2: TBA Trusted User registration
+
+The U pipeline (eye/match_boundary.py + scout/tba_writer.py + workers/tba_uploader.py)
+publishes post-match video links back to The Blue Alliance via TBA's
+Trusted v1 API. This requires a human-completed registration step that
+CANNOT be automated from inside The Engine.
+
+### Prerequisites
+
+1. **Team TBA account.** Sign into https://www.thebluealliance.com/ with
+   the team's TBA account (the one that already administers Team 2950
+   on TBA). If the team does not have a shared TBA account yet, create
+   one using a shared mentor email — individual mentor accounts should
+   not own trusted-API credentials.
+
+2. **Request trusted access for an event.** Under Account → My Events,
+   request trusted access for the specific event key(s) we plan to
+   upload videos for (e.g. `2026txbel`). TBA staff approve these
+   manually and grant access per event, not globally.
+
+3. **Generate an auth_id + auth_secret pair.** Once trusted access is
+   approved, the TBA UI exposes an "auth_id" (short integer-like
+   identifier) and an "auth_secret" (long hex string). Copy both — the
+   secret is only shown once. If it gets lost, regenerate from the
+   same page.
+
+### Store credentials in Key Vault
+
+```bash
+# Once per environment — name MUST match parameters.dev.json / parameters.prod.json
+az keyvault secret set \
+  --vault-name $KEYVAULT_NAME \
+  --name tba-trusted-auth-id \
+  --value "$TBA_TRUSTED_AUTH_ID"
+
+az keyvault secret set \
+  --vault-name $KEYVAULT_NAME \
+  --name tba-trusted-auth-secret \
+  --value "$TBA_TRUSTED_AUTH_SECRET"
+```
+
+Both secrets are referenced by `infra/bicep/main.bicep` via the
+`@secure` params `tbaTrustedAuthId` and `tbaTrustedAuthSecret`.
+
+### Dry-run until the secret lands
+
+The Bicep template defaults `tbaUploaderDryRun=true`, and the worker
+has a second env-driven guard via `TBA_UPLOADER_DRY_RUN`. Before real
+credentials are in place, the uploader will iterate state, log every
+match it *would* upload, and short-circuit the HTTP transport. This
+means you can deploy the whole Phase 2 stack — including the uploader
+cron job — without risking a bad POST to TBA.
+
+When you're ready to go live:
+
+```bash
+# Flip dry-run off for the next deploy
+az deployment group create \
+  --resource-group $RG \
+  --template-file infra/bicep/main.bicep \
+  --parameters tbaUploaderDryRun=false environmentName=livescout-prod ...
+```
+
+### Debugging a failed upload
+
+The uploader prints one of these status strings per match:
+
+| status              | meaning                                              |
+|---------------------|------------------------------------------------------|
+| `processed`         | TBA accepted the POST (200 OK)                       |
+| `already_uploaded`  | TBA said "already exists" (treated as success)       |
+| `skipped_no_video`  | LiveMatch had no real YouTube id (frame dir only)    |
+| `skipped_already_marked` | `tba_uploaded=True` was already on the record   |
+| `error:http_400`    | Bad body or wrong match_key shape — do not retry     |
+| `error:http_401`    | Auth fail — check auth_id/secret in Key Vault        |
+| `error:http_403`    | Event not in your trusted scope — ask TBA staff      |
+| `error:http_5xx`    | TBA transient — retried 3x, will retry next cron     |
+
+When you see `error:http_401` or `error:http_403`, the uploader's
+auth state is wrong. Regenerate the auth_secret on TBA, re-set the
+Key Vault secret, and redeploy. The `tba_uploaded` flag is NOT set
+on error paths, so matches are safe to re-upload on the next tick.
+
+---
+
+## §8 — Phase 2: Anthropic API key for the synthesis worker
+
+The T3 synthesis worker (workers/synthesis_worker.py) calls the
+Anthropic API for end-of-day strategic briefs. Register an Anthropic
+API key under the team's account and drop it in Key Vault:
+
+```bash
+az keyvault secret set \
+  --vault-name $KEYVAULT_NAME \
+  --name anthropic-api-key \
+  --value "$ANTHROPIC_API_KEY"
+```
+
+This is referenced by `infra/bicep/main.bicep` via the secure param
+`anthropicApiKey`. Without it the synthesis-worker cron job still
+deploys and runs, but every tick logs a missing-key error and exits
+non-zero.
+
+The model defaults to `claude-opus-4-6` (Bicep param
+`synthesisAnthropicModel`). Override in `parameters.*.json` if you
+need to point at a different snapshot.
+
+---
+
+## §9 — Phase 2: Vision worker model selection (V0a)
+
+`eye/vision_yolo.py` ships with a `FakeYOLOModel` that returns empty
+event lists for every frame. The Bicep template sets
+`MODEL_NAME=fake` by default, so the vision-worker cron runs end-to-end
+but no-ops. To switch to a real model:
+
+1. Pick a Roboflow Universe FRC YOLO model (or train your own — see
+   the Gemma+SAM3.1 auto-labeling backlog entry in
+   LIVE_SCOUT_PHASE2_REMAINING.md §Off-season backlog).
+2. Implement the loader in `eye/vision_yolo.py::_load_real_model`,
+   replacing the `NotImplementedError` with a weights fetch and a
+   wrapper that exposes `.infer(frame_path) -> list[VisionEvent]`.
+3. Flip the Bicep param `visionModelName` from `"fake"` to the real
+   model id, and if you need a GPU SKU, set `visionGpuSku` to the
+   target Azure Container Apps SKU.
