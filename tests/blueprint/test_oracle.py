@@ -580,17 +580,11 @@ def test_predict_from_file_loads_scalar_fields(tmp_path):
     assert pred["endgame"]["type"] != "none"  # endgame_type carries over
 
 
-@pytest.mark.xfail(
-    reason="oracle.predict_from_file uses hasattr(GameRules, k), which returns "
-           "False for dataclass fields with default_factory (scoring_targets, etc.). "
-           "Those fields are silently dropped on JSON load, so the in-memory and "
-           "from-file predictions diverge. Real bug — fix in a separate session.",
-    strict=True,
-)
 def test_predict_from_file_full_round_trip(tmp_path):
     """A GameRules → JSON → predict_from_file → same prediction as in-memory.
 
-    Currently broken because list-typed fields (scoring_targets) get stripped.
+    Bug fixed: GameRules.from_dict() now uses dataclasses.fields() for proper
+    field enumeration, so list-typed fields (scoring_targets) are preserved.
     """
     game = HISTORICAL_GAMES["2024"]
     json_path = tmp_path / "game.json"
@@ -608,6 +602,67 @@ def test_predict_from_file_ignores_unknown_keys(tmp_path):
     json_path.write_text(json.dumps(data))
     pred = predict_from_file(str(json_path))
     assert pred["game_name"] == "EdgeCase"
+
+
+def test_gamerules_from_dict_round_trip():
+    """asdict → from_dict → asdict yields the same dict for all historical games."""
+    for year, game in HISTORICAL_GAMES.items():
+        data = asdict(game)
+        rebuilt = GameRules.from_dict(data)
+        assert asdict(rebuilt) == data, f"round-trip failed for {year}"
+
+
+def test_gamerules_from_dict_drops_unknown_keys():
+    """Extra keys in the input dict should not crash from_dict."""
+    data = {"game_name": "Test", "year": 2027, "totally_made_up": "ignore me"}
+    game = GameRules.from_dict(data)
+    assert game.game_name == "Test"
+    assert game.year == 2027
+
+
+def test_gamerules_from_dict_handles_minimal_input():
+    """Passing only a name produces a GameRules with all other defaults."""
+    game = GameRules.from_dict({"game_name": "Sparse"})
+    assert game.game_name == "Sparse"
+    assert game.scoring_targets == []  # default_factory respected
+    assert game.year == 2027  # default value
+
+
+def test_gamerules_from_dict_preserves_scoring_targets():
+    """The actual bug fix: scoring_targets must survive a from_dict round-trip."""
+    original = HISTORICAL_GAMES["2024"]
+    data = asdict(original)
+    rebuilt = GameRules.from_dict(data)
+    assert len(rebuilt.scoring_targets) == len(original.scoring_targets)
+    assert rebuilt.scoring_targets == original.scoring_targets
+
+
+def test_gamerules_to_dict_returns_dict():
+    game = HISTORICAL_GAMES["2022"]
+    d = game.to_dict()
+    assert isinstance(d, dict)
+    assert d["game_name"] == "Rapid React"
+
+
+def test_gamerules_to_dict_includes_scoring_targets():
+    """to_dict must include the scoring_targets list (regression check)."""
+    game = HISTORICAL_GAMES["2022"]
+    d = game.to_dict()
+    assert "scoring_targets" in d
+    assert len(d["scoring_targets"]) > 0
+
+
+def test_predict_from_file_preserves_scoring_targets(tmp_path):
+    """End-to-end bug fix verification: predict_from_file now produces the
+    same scorer prediction as in-memory apply_rules."""
+    import json as _json
+    game = HISTORICAL_GAMES["2024"]
+    json_path = tmp_path / "game.json"
+    json_path.write_text(_json.dumps(asdict(game)))
+    pred_from_file = predict_from_file(str(json_path))
+    pred_in_memory = apply_rules(game)
+    assert pred_from_file["scorer"] == pred_in_memory["scorer"]
+    assert pred_from_file["intake"]["roller_material"] == pred_in_memory["intake"]["roller_material"]
 
 
 def test_rule_result_dataclass_construction():

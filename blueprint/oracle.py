@@ -19,7 +19,7 @@ Usage:
 
 import json
 import sys
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field, asdict, fields
 from pathlib import Path
 
 BASE_DIR = Path(__file__).parent
@@ -78,6 +78,19 @@ class GameRules:
 
     # Scoring meta
     estimated_winning_score: int = 100
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "GameRules":
+        """Construct a GameRules from a plain dict, ignoring unknown keys.
+        Uses dataclasses.fields() for proper introspection — fixes the
+        hasattr() bug where default_factory fields were silently dropped."""
+        valid_field_names = {f.name for f in fields(cls)}
+        filtered = {k: v for k, v in data.items() if k in valid_field_names}
+        return cls(**filtered)
+
+    def to_dict(self) -> dict:
+        """Serialize this GameRules to a plain dict (for JSON output)."""
+        return asdict(self)
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -705,7 +718,7 @@ def predict_from_file(path: str) -> dict:
     """Load GameRules JSON from file, run prediction, return result."""
     with open(path) as f:
         data = json.load(f)
-    game = GameRules(**{k: v for k, v in data.items() if hasattr(GameRules, k)})
+    game = GameRules.from_dict(data)
     return predict_game(game)
 
 
