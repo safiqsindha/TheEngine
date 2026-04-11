@@ -57,7 +57,7 @@ audit of what's covered and what's NOT.
 | Off-camera failures (brownouts, jams) | Stand scouts |
 | Driver station behavior — queue speed, recovery | Stand scouts |
 | Same-day morale / hot streaks / mentor disputes | Pure human read |
-| Robot construction details | `pit-crew/` photos + human notes |
+| Robot construction details | `design-intelligence/pit-crew/` photos + human notes |
 
 ### How the layers fit together
 

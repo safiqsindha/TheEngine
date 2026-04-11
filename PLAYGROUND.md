@@ -27,8 +27,8 @@ The Engine is one big GitHub repo with **fifteen subsystems** at three different
 ### Specs and templates — read these, no code to run
 | Subsystem | What's there | Lives in |
 |---|---|---|
-| **Cockpit** | Driver console standards: controller mapping, dashboard layout, hardware spec | `cockpit/` |
-| **Pit Crew** | Robot report template used between matches | `pit-crew/` |
+| **Cockpit** | Driver console standards: controller mapping, dashboard layout, hardware spec | `design-intelligence/cockpit/` |
+| **Pit Crew** | Robot report template used between matches | `design-intelligence/pit-crew/` |
 | **Training** | 6 training modules + worksheet PDF + deck PPTX + a React training app | `training/` |
 
 ### Reserved subsystem slots — planned but not built yet
@@ -639,10 +639,10 @@ code src/main/java/frc/robot/RobotContainer.java \
 
 These are the contracts the Cockpit and Pit Crew subsystems will eventually be built against. Click each one to open it:
 
-- [`cockpit/D1_CONTROLLER_MAPPING.md`](cockpit/D1_CONTROLLER_MAPPING.md) — exactly which button does what on the driver and operator controllers
-- [`cockpit/D2_DASHBOARD_LAYOUT.md`](cockpit/D2_DASHBOARD_LAYOUT.md) — what every widget on the driver-station dashboard means
-- [`cockpit/D3_CONSOLE_HARDWARE_STANDARD.md`](cockpit/D3_CONSOLE_HARDWARE_STANDARD.md) — the physical driver console build spec
-- [`pit-crew/ROBOT_REPORT_TEMPLATE.md`](pit-crew/ROBOT_REPORT_TEMPLATE.md) — the template the pit crew fills out between matches
+- [`design-intelligence/cockpit/D1_CONTROLLER_MAPPING.md`](design-intelligence/cockpit/D1_CONTROLLER_MAPPING.md) — exactly which button does what on the driver and operator controllers
+- [`design-intelligence/cockpit/D2_DASHBOARD_LAYOUT.md`](design-intelligence/cockpit/D2_DASHBOARD_LAYOUT.md) — what every widget on the driver-station dashboard means
+- [`design-intelligence/cockpit/D3_CONSOLE_HARDWARE_STANDARD.md`](design-intelligence/cockpit/D3_CONSOLE_HARDWARE_STANDARD.md) — the physical driver console build spec
+- [`design-intelligence/pit-crew/ROBOT_REPORT_TEMPLATE.md`](design-intelligence/pit-crew/ROBOT_REPORT_TEMPLATE.md) — the template the pit crew fills out between matches
 
 ### Step 3 — Bonus: read the unit tests
 

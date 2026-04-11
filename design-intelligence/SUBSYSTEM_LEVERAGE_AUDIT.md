@@ -68,7 +68,7 @@ back roughly **3× that effort** to spend elsewhere.
 
 **Action:**
 - Delete P.3 and P.6 from the roadmap
-- Add a one-line note: *"Log replay + digital twin handled by AdvantageScope. Document the field model + log paths in `pit-crew/ADVANTAGESCOPE_SETUP.md`."*
+- Add a one-line note: *"Log replay + digital twin handled by AdvantageScope. Document the field model + log paths in `design-intelligence/pit-crew/ADVANTAGESCOPE_SETUP.md`."*
 - ~36 h reclaimed
 
 **Status:** Ready to execute. No blockers.
