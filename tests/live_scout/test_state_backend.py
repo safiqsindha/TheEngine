@@ -23,6 +23,7 @@ from workers.state_backend import (  # noqa: E402
     AzureTableBackend,
     LocalFileBackend,
     get_backfill_backend,
+    get_brief_backend,
     get_dispatcher_backend,
     get_pick_board_backend,
 )
@@ -447,6 +448,51 @@ def test_get_backfill_backend_azure_respects_container_override(monkeypatch, stu
     backend = get_backfill_backend(event_key="2024txhou", season=2024)
     assert backend._container == "customcorpus"
     assert backend._blob == "backfill/2024/2024txhou.json"
+
+
+# ─── Brief factory (T3 synthesis worker) ───
+
+
+def test_get_brief_backend_local_default_path(monkeypatch, tmp_path):
+    """Default local backend lands under workers/.state/briefs/brief_<event>.json."""
+    monkeypatch.delenv("STATE_BACKEND", raising=False)
+    backend = get_brief_backend("2026txbel")
+    assert isinstance(backend, LocalFileBackend)
+    assert str(backend.path).endswith("/briefs/brief_2026txbel.json")
+
+
+def test_get_brief_backend_honors_explicit_local_path(tmp_path):
+    backend = get_brief_backend(
+        "2026txbel", local_path=tmp_path / "custom.json",
+    )
+    assert isinstance(backend, LocalFileBackend)
+    assert backend.path == tmp_path / "custom.json"
+
+
+def test_get_brief_backend_requires_event_key():
+    with pytest.raises(ValueError, match="event_key"):
+        get_brief_backend("")
+
+
+def test_get_brief_backend_azure_default_blob(monkeypatch, stub_azure_blobs):
+    monkeypatch.setenv("STATE_BACKEND", "azure")
+    monkeypatch.setenv("AZURE_STORAGE_CONNECTION_STRING", "UseDevelopmentStorage=true")
+    monkeypatch.delenv("AZURE_BRIEF_BLOB", raising=False)
+    monkeypatch.delenv("AZURE_STATE_BLOB_CONTAINER", raising=False)
+    backend = get_brief_backend("2026txbel")
+    assert isinstance(backend, AzureBlobBackend)
+    assert backend._container == "livescoutstate"
+    assert backend._blob == "brief_2026txbel.json"
+
+
+def test_get_brief_backend_azure_env_overrides(monkeypatch, stub_azure_blobs):
+    monkeypatch.setenv("STATE_BACKEND", "azure")
+    monkeypatch.setenv("AZURE_STORAGE_CONNECTION_STRING", "UseDevelopmentStorage=true")
+    monkeypatch.setenv("AZURE_STATE_BLOB_CONTAINER", "mybriefs")
+    monkeypatch.setenv("AZURE_BRIEF_BLOB", "nightly_brief.json")
+    backend = get_brief_backend("2026txbel")
+    assert backend._container == "mybriefs"
+    assert backend._blob == "nightly_brief.json"
 
 
 # ─── Discovery integration: prove the W1 worker can talk to the backend ───

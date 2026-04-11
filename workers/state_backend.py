@@ -28,6 +28,8 @@ and inside an Azure Container Apps Job with zero code changes:
   AZURE_STATE_BLOB_CONTAINER      → blob container (default: livescoutstate)
   AZURE_PICK_BOARD_BLOB           → blob name (default: pick_board.json)
   AZURE_BACKFILL_BLOB_CONTAINER   → backfill blob container (default: livescoutbackfill)
+  AZURE_BRIEF_BLOB                → synthesis brief blob name
+                                    (default: brief_<event_key>.json)
 
 Backfill namespace isolation (Gate 5 / W6):
   The backfill worker writes one state document per (season, event_key)
@@ -253,6 +255,7 @@ _DEFAULT_PICK_BOARD_LOCAL_PATH = Path.home() / ".scout" / "state.json"
 _DEFAULT_BACKFILL_LOCAL_ROOT = Path(__file__).parent / ".state" / "backfill"
 _DEFAULT_ANOMALY_LOCAL_PATH = Path(__file__).parent / ".state" / "mode_c_anomaly.json"
 _DEFAULT_DIGEST_LOCAL_DIR = Path(__file__).parent / ".state" / "digests"
+_DEFAULT_BRIEF_LOCAL_DIR = Path(__file__).parent / ".state" / "briefs"
 _DEFAULT_DISCORD_DEDUPE_LOCAL_PATH = Path(__file__).parent / ".state" / "discord_dedupe.json"
 
 
@@ -402,6 +405,37 @@ def get_digest_backend(
         )
     if local_path is None:
         local_path = _DEFAULT_DIGEST_LOCAL_DIR / f"digest_{event_key}.json"
+    return LocalFileBackend(local_path)
+
+
+def get_brief_backend(
+    event_key: str,
+    *,
+    local_path: Optional[Path] = None,
+) -> JsonStateBackend:
+    """Return the configured synthesis-brief backend for a specific event.
+
+    Written by T3 (workers/synthesis_worker.py). One blob per event so
+    briefs from different events don't clobber each other. Local default
+    is workers/.state/briefs/brief_<event_key>.json. In Azure,
+    AZURE_BRIEF_BLOB (default: `brief_<event_key>.json`) lives in
+    AZURE_STATE_BLOB_CONTAINER (default: 'livescoutstate').
+    """
+    if not event_key:
+        raise ValueError("get_brief_backend requires an event_key")
+    if _selected_backend() == "azure":
+        conn = os.environ.get("AZURE_STORAGE_CONNECTION_STRING", "")
+        container = os.environ.get("AZURE_STATE_BLOB_CONTAINER", "livescoutstate")
+        blob_name = os.environ.get(
+            "AZURE_BRIEF_BLOB", f"brief_{event_key}.json"
+        )
+        return AzureBlobBackend(
+            connection_string=conn,
+            container_name=container,
+            blob_name=blob_name,
+        )
+    if local_path is None:
+        local_path = _DEFAULT_BRIEF_LOCAL_DIR / f"brief_{event_key}.json"
     return LocalFileBackend(local_path)
 
 
