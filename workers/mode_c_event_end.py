@@ -164,18 +164,15 @@ def _default_event_matches(event_key: str) -> list[dict[str, Any]]:
     return event_matches(event_key)
 
 
-def _default_run_mode_b(**kwargs) -> None:
-    """Default Mode B invocation. Mode B doesn't exist yet (W3 is a
-    separate ticket in the same gate plan), so this is a no-op in
-    Phase 1 / Gate 4 — the caller is expected to have already populated
-    state['live_matches'] via Mode A.
+def _default_run_mode_b(**kwargs) -> Any:
+    """Default Mode B invocation — wired to workers.mode_b.run_mode_b (W3).
 
-    Once workers/mode_b.py lands, this default can switch to:
-        from workers.mode_b import run_mode_b
-        return run_mode_b(**kwargs)
+    Lazy import so importing this module does not pull in PaddleOCR or
+    the rest of the OCR stack until something actually triggers a
+    backfill pass.
     """
-    # TODO: wire to workers.mode_b.run_mode_b once W3 lands.
-    return None
+    from workers.mode_b import run_mode_b
+    return run_mode_b(**kwargs)
 
 
 # ─── Orchestrator ───
