@@ -424,15 +424,22 @@ headline feature; treat the backfill as the moat.
 
 ## Open questions to resolve before build starts
 
-1. **Microsoft FIRST Azure credits** — Safiq to confirm the team
-   tenant has active credits, or apply through the FRC Microsoft
-   Imagine sponsorship program.
-2. **TBA Trusted User application** — Safiq to apply this week.
+1. ~~**Microsoft FIRST Azure credits**~~ — **RESOLVED 2026-04-10.**
+   Safiq is applying for FIRST Azure credits. Worst case, fall back to
+   personal billing — the cost ceiling is low enough (~$30/season
+   Anthropic API + Azure scale-to-zero) that this isn't a blocker.
+2. ~~**TBA Trusted User application**~~ — **DEFERRED 2026-04-10.**
+   Not needed for Phase 1 because `@texasFRC` is already cutting and
+   uploading per-match videos to TBA. Reopen this question only if/when
+   Phase 2 (be faster than `@texasFRC`) becomes a priority.
 3. **pick_board live feed shape** — does pick_board.py read from a
-   REST endpoint, a file, or a database? Need to confirm before Mode A
-   ships so the integration doesn't surprise us.
-4. **Discord #engine-alerts channel** — does the channel exist? If
-   not, create it before the alert push layer is built.
+   REST endpoint, a file, or a database? **Audit deferred until we
+   start Mode A** — confirm before that worker ships so the integration
+   doesn't surprise us, but it does not block design-doc sign-off.
+4. ~~**Discord #engine-alerts channel**~~ — **DEFERRED 2026-04-10.**
+   Hold the channel + alert push layer until Phase 1 is fully built.
+   No reason to create the channel before there's anything to send to
+   it; avoids student confusion about a dead alerts channel.
 5. ~~**Backfill scope**~~ — **RESOLVED 2026-04-10.** Go straight to
    2023+. Source is already on YouTube (`@texasFRC` per-match archive
    + `@FIRSTinTexas` full-day livestream VODs), so there is no
