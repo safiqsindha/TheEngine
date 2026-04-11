@@ -1,30 +1,42 @@
 # Live Scout Phase 2 — Remaining Work
 
-**Status as of 2026-04-10 night:** T2 V1 + V3 + V4 shipped (commits `0beabe0` + `ba9be9a`).
-Test suite: **327 passing, 2 skipped** (+43 vs Phase 1 baseline).
+**Status as of 2026-04-11:** T2 V1 + V3 + V4 + V5 shipped. T2 fully in-infra.
+Test suite: **492 passing, 2 skipped** (+165 vs the 2026-04-10 baseline,
+includes the Antenna Live Scout command layer tests from
+`tests/antenna/test_live_scout_commands.py`).
 
 What's still on the list, ordered by what to grab first.
 
 ---
 
-## 1. T2 V5 — Bicep + GHA wiring (smallest, ~30 min)
+## 1. ~~T2 V5 — Bicep + GHA wiring~~ **RESOLVED 2026-04-11**
 
-Close out the vision worker by wiring it into infra.
+Vision worker is fully wired into the infra. Audit trail:
 
-- **`infra/bicep/main.bicep`** — add `vision-worker` Container App Job
-  - Cron: `*/10 * * * *`
-  - Env: `MODEL_NAME` (default `"fake"` until V0a lands), `STATE_BACKEND=azure`,
-    `AZURE_STORAGE_CONNECTION_STRING` from Key Vault
-  - New param: `visionGpuSku` (string, default `""` so CPU is the fallback)
-  - Image tag follows the same `${acrLoginServer}/vision-worker:${imageTag}` pattern as mode-a
-- **`.github/workflows/mode-a-build.yml`** — add `vision-worker` build target
-  - Same matrix entry shape as mode-a/mode-b/backfill — point Dockerfile build context at
-    `workers/` and tag with the new image name
-- **No new Dockerfile needed** — vision_worker.py imports from the same `workers/` package
-  the existing image already builds
+- `infra/bicep/main.bicep` — `visionJob` resource block (lines ~368-455):
+  - `cronExpression: visionCronExpression` (default `*/10 * * * *`)
+  - Env: `MODEL_NAME=fake` (from `visionModelName` param), `STATE_BACKEND=azure`,
+    `AZURE_STORAGE_CONNECTION_STRING` from inline secret, `VISION_GPU_SKU`
+    (from `visionGpuSku` param, default `""`)
+  - `replicaTimeout: 1800` (30 min ceiling per tick)
+  - `dependsOn: [dispatcherTable, pickBoardContainer]`
+  - Output: `visionJobName`
+- `infra/bicep/parameters.dev.json` — `visionCronExpression` + `visionModelName`
+  set to their production defaults (`*/10 * * * *` + `fake`)
+- `.github/workflows/mode-a-build.yml` — the `deploy` job has a
+  "Smoke test — start one Vision worker execution" step (lines ~142-148)
+  that fires the job after every manual deploy
+- `MODEL_NAME=fake` is enforced in prod per V0a decision below — when real
+  models ship, flip the param, don't touch the template
 
-**Done when:** `python3 -m pytest tests/live_scout/` still green and `terraform plan`/`bicep build`
-runs clean against the updated template.
+**No new Dockerfile needed** — `workers/vision_worker.py` is packaged inside
+the same image the mode-a job uses, so the single existing build target covers
+both jobs.
+
+**Done when:** `python3 -m pytest tests/` green (**492 passing, 2 skipped** as of 2026-04-11) and
+`az bicep build --file infra/bicep/main.bicep` parses clean. Pytest confirmed green 2026-04-11;
+the Bicep template hasn't changed in this session so the last successful parse (commit that
+introduced the `visionJob` block) is still authoritative.
 
 ---
 
