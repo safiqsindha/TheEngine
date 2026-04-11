@@ -11,7 +11,8 @@ import sys
 import unittest
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent))
+_BLUEPRINT_DIR = Path(__file__).resolve().parents[2] / "blueprint"
+sys.path.insert(0, str(_BLUEPRINT_DIR))
 
 from elevator_generator import (
     ElevatorSpec,

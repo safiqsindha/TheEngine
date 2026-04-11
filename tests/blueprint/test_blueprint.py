@@ -22,8 +22,9 @@ import unittest
 from pathlib import Path
 from dataclasses import asdict
 
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent))
+# Add blueprint source directory to path for imports
+_BLUEPRINT_DIR = Path(__file__).resolve().parents[2] / "blueprint"
+sys.path.insert(0, str(_BLUEPRINT_DIR))
 
 from frame_generator import (
     generate_frame,
@@ -57,7 +58,7 @@ from prediction_bridge import (
     _normalize_scorer_method,
     _normalize_endgame_type,
 )
-from onshape_api import load_cots_catalog, lookup_part, test_connection
+from onshape_api import load_cots_catalog, lookup_part, test_connection as check_onshape_connection
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -490,13 +491,17 @@ class TestCOTSCatalog(unittest.TestCase):
 # ONSHAPE API SMOKE TESTS
 # ═══════════════════════════════════════════════════════════════════
 
+@unittest.skipUnless(
+    os.getenv("ONSHAPE_ACCESS_KEY") and os.getenv("ONSHAPE_SECRET_KEY"),
+    "Onshape API credentials not set; skipping smoke tests"
+)
 class TestOnShapeSmoke(unittest.TestCase):
     """Smoke tests for OnShape API. Skipped if no API keys configured."""
 
     def setUp(self):
         if not os.environ.get("ONSHAPE_ACCESS_KEY"):
             # Try loading .env
-            env_path = Path(__file__).parent / ".env"
+            env_path = _BLUEPRINT_DIR / ".env"
             if env_path.exists():
                 with open(env_path) as f:
                     for line in f:
@@ -509,12 +514,12 @@ class TestOnShapeSmoke(unittest.TestCase):
             self.skipTest("ONSHAPE_ACCESS_KEY not set — skipping API smoke tests")
 
     def test_connection(self):
-        result = test_connection()
+        result = check_onshape_connection()
         self.assertTrue(result["connected"])
         self.assertIn("user", result)
 
     def test_connection_has_email(self):
-        result = test_connection()
+        result = check_onshape_connection()
         self.assertIn("@", result.get("email", ""))
 
 
