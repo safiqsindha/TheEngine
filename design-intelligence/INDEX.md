@@ -4,7 +4,7 @@ Entry point for all design, prediction, and operational docs.
 **Start here** when onboarding a new agent or planning a session.
 
 *Last updated: 2026-04-11. 53 docs across 4 buckets + 2 subfolders.*
-*Test suite: **936 tests** in tests/ (503 scout + 64 antenna + 371 blueprint + 2 skip + 4 xfail). Oracle + assembly_composer suites added 2026-04-11.*
+*Test suite: **944 tests** in tests/ (503 scout + 64 antenna + 377 blueprint + 2 skip + 3 xfail). Oracle + assembly_composer suites added 2026-04-11. GameRules I/O fix added 2026-04-11.*
 
 ---
 
