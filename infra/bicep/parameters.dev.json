@@ -18,6 +18,48 @@
         },
         "secretName": "tba-api-key"
       }
+    },
+    "visionCronExpression": {
+      "value": "*/10 * * * *"
+    },
+    "visionModelName": {
+      "value": "fake"
+    },
+    "synthesisCronExpression": {
+      "value": "0 4 * * *"
+    },
+    "synthesisAnthropicModel": {
+      "value": "claude-opus-4-6"
+    },
+    "tbaUploaderCronExpression": {
+      "value": "*/15 * * * *"
+    },
+    "tbaUploaderDryRun": {
+      "value": true
+    },
+    "anthropicApiKey": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/REPLACE_ME/resourceGroups/REPLACE_ME/providers/Microsoft.KeyVault/vaults/REPLACE_ME"
+        },
+        "secretName": "anthropic-api-key"
+      }
+    },
+    "tbaTrustedAuthId": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/REPLACE_ME/resourceGroups/REPLACE_ME/providers/Microsoft.KeyVault/vaults/REPLACE_ME"
+        },
+        "secretName": "tba-trusted-auth-id"
+      }
+    },
+    "tbaTrustedAuthSecret": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/REPLACE_ME/resourceGroups/REPLACE_ME/providers/Microsoft.KeyVault/vaults/REPLACE_ME"
+        },
+        "secretName": "tba-trusted-auth-secret"
+      }
     }
   }
 }

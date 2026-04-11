@@ -1,4 +1,4 @@
-name: Live Scout — build & deploy Mode A
+name: Live Scout — build & deploy
 
 # Manual-only until the Azure resources exist (Gate 2 handoff). Once
 # infra is provisioned and the GitHub secrets below are set, you can
@@ -24,6 +24,11 @@ on:
 #   AZURE_SUBSCRIPTION_ID   — subscription containing the resource group
 #   ACR_NAME                — Azure Container Registry name (no .azurecr.io)
 #   TBA_API_KEY             — The Blue Alliance read API key
+#
+# Phase 2 secrets (optional — workers degrade gracefully without them):
+#   ANTHROPIC_API_KEY          — Anthropic key for T3 synthesis worker
+#   TBA_TRUSTED_AUTH_ID        — TBA Trusted User auth_id for U uploader
+#   TBA_TRUSTED_AUTH_SECRET    — TBA Trusted User auth_secret for U uploader
 #
 # Optional:
 #   ENVIRONMENT_NAME        — defaults to 'livescout-prod'
@@ -119,6 +124,9 @@ jobs:
           parameters: >-
             environmentName=${{ secrets.ENVIRONMENT_NAME || 'livescout-prod' }}
             tbaApiKey=${{ secrets.TBA_API_KEY }}
+            anthropicApiKey=${{ secrets.ANTHROPIC_API_KEY }}
+            tbaTrustedAuthId=${{ secrets.TBA_TRUSTED_AUTH_ID }}
+            tbaTrustedAuthSecret=${{ secrets.TBA_TRUSTED_AUTH_SECRET }}
             imageTag=${{ needs.build.outputs.image_tag }}
           failOnStdErr: false
 
@@ -130,3 +138,19 @@ jobs:
             --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}"
           echo "Mode A job triggered. Check execution status with:"
           echo "  az containerapp job execution list --name ${ENV_NAME}-mode-a --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }}"
+
+      - name: Smoke test — start one Vision worker execution
+        run: |
+          ENV_NAME="${{ secrets.ENVIRONMENT_NAME || 'livescout-prod' }}"
+          az containerapp job start \
+            --name "${ENV_NAME}-vision" \
+            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" || true
+          echo "Vision job triggered (ignored failures — FakeYOLOModel is a no-op until V0a)"
+
+      - name: Smoke test — start one TBA uploader execution (dry-run)
+        run: |
+          ENV_NAME="${{ secrets.ENVIRONMENT_NAME || 'livescout-prod' }}"
+          az containerapp job start \
+            --name "${ENV_NAME}-tba-uploader" \
+            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" || true
+          echo "TBA uploader triggered (dry-run by default — tbaUploaderDryRun=true)"

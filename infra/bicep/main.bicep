@@ -1,12 +1,18 @@
-// The Engine — Live Scout Phase 1 Gate 2 infrastructure
+// The Engine — Live Scout infrastructure (Phase 1 Gate 2 + Phase 2)
 // Team 2950 — The Devastators
 //
-// Provisions everything Mode A needs to run on cron in Azure:
+// Provisions everything Live Scout needs to run on cron in Azure:
 //   - Storage Account            (Tables for dispatcher, Blobs for pick_board)
 //   - Log Analytics Workspace    (Container App logs land here)
 //   - Container Apps Environment (the host)
 //   - Container Registry         (private images, no Docker Hub auth)
-//   - Container App Job × 2      (mode-a-worker, discovery-worker)
+//   - Container App Jobs (Phase 1):
+//       * mode-a-worker        — high-frequency match OCR
+//       * discovery-worker     — dispatcher state builder
+//   - Container App Jobs (Phase 2):
+//       * vision-worker        — T2 YOLO vision pass over cached frames
+//       * synthesis-worker     — T3 Opus end-of-day strategic brief
+//       * tba-uploader         — U post-match video publisher to TBA
 //
 // Deploy:
 //   az deployment group create \
@@ -14,7 +20,13 @@
 //     --template-file infra/bicep/main.bicep \
 //     --parameters environmentName=livescout-prod \
 //                  tbaApiKey=<secret> \
+//                  tbaTrustedAuthId=<secret> \
+//                  tbaTrustedAuthSecret=<secret> \
+//                  anthropicApiKey=<secret> \
 //                  imageTag=<sha>
+//
+// Phase 2 secrets are optional at template level — workers whose secrets
+// are missing will run but log an error. See GATE_2_HANDOFF.md §Phase 2.
 //
 // Resource names default to ${environmentName}-* so two environments
 // (e.g. dev + prod) can coexist in the same subscription.
@@ -43,6 +55,41 @@ param discoveryCronExpression string = '*/15 * * * *'  // every 15 minutes
 @description('Optional: pin the Mode A schedule to a date range so it does not waste compute outside of event days. Empty = always on.')
 param modeAStartTime string = ''
 
+// ─── Phase 2 params ───
+
+@description('How often the vision worker runs on cached frames. Cron format.')
+param visionCronExpression string = '*/10 * * * *'  // every 10 minutes
+
+@description('Vision model name. "fake" runs the scripted stub (safe default); any other value routes to the real Roboflow loader which is NotImplementedError until V0a lands.')
+param visionModelName string = 'fake'
+
+@description('Optional GPU SKU for the vision worker. Empty = CPU-only (slow but works).')
+param visionGpuSku string = ''
+
+@description('How often the synthesis worker runs. Default 04:00 UTC ~= 20:00 PT (end-of-day strategic brief).')
+param synthesisCronExpression string = '0 4 * * *'
+
+@description('Anthropic model name for T3 synthesis. Defaults to claude-opus-4-6.')
+param synthesisAnthropicModel string = 'claude-opus-4-6'
+
+@description('How often the TBA uploader runs. Default every 15 minutes.')
+param tbaUploaderCronExpression string = '*/15 * * * *'
+
+@description('Anthropic API key for the T3 synthesis worker. Empty = synthesis-worker runs but errors out per tick.')
+@secure()
+param anthropicApiKey string = ''
+
+@description('TBA Trusted User auth_id for the U TBA uploader. Empty = uploader runs in dry-run only.')
+@secure()
+param tbaTrustedAuthId string = ''
+
+@description('TBA Trusted User auth_secret for the U TBA uploader. Empty = uploader runs in dry-run only.')
+@secure()
+param tbaTrustedAuthSecret string = ''
+
+@description('When true, the TBA uploader never actually POSTs to TBA — logs only. Set to true in dev/staging.')
+param tbaUploaderDryRun bool = true
+
 // ─── Names ───
 
 var storageAccountName    = toLower('${replace(environmentName, '-', '')}sa')
@@ -51,6 +98,9 @@ var containerAppsEnvName  = '${environmentName}-cae'
 var registryName          = toLower('${replace(environmentName, '-', '')}acr')
 var modeAJobName          = '${environmentName}-mode-a'
 var discoveryJobName      = '${environmentName}-discovery'
+var visionJobName         = '${environmentName}-vision'
+var synthesisJobName      = '${environmentName}-synthesis'
+var tbaUploaderJobName    = '${environmentName}-tba-uploader'
 
 var imageRepository = 'mode-a-worker'
 
@@ -313,6 +363,279 @@ resource discoveryJob 'Microsoft.App/jobs@2024-03-01' = {
   ]
 }
 
+// ─── Container App Job: Vision worker (Phase 2 T2) ───
+
+resource visionJob 'Microsoft.App/jobs@2024-03-01' = {
+  name: visionJobName
+  location: location
+  properties: {
+    environmentId: containerAppsEnv.id
+    configuration: {
+      triggerType: 'Schedule'
+      replicaTimeout: 1800        // 30 min — YOLO on a full backlog can take a while
+      replicaRetryLimit: 1
+      scheduleTriggerConfig: {
+        cronExpression: visionCronExpression
+        parallelism: 1
+        replicaCompletionCount: 1
+      }
+      registries: [
+        {
+          server: registry.properties.loginServer
+          username: registry.listCredentials().username
+          passwordSecretRef: 'acr-password'
+        }
+      ]
+      secrets: [
+        {
+          name: 'storage-connection-string'
+          value: storageConnectionString
+        }
+        {
+          name: 'acr-password'
+          value: registry.listCredentials().passwords[0].value
+        }
+      ]
+    }
+    template: {
+      containers: [
+        {
+          name: 'vision-worker'
+          image: '${registry.properties.loginServer}/${imageRepository}:${imageTag}'
+          command: [
+            'python'
+          ]
+          args: [
+            '-m'
+            'workers.vision_worker'
+            '--frames-dir-pattern'
+            'eye/.cache/{event}/{match_short}/frames'
+          ]
+          // CPU-only until V0b picks a GPU SKU. Container Apps don't
+          // expose GPU scheduling on the basic SKU path anyway — when
+          // V0b lands, move this job to a GPU-capable environment.
+          resources: {
+            cpu: json('2.0')
+            memory: '4.0Gi'
+          }
+          env: [
+            {
+              name: 'STATE_BACKEND'
+              value: 'azure'
+            }
+            {
+              name: 'AZURE_STORAGE_CONNECTION_STRING'
+              secretRef: 'storage-connection-string'
+            }
+            {
+              name: 'AZURE_STATE_TABLE'
+              value: 'livescoutstate'
+            }
+            {
+              name: 'AZURE_STATE_BLOB_CONTAINER'
+              value: 'livescoutstate'
+            }
+            {
+              name: 'MODEL_NAME'
+              value: visionModelName
+            }
+            {
+              name: 'VISION_GPU_SKU'
+              value: visionGpuSku
+            }
+          ]
+        }
+      ]
+    }
+  }
+  dependsOn: [
+    dispatcherTable
+    pickBoardContainer
+  ]
+}
+
+// ─── Container App Job: Synthesis worker (Phase 2 T3) ───
+
+resource synthesisJob 'Microsoft.App/jobs@2024-03-01' = {
+  name: synthesisJobName
+  location: location
+  properties: {
+    environmentId: containerAppsEnv.id
+    configuration: {
+      triggerType: 'Schedule'
+      replicaTimeout: 600        // 10 min — one Anthropic call + state read/write
+      replicaRetryLimit: 1
+      scheduleTriggerConfig: {
+        cronExpression: synthesisCronExpression
+        parallelism: 1
+        replicaCompletionCount: 1
+      }
+      registries: [
+        {
+          server: registry.properties.loginServer
+          username: registry.listCredentials().username
+          passwordSecretRef: 'acr-password'
+        }
+      ]
+      secrets: [
+        {
+          name: 'storage-connection-string'
+          value: storageConnectionString
+        }
+        {
+          name: 'anthropic-api-key'
+          value: anthropicApiKey
+        }
+        {
+          name: 'acr-password'
+          value: registry.listCredentials().passwords[0].value
+        }
+      ]
+    }
+    template: {
+      containers: [
+        {
+          name: 'synthesis-worker'
+          image: '${registry.properties.loginServer}/${imageRepository}:${imageTag}'
+          command: [
+            'python'
+          ]
+          args: [
+            '-m'
+            'workers.synthesis_worker'
+          ]
+          resources: {
+            cpu: json('0.5')
+            memory: '1.0Gi'
+          }
+          env: [
+            {
+              name: 'STATE_BACKEND'
+              value: 'azure'
+            }
+            {
+              name: 'AZURE_STORAGE_CONNECTION_STRING'
+              secretRef: 'storage-connection-string'
+            }
+            {
+              name: 'AZURE_STATE_TABLE'
+              value: 'livescoutstate'
+            }
+            {
+              name: 'AZURE_STATE_BLOB_CONTAINER'
+              value: 'livescoutstate'
+            }
+            {
+              name: 'ANTHROPIC_API_KEY'
+              secretRef: 'anthropic-api-key'
+            }
+            {
+              name: 'ANTHROPIC_MODEL'
+              value: synthesisAnthropicModel
+            }
+          ]
+        }
+      ]
+    }
+  }
+  dependsOn: [
+    pickBoardContainer
+  ]
+}
+
+// ─── Container App Job: TBA uploader (Phase 2 U) ───
+
+resource tbaUploaderJob 'Microsoft.App/jobs@2024-03-01' = {
+  name: tbaUploaderJobName
+  location: location
+  properties: {
+    environmentId: containerAppsEnv.id
+    configuration: {
+      triggerType: 'Schedule'
+      replicaTimeout: 300
+      replicaRetryLimit: 1
+      scheduleTriggerConfig: {
+        cronExpression: tbaUploaderCronExpression
+        parallelism: 1
+        replicaCompletionCount: 1
+      }
+      registries: [
+        {
+          server: registry.properties.loginServer
+          username: registry.listCredentials().username
+          passwordSecretRef: 'acr-password'
+        }
+      ]
+      secrets: [
+        {
+          name: 'storage-connection-string'
+          value: storageConnectionString
+        }
+        {
+          name: 'tba-trusted-auth-id'
+          value: tbaTrustedAuthId
+        }
+        {
+          name: 'tba-trusted-auth-secret'
+          value: tbaTrustedAuthSecret
+        }
+        {
+          name: 'acr-password'
+          value: registry.listCredentials().passwords[0].value
+        }
+      ]
+    }
+    template: {
+      containers: [
+        {
+          name: 'tba-uploader'
+          image: '${registry.properties.loginServer}/${imageRepository}:${imageTag}'
+          command: [
+            'python'
+          ]
+          args: [
+            '-m'
+            'workers.tba_uploader'
+          ]
+          resources: {
+            cpu: json('0.25')
+            memory: '0.5Gi'
+          }
+          env: [
+            {
+              name: 'STATE_BACKEND'
+              value: 'azure'
+            }
+            {
+              name: 'AZURE_STORAGE_CONNECTION_STRING'
+              secretRef: 'storage-connection-string'
+            }
+            {
+              name: 'AZURE_STATE_BLOB_CONTAINER'
+              value: 'livescoutstate'
+            }
+            {
+              name: 'TBA_TRUSTED_AUTH_ID'
+              secretRef: 'tba-trusted-auth-id'
+            }
+            {
+              name: 'TBA_TRUSTED_AUTH_SECRET'
+              secretRef: 'tba-trusted-auth-secret'
+            }
+            {
+              name: 'TBA_UPLOADER_DRY_RUN'
+              value: string(tbaUploaderDryRun)
+            }
+          ]
+        }
+      ]
+    }
+  }
+  dependsOn: [
+    pickBoardContainer
+  ]
+}
+
 // ─── Outputs (referenced by the GitHub Action after first deploy) ───
 
 output registryLoginServer string = registry.properties.loginServer
@@ -321,3 +644,6 @@ output storageAccountName string = storageAccount.name
 output containerAppsEnvironmentName string = containerAppsEnv.name
 output modeAJobName string = modeAJob.name
 output discoveryJobName string = discoveryJob.name
+output visionJobName string = visionJob.name
+output synthesisJobName string = synthesisJob.name
+output tbaUploaderJobName string = tbaUploaderJob.name
