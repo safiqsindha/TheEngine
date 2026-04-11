@@ -1,0 +1,23 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environmentName": {
+      "value": "livescout-dev"
+    },
+    "modeACronExpression": {
+      "value": "*/5 * * * *"
+    },
+    "discoveryCronExpression": {
+      "value": "*/30 * * * *"
+    },
+    "tbaApiKey": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/REPLACE_ME/resourceGroups/REPLACE_ME/providers/Microsoft.KeyVault/vaults/REPLACE_ME"
+        },
+        "secretName": "tba-api-key"
+      }
+    }
+  }
+}

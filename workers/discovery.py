@@ -344,17 +344,42 @@ def build_dispatcher_state(
     return state
 
 
-def save_dispatcher_state(state: DispatcherState, path: Path = DISPATCHER_STATE_PATH) -> None:
-    """Persist dispatcher state for Mode A to pick up."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(state.to_dict(), indent=2, sort_keys=True))
+def save_dispatcher_state(
+    state: DispatcherState,
+    path: Optional[Path] = None,
+    *,
+    backend: Optional["JsonStateBackend"] = None,
+) -> None:
+    """Persist dispatcher state for Mode A to pick up.
+
+    By default routes through the configured StateBackend (local file
+    or Azure Table, depending on STATE_BACKEND env var). The legacy
+    `path=` argument is retained for backwards compatibility — passing
+    a path forces a LocalFileBackend at that location, which is what
+    every existing test relies on.
+    """
+    from workers.state_backend import LocalFileBackend, get_dispatcher_backend
+    if backend is None:
+        backend = LocalFileBackend(path) if path is not None else get_dispatcher_backend()
+    backend.write(state.to_dict())
 
 
-def load_dispatcher_state(path: Path = DISPATCHER_STATE_PATH) -> Optional[DispatcherState]:
-    """Load dispatcher state if it exists."""
-    if not path.exists():
+def load_dispatcher_state(
+    path: Optional[Path] = None,
+    *,
+    backend: Optional["JsonStateBackend"] = None,
+) -> Optional[DispatcherState]:
+    """Load dispatcher state if it exists.
+
+    Mirrors `save_dispatcher_state`'s contract: defaults to the
+    configured StateBackend, but accepts an explicit `path=` for
+    legacy callers and tests."""
+    from workers.state_backend import LocalFileBackend, get_dispatcher_backend
+    if backend is None:
+        backend = LocalFileBackend(path) if path is not None else get_dispatcher_backend()
+    data = backend.read()
+    if data is None:
         return None
-    data = json.loads(path.read_text())
     return DispatcherState(
         generated_at=data.get("generated_at", 0),
         today=data.get("today", ""),

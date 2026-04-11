@@ -1,0 +1,132 @@
+name: Live Scout — build & deploy Mode A
+
+# Manual-only until the Azure resources exist (Gate 2 handoff). Once
+# infra is provisioned and the GitHub secrets below are set, you can
+# add a `push:` trigger to run on every commit to main.
+on:
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: 'Also deploy Bicep + run a smoke job after the build'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+# ─── Required GitHub repo secrets (set under Settings → Secrets → Actions) ───
+#
+#   AZURE_CREDENTIALS       — service principal JSON from
+#                              `az ad sp create-for-rbac --sdk-auth`
+#                              (see GATE_2_HANDOFF.md §1)
+#   AZURE_RESOURCE_GROUP    — name of the resource group hosting Live Scout
+#   AZURE_SUBSCRIPTION_ID   — subscription containing the resource group
+#   ACR_NAME                — Azure Container Registry name (no .azurecr.io)
+#   TBA_API_KEY             — The Blue Alliance read API key
+#
+# Optional:
+#   ENVIRONMENT_NAME        — defaults to 'livescout-prod'
+
+env:
+  IMAGE_REPO: mode-a-worker
+
+jobs:
+  test:
+    name: pytest live_scout
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install test deps only
+        # Tests don't need PaddleOCR/cv2 — they stub the OCR layer.
+        # We only need pytest + numpy for the bbox helpers.
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest numpy
+
+      - name: Run live_scout test suite
+        run: |
+          python -m pytest tests/live_scout/ -v --tb=short
+
+  build:
+    name: Build & push image
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      image_tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compute image tag (short SHA)
+        id: tag
+        run: echo "tag=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: ACR login
+        run: |
+          az acr login --name "${{ secrets.ACR_NAME }}"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build & push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: workers/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.IMAGE_REPO }}:${{ steps.tag.outputs.tag }}
+            ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.IMAGE_REPO }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy Bicep + smoke test
+    needs: build
+    if: ${{ github.event.inputs.deploy == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy Bicep template
+        uses: azure/arm-deploy@v2
+        with:
+          subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          resourceGroupName: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          template: infra/bicep/main.bicep
+          parameters: >-
+            environmentName=${{ secrets.ENVIRONMENT_NAME || 'livescout-prod' }}
+            tbaApiKey=${{ secrets.TBA_API_KEY }}
+            imageTag=${{ needs.build.outputs.image_tag }}
+          failOnStdErr: false
+
+      - name: Smoke test — start one Mode A execution
+        run: |
+          ENV_NAME="${{ secrets.ENVIRONMENT_NAME || 'livescout-prod' }}"
+          az containerapp job start \
+            --name "${ENV_NAME}-mode-a" \
+            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}"
+          echo "Mode A job triggered. Check execution status with:"
+          echo "  az containerapp job execution list --name ${ENV_NAME}-mode-a --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }}"

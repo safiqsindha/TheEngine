@@ -1,0 +1,20 @@
+# Live Scout worker runtime deps (Gate 2)
+# Pinned for reproducible Container App Job builds. Update via:
+#     pip-compile --upgrade workers/requirements.in
+# (or just bump these by hand and re-test). Keep this list lean — every
+# package adds to the OCR image size which dominates cold-start time.
+
+# ─── OCR pipeline ───
+paddleocr>=3.0,<4.0
+paddlepaddle>=2.6,<3.0
+opencv-python-headless>=4.10,<5.0
+numpy>=1.26,<3.0
+
+# ─── Cloud state ───
+azure-data-tables>=12.5,<13.0
+azure-storage-blob>=12.20,<13.0
+azure-core>=1.30,<2.0
+
+# ─── HTTP / TBA / YouTube ───
+requests>=2.31,<3.0
+yt-dlp>=2024.10.0
