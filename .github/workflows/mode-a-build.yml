@@ -38,9 +38,9 @@ env:
 
 jobs:
   test:
-    name: pytest scout
+    name: pytest engine
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -50,16 +50,17 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install test deps only
+      - name: Install test deps
         # Tests don't need PaddleOCR/cv2 — they stub the OCR layer.
-        # We only need pytest + numpy for the bbox helpers.
+        # Antenna tests need discord.py; blueprint tests need onshape-client.
+        # Onshape smoke tests are gated on ONSHAPE_ACCESS_KEY (env var not set in CI → skipped).
         run: |
           python -m pip install --upgrade pip
-          pip install pytest numpy
+          pip install -r requirements-test.txt
 
-      - name: Run scout test suite
+      - name: Run full test suite
         run: |
-          python -m pytest tests/scout/ -v --tb=short
+          python -m pytest tests/ -v --tb=short
 
   build:
     name: Build & push image
