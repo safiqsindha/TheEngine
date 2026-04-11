@@ -165,3 +165,46 @@ Recommended grab order to minimize merge friction (everything goes onto `main` d
 4. **Cleanup + final push**
 
 Total estimated remaining work: **~6-8 focused hours**.
+
+---
+
+## Off-season backlog (post-Phase 2)
+
+### Auto-labeling data engine — Gemma + SAM3.1 on MLX
+
+**The play:** Use a small reasoning LLM (Gemma 4) orchestrating SAM3.1 on Apple Silicon
+(MLX, no GPU) as a label oracle against archived FRC broadcasts. Output: FRC-specific
+YOLO training data for the T2 vision worker.
+
+**Why it matters:** T2 V0a is currently blocked on "pick a Roboflow Universe FRC YOLO
+model." Whatever we pick is trained on someone else's footage, someone else's game year,
+and someone else's class taxonomy. The data-engine play unblocks V0a permanently —
+we ship a model trained on Devastators-relevant footage with classes we control.
+
+**Sketch:**
+1. `tools/auto_label/` — new top-level tool, not part of the cron worker fleet
+2. Input: archived match VODs from `eye/.cache/` or YouTube backfill
+3. Pipeline: extract frames → Gemma 4 picks open-vocabulary prompts per frame
+   ("segment robot 2950 attempting a climb", "segment any robot scoring") → SAM3.1
+   returns masks → convert masks to YOLO bounding boxes → write `data.yaml` +
+   `labels/*.txt` in YOLO training format
+4. Train a small YOLOv8/v11 model on the auto-labels
+5. Ship the trained weights into the vision-worker job, flip `MODEL_NAME` from
+   `"fake"` to the local model id
+
+**Why this fits the pattern we already use:**
+- Same shape as `project_llm_wiki.md` — Karpathy's data engine, but for vision instead
+  of code/docs
+- Same shape as `reference_advisor_strategy.md` — small executor + reasoner pair, here
+  the reasoner is Gemma 4 and the executor is SAM3.1
+- Runs on a MacBook — no Azure GPU procurement (V0b also unblocked)
+
+**Latency reality:** ~10-15 sec/frame on M-series. A 4-hour broadcast at 0.5s frame
+interval is ~28k frames → 80-120 hours of single-machine inference. **This is fine** —
+it's an off-season batch job, not a cron tick. Run it on archived footage during summer.
+
+**Status:** Idea only. Not started. Revisit after Phase 2 ships and after the 2026
+season ends so we have a full year of Devastators footage to chew on.
+
+**Sources:** sam3-angle (https://github.com/Radar105/sam3-angle), Maziyar Panahi tweet
+2026-04 demoing Gemma 4 + SAM 3.1 on MLX.
