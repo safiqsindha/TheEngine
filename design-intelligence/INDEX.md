@@ -3,8 +3,8 @@
 Entry point for all design, prediction, and operational docs.
 **Start here** when onboarding a new agent or planning a session.
 
-*Last updated: 2026-04-11. 51 docs across 4 buckets + 2 subfolders.*
-*Test suite: **796 tests** in tests/ (503 scout + 64 antenna + 231 blueprint + 2 skip). Orphaned tests recovered 2026-04-11.*
+*Last updated: 2026-04-11. 52 docs across 4 buckets + 2 subfolders.*
+*Test suite: **874 tests** in tests/ (503 scout + 64 antenna + 309 blueprint + 2 skip + 1 xfail). Oracle suite added 2026-04-11.*
 
 ---
 
@@ -106,6 +106,7 @@ Dated session summaries and one-shot planning docs. Preserved for audit trail.
 | File | Date | What happened |
 |---|---|---|
 | `CLEANUP_PLAN_2026-04-11.md` | 2026-04-11 | This cleanup session's execution plan |
+| `PLAN_ORACLE_TEST_SUITE.md` | 2026-04-11 | Plan for oracle.py test suite (executed: 78 tests added) |
 | `COFFEE_SHOP_TASKS.md` | 2026-04 | Coffee shop session task breakdown |
 | `GATE_2_HANDOFF.md` | 2026-04 | Gate 2 design handoff milestone document |
 | `SESSION_2026-04-11_EVENING_SUMMARY.md` | 2026-04-11 | Evening session: !status, --force, 2026 validation |
