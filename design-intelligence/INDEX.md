@@ -4,6 +4,7 @@ Entry point for all design, prediction, and operational docs.
 **Start here** when onboarding a new agent or planning a session.
 
 *Last updated: 2026-04-11. 51 docs across 4 buckets + 2 subfolders.*
+*Test suite: **796 tests** in tests/ (503 scout + 64 antenna + 231 blueprint + 2 skip). Orphaned tests recovered 2026-04-11.*
 
 ---
 
@@ -54,7 +55,7 @@ In-progress or forward-looking specs. Some may be partially complete.
 | File | One-line description |
 |---|---|
 | `LIVE_SCOUT_PHASE2_REMAINING.md` | Remaining T2/T3 live scout work items (T2-V5 resolved 2026-04-11) |
-| `PURCHASE_LIST.md` | Post-season purchase decisions gated on Belton results |
+| `PURCHASE_LIST.md` | Off-season purchase decisions gated on first off-season scrimmage / 2027 prep milestones |
 | `ROADMAP_2028.md` | 2028 off-season vision data engine (Gemma + SAM3.1) |
 | `SIMULATION_EXERCISES.md` | Maple Sim training exercises for students |
 | `VISION_2027_TRAINING_PLAN.md` | 2027 vision model training pipeline plan |

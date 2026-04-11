@@ -1,6 +1,12 @@
 # Session Summary — 2026-04-11 Evening
 **Model:** Claude Sonnet 4.6 | **Duration:** ~4 hrs autonomous
 
+> **CORRECTION (2026-04-11, post-session):** This summary references "Belton (in-season)"
+> as the next milestone. That was wrong — Team 2950's 2026 season is **OVER**. No Belton,
+> no state, no worlds. Treat all "next milestone" / "post-Belton" / "in-season" framing
+> below as obsolete. The Engine is now off-season infrastructure for the 2027 build season.
+> See `~/.claude/.../memory/project_season_status.md` for the corrected framing.
+
 ---
 
 ## What was built

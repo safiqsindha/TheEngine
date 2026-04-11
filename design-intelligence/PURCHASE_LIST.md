@@ -1,6 +1,6 @@
 # Post-Season Purchase List — The Engine
 
-Deferred items that need budget approval before the next build season. Nothing here is urgent for Belton; all items are post-season unless flagged otherwise.
+Deferred items that need budget approval before the next build season. The 2026 season is over for Team 2950 — all items are off-season investments evaluated against 2027 readiness milestones, not any in-season deadline.
 
 **Last updated:** 2026-04-11
 
@@ -16,7 +16,7 @@ Deferred items that need budget approval before the next build season. Nothing h
 - Verify `workers/Dockerfile` image can build for arm64/M-series without architecture issues
 - Decide whether it runs as a local server or deploys workers via Azure
 
-**Decision gate:** after Belton, once we know what the competition network looks like in practice.
+**Decision gate:** at first off-season scrimmage / fall event, once we have a real venue network to test against. No urgency before then.
 
 ---
 
@@ -48,7 +48,7 @@ Deferred items that need budget approval before the next build season. Nothing h
 - Network: Pi needs to reach the MacBook OR an Azure endpoint for state sync
 - Power: pit tables have outlets but venue availability varies
 
-**Decision gate:** after Belton, if MacBook resource contention is observed.
+**Decision gate:** at first off-season event running the full Engine stack, if MacBook resource contention is observed.
 
 ---
 

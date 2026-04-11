@@ -1,6 +1,8 @@
 # Regional Competition Runbook — Live Scout + Antenna
 
-**Status:** operational playbook, 2026-04-11. Covers a single 2-day regional (Friday setup → Sunday playoffs). Assumes: Live Scout Phase-1 shipped, Antenna Discord bot live, pick_board.py 2.0 API wired through `antenna/live_scout_commands.py`, vision worker optional (runs in dry/fake mode if not provisioned yet).
+**Status:** REFERENCE doc for the 2027 build season — NOT an active 2026 playbook. Team 2950's 2026 season ended before regional cutoff (no Belton, no state, no worlds). This doc captures the operational pattern so it can be exercised at fall off-season events and refreshed before the 2027 kickoff. Last meaningful update: 2026-04-11.
+
+Covers a single 2-day regional (Friday setup → Sunday playoffs). Assumes: Live Scout Phase-1 shipped, Antenna Discord bot live, pick_board.py 2.0 API wired through `antenna/live_scout_commands.py`, vision worker optional (runs in dry/fake mode if not provisioned yet).
 
 **Owner at event:** Safiq + one student operator. Mentor has a MacBook Pro (M-series, ≥16 GB unified memory), iPhone hotspot, and a Discord channel provisioned under team ownership (`#engine-scout-live`).
 
@@ -431,4 +433,4 @@ grep "command" antenna/nohup.out | tail -20
 ## Change log
 
 - **2026-04-11** — initial runbook written alongside the pick_board → antenna refactor. Covers subprocess-free command wiring (`antenna/live_scout_commands.py`) and the 7 new draft-day commands (`!undo !dnp !alliances !sim !captains !brief !preview`). Vision worker treated as optional; brief worker treated as optional.
-- _Next update after Belton regional debrief._
+- **2026-04-11 (later)** — reframed as REFERENCE doc, not active playbook. 2026 season ended for Team 2950 with no regional attendance. Next meaningful update will come after the first off-season scrimmage exercises this runbook in anger.
