@@ -251,6 +251,9 @@ class AzureBlobBackend:
 _DEFAULT_DISPATCHER_LOCAL_PATH = Path(__file__).parent / ".state" / "dispatcher.json"
 _DEFAULT_PICK_BOARD_LOCAL_PATH = Path.home() / ".scout" / "state.json"
 _DEFAULT_BACKFILL_LOCAL_ROOT = Path(__file__).parent / ".state" / "backfill"
+_DEFAULT_ANOMALY_LOCAL_PATH = Path(__file__).parent / ".state" / "mode_c_anomaly.json"
+_DEFAULT_DIGEST_LOCAL_DIR = Path(__file__).parent / ".state" / "digests"
+_DEFAULT_DISCORD_DEDUPE_LOCAL_PATH = Path(__file__).parent / ".state" / "discord_dedupe.json"
 
 
 def _selected_backend() -> str:
@@ -347,3 +350,80 @@ def get_backfill_backend(
     if local_path is None:
         local_path = _DEFAULT_BACKFILL_LOCAL_ROOT / str(season) / f"{event_key}.json"
     return LocalFileBackend(local_path)
+
+
+def get_anomaly_backend(
+    *,
+    local_path: Optional[Path] = None,
+) -> JsonStateBackend:
+    """Return the configured Mode C anomaly state backend.
+
+    Stores per-event score stats + cursors used by W4 (mode_c_anomaly).
+    Defaults to LocalFileBackend at workers/.state/mode_c_anomaly.json.
+    If `STATE_BACKEND=azure`, returns an AzureBlobBackend at
+    AZURE_STATE_BLOB_CONTAINER/AZURE_ANOMALY_BLOB
+    (defaults: container 'livescoutstate', blob 'mode_c_anomaly.json').
+    """
+    if _selected_backend() == "azure":
+        conn = os.environ.get("AZURE_STORAGE_CONNECTION_STRING", "")
+        container = os.environ.get("AZURE_STATE_BLOB_CONTAINER", "livescoutstate")
+        blob_name = os.environ.get("AZURE_ANOMALY_BLOB", "mode_c_anomaly.json")
+        return AzureBlobBackend(
+            connection_string=conn,
+            container_name=container,
+            blob_name=blob_name,
+        )
+    return LocalFileBackend(local_path or _DEFAULT_ANOMALY_LOCAL_PATH)
+
+
+def get_digest_backend(
+    event_key: str,
+    *,
+    local_path: Optional[Path] = None,
+) -> JsonStateBackend:
+    """Return the configured digest blob backend for a specific event.
+
+    Written by W5 (mode_c_event_end). One blob per event so digests from
+    different events don't clobber each other. Local default is
+    workers/.state/digests/digest_<event_key>.json. In Azure,
+    AZURE_DIGEST_BLOB (default: `digest_<event_key>.json`) lives in
+    AZURE_STATE_BLOB_CONTAINER (default: 'livescoutstate').
+    """
+    if _selected_backend() == "azure":
+        conn = os.environ.get("AZURE_STORAGE_CONNECTION_STRING", "")
+        container = os.environ.get("AZURE_STATE_BLOB_CONTAINER", "livescoutstate")
+        blob_name = os.environ.get(
+            "AZURE_DIGEST_BLOB", f"digest_{event_key}.json"
+        )
+        return AzureBlobBackend(
+            connection_string=conn,
+            container_name=container,
+            blob_name=blob_name,
+        )
+    if local_path is None:
+        local_path = _DEFAULT_DIGEST_LOCAL_DIR / f"digest_{event_key}.json"
+    return LocalFileBackend(local_path)
+
+
+def get_discord_dedupe_backend(
+    *,
+    local_path: Optional[Path] = None,
+) -> JsonStateBackend:
+    """Return the configured Discord dedupe state backend.
+
+    Stores a `{"seen": [dedupe_key, ...]}` document so cron retries of
+    mode_a / mode_c workers don't double-post the same alert. Local
+    default is workers/.state/discord_dedupe.json. In Azure, lives in
+    AZURE_STATE_BLOB_CONTAINER/AZURE_DISCORD_DEDUPE_BLOB
+    (defaults: container 'livescoutstate', blob 'discord_dedupe.json').
+    """
+    if _selected_backend() == "azure":
+        conn = os.environ.get("AZURE_STORAGE_CONNECTION_STRING", "")
+        container = os.environ.get("AZURE_STATE_BLOB_CONTAINER", "livescoutstate")
+        blob_name = os.environ.get("AZURE_DISCORD_DEDUPE_BLOB", "discord_dedupe.json")
+        return AzureBlobBackend(
+            connection_string=conn,
+            container_name=container,
+            blob_name=blob_name,
+        )
+    return LocalFileBackend(local_path or _DEFAULT_DISCORD_DEDUPE_LOCAL_PATH)
