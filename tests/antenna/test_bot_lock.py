@@ -8,9 +8,10 @@ import subprocess
 import time
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent))
+_ANTENNA_DIR = Path(__file__).resolve().parents[2] / "antenna"
+sys.path.insert(0, str(_ANTENNA_DIR))
 
-LOCK_FILE = Path(__file__).parent / ".bot.lock"
+LOCK_FILE = _ANTENNA_DIR / ".bot.lock"
 
 
 def cleanup():
@@ -57,7 +58,7 @@ def test_second_bot_process_exits():
     # Write current PID to simulate a running instance
     LOCK_FILE.write_text(str(os.getpid()))
 
-    bot_path = Path(__file__).parent / "bot.py"
+    bot_path = _ANTENNA_DIR / "bot.py"
     result = subprocess.run(
         [sys.executable, str(bot_path)],
         capture_output=True, text=True, timeout=10,

@@ -17,17 +17,18 @@ import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent))
+_ANTENNA_DIR = Path(__file__).resolve().parents[2] / "antenna"
+sys.path.insert(0, str(_ANTENNA_DIR))
 
 # ═════════════════════════════════════════════════════════════════════
 # TEST HELPERS
 # ═════════════════════════════════════════════════════════════════════
 
 RESULTS = {"passed": 0, "failed": 0, "errors": []}
-LOCK_FILE = Path(__file__).parent / ".bot.lock"
+LOCK_FILE = _ANTENNA_DIR / ".bot.lock"
 
 
-def test(name):
+def _test(name):
     """Decorator to register and run a test."""
     def decorator(fn):
         fn._test_name = name
@@ -90,7 +91,7 @@ def get_temp_db():
 # SCORER TESTS
 # ═════════════════════════════════════════════════════════════════════
 
-@test("Scorer: tracked team gets +5 per team")
+@_test("Scorer: tracked team gets +5 per team")
 def test_tracked_team_scoring():
     from scorer import score_topic
     topic = make_topic(title="Team 254 Technical Binder 2026")
@@ -99,7 +100,7 @@ def test_tracked_team_scoring():
     assert "254" in result["tracked_teams"]
 
 
-@test("Scorer: multiple tracked teams stack")
+@_test("Scorer: multiple tracked teams stack")
 def test_multiple_tracked_teams():
     from scorer import score_topic
     topic = make_topic(title="254 vs 1678 in Einstein Finals")
@@ -110,7 +111,7 @@ def test_multiple_tracked_teams():
     assert result["relevance_score"] >= 10
 
 
-@test("Scorer: years are NOT treated as team numbers")
+@_test("Scorer: years are NOT treated as team numbers")
 def test_years_not_teams():
     from scorer import extract_team_numbers
     teams = extract_team_numbers("2026 season 2025 recap")
@@ -118,7 +119,7 @@ def test_years_not_teams():
     assert 2025 not in teams, "2025 should be filtered as a year"
 
 
-@test("Scorer: team numbers extracted correctly")
+@_test("Scorer: team numbers extracted correctly")
 def test_team_number_extraction():
     from scorer import extract_team_numbers
     teams = extract_team_numbers("Team 254 and 1678 at 2026 Worlds")
@@ -127,7 +128,7 @@ def test_team_number_extraction():
     assert 2026 not in teams
 
 
-@test("Scorer: known author gets +3")
+@_test("Scorer: known author gets +3")
 def test_known_author_bonus():
     from scorer import score_topic
     topic = make_topic(title="Generic post", author="Karthik")
@@ -135,7 +136,7 @@ def test_known_author_bonus():
     assert result["relevance_score"] >= 3
 
 
-@test("Scorer: unknown author gets no bonus")
+@_test("Scorer: unknown author gets no bonus")
 def test_unknown_author_no_bonus():
     from scorer import score_topic
     topic = make_topic(title="Generic post", author="random_user_123")
@@ -143,7 +144,7 @@ def test_unknown_author_no_bonus():
     assert result["relevance_score"] == 0
 
 
-@test("Scorer: mechanism keywords score +3")
+@_test("Scorer: mechanism keywords score +3")
 def test_mechanism_keywords():
     from scorer import score_topic
     topic = make_topic(title="Elevator design review", excerpt="cascade elevator build")
@@ -152,7 +153,7 @@ def test_mechanism_keywords():
     assert result["relevance_score"] >= 3
 
 
-@test("Scorer: design doc keywords score +5")
+@_test("Scorer: design doc keywords score +5")
 def test_design_doc_keywords():
     from scorer import score_topic
     topic = make_topic(title="Team 9999 Technical Binder Released")
@@ -161,7 +162,7 @@ def test_design_doc_keywords():
     assert result["relevance_score"] >= 5
 
 
-@test("Scorer: open alliance keywords score +4")
+@_test("Scorer: open alliance keywords score +4")
 def test_open_alliance_keywords():
     from scorer import score_topic
     topic = make_topic(title="FRC 9999 Build Thread Open Alliance")
@@ -169,7 +170,7 @@ def test_open_alliance_keywords():
     assert result["relevance_score"] >= 4
 
 
-@test("Scorer: CAD link detected")
+@_test("Scorer: CAD link detected")
 def test_cad_link_detection():
     from scorer import check_link_types
     result = check_link_types("Check our CAD at cad.onshape.com/documents/abc123")
@@ -177,21 +178,21 @@ def test_cad_link_detection():
     assert result["code"] is False
 
 
-@test("Scorer: GitHub link detected")
+@_test("Scorer: GitHub link detected")
 def test_code_link_detection():
     from scorer import check_link_types
     result = check_link_types("Code at github.com/team/repo")
     assert result["code"] is True
 
 
-@test("Scorer: video link detected")
+@_test("Scorer: video link detected")
 def test_video_link_detection():
     from scorer import check_link_types
     result = check_link_types("Watch at youtube.com/watch?v=abc")
     assert result["video"] is True
 
 
-@test("Scorer: high engagement boosts score")
+@_test("Scorer: high engagement boosts score")
 def test_engagement_scoring():
     from scorer import score_topic
     topic = make_topic(title="Generic discussion", like_count=150, posts_count=60)
@@ -200,7 +201,7 @@ def test_engagement_scoring():
     assert result["relevance_score"] >= 9
 
 
-@test("Scorer: tier thresholds are correct")
+@_test("Scorer: tier thresholds are correct")
 def test_tier_thresholds():
     from scorer import score_topic
     # Score 0 = ignore
@@ -212,7 +213,7 @@ def test_tier_thresholds():
     assert result["tier"] == "notable", f"Expected notable, got {result['tier']} (score {result['relevance_score']})"
 
 
-@test("Scorer: critical threshold is 16+")
+@_test("Scorer: critical threshold is 16+")
 def test_critical_threshold():
     from scorer import score_topic
     # Tracked team (5) + design doc (5) + mechanism (3) + known author (3) + engagement (5) = 21
@@ -228,7 +229,7 @@ def test_critical_threshold():
     assert result["relevance_score"] >= 16
 
 
-@test("Scorer: 'epa' no longer matches Statbotics keywords")
+@_test("Scorer: 'epa' no longer matches Statbotics keywords")
 def test_epa_not_statbotics():
     from scorer import score_topic
     from config import STATBOTICS_KEYWORDS
@@ -243,7 +244,7 @@ def test_epa_not_statbotics():
         f"Should not target Statbotics, got: {result['engine_file_target']}"
 
 
-@test("Scorer: empty/null inputs don't crash")
+@_test("Scorer: empty/null inputs don't crash")
 def test_scorer_empty_inputs():
     from scorer import score_topic, extract_team_numbers, find_keyword_matches, check_link_types
     # Empty topic
@@ -259,7 +260,7 @@ def test_scorer_empty_inputs():
     assert check_link_types(None) == {"cad": False, "code": False, "video": False}
 
 
-@test("Scorer: engine targeting routes 254 binder correctly")
+@_test("Scorer: engine targeting routes 254 binder correctly")
 def test_engine_targeting_254():
     from scorer import score_topic
     topic = make_topic(title="254 Technical Binder 2026")
@@ -267,7 +268,7 @@ def test_engine_targeting_254():
     assert "254_CROSS_SEASON_ANALYSIS" in (result.get("engine_file_target") or "")
 
 
-@test("Scorer: engine targeting routes Open Alliance correctly")
+@_test("Scorer: engine targeting routes Open Alliance correctly")
 def test_engine_targeting_oa():
     from scorer import score_topic
     topic = make_topic(title="FRC 9999 Build Thread Open Alliance")
@@ -275,7 +276,7 @@ def test_engine_targeting_oa():
     assert "OPEN_ALLIANCE_TRACKER" in (result.get("engine_file_target") or "")
 
 
-@test("Scorer: engine targeting routes game Q&A correctly")
+@_test("Scorer: engine targeting routes game Q&A correctly")
 def test_engine_targeting_qa():
     from scorer import score_topic
     topic = make_topic(title="2026 Team Update 20", excerpt="Rule clarification on G205")
@@ -287,7 +288,7 @@ def test_engine_targeting_qa():
 # DATABASE TESTS
 # ═════════════════════════════════════════════════════════════════════
 
-@test("Database: init creates all tables")
+@_test("Database: init creates all tables")
 def test_db_init():
     db_path = get_temp_db()
     conn = sqlite3.connect(str(db_path))
@@ -303,7 +304,7 @@ def test_db_init():
     os.unlink(db_path)
 
 
-@test("Database: upsert_post inserts new post")
+@_test("Database: upsert_post inserts new post")
 def test_db_upsert_new():
     from database import get_connection, init_db, upsert_post
     db_path = get_temp_db()
@@ -324,7 +325,7 @@ def test_db_upsert_new():
     os.unlink(db_path)
 
 
-@test("Database: upsert_post updates existing post")
+@_test("Database: upsert_post updates existing post")
 def test_db_upsert_update():
     from database import get_connection, init_db, upsert_post
     db_path = get_temp_db()
@@ -342,7 +343,7 @@ def test_db_upsert_update():
     os.unlink(db_path)
 
 
-@test("Database: get_weekly_posts filters by date_posted (not date_scraped)")
+@_test("Database: get_weekly_posts filters by date_posted (not date_scraped)")
 def test_db_weekly_filter():
     from database import get_connection, upsert_post, get_weekly_posts
     db_path = get_temp_db()
@@ -369,7 +370,7 @@ def test_db_weekly_filter():
     os.unlink(db_path)
 
 
-@test("Database: mark_post_reviewed updates status")
+@_test("Database: mark_post_reviewed updates status")
 def test_db_mark_reviewed():
     from database import get_connection, upsert_post, mark_post_reviewed
     db_path = get_temp_db()
@@ -385,7 +386,7 @@ def test_db_mark_reviewed():
     os.unlink(db_path)
 
 
-@test("Database: get_db_stats returns correct counts")
+@_test("Database: get_db_stats returns correct counts")
 def test_db_stats():
     from database import get_connection, upsert_post, get_db_stats
     db_path = get_temp_db()
@@ -404,7 +405,7 @@ def test_db_stats():
     os.unlink(db_path)
 
 
-@test("Database: SQL injection via topic title is safe")
+@_test("Database: SQL injection via topic title is safe")
 def test_db_sql_injection():
     from database import get_connection, upsert_post
     db_path = get_temp_db()
@@ -427,7 +428,7 @@ def test_db_sql_injection():
     os.unlink(db_path)
 
 
-@test("Database: scrape run logging works")
+@_test("Database: scrape run logging works")
 def test_db_scrape_run():
     from database import get_connection, log_scrape_run, update_scrape_run
     db_path = get_temp_db()
@@ -446,7 +447,7 @@ def test_db_scrape_run():
 # DIGEST FORMATTING TESTS
 # ═════════════════════════════════════════════════════════════════════
 
-@test("Digest: no URLs in digest body text")
+@_test("Digest: no URLs in digest body text")
 def test_digest_no_urls():
     from digest import format_weekly_digest
     posts = [
@@ -459,7 +460,7 @@ def test_digest_no_urls():
     assert "chiefdelphi.com" not in digest, "Digest body should not contain URLs"
 
 
-@test("Digest: fits in single Discord message (< 2000 chars)")
+@_test("Digest: fits in single Discord message (< 2000 chars)")
 def test_digest_length():
     from digest import format_weekly_digest
     posts = [
@@ -472,7 +473,7 @@ def test_digest_length():
     assert len(digest) < 2000, f"Digest is {len(digest)} chars, should be < 2000"
 
 
-@test("Digest: split_for_discord respects max_length")
+@_test("Digest: split_for_discord respects max_length")
 def test_discord_split():
     from digest import split_for_discord
     long_text = "\n".join([f"Line {i}: " + "x" * 80 for i in range(50)])
@@ -484,7 +485,7 @@ def test_discord_split():
     assert len(reassembled) >= len(long_text) * 0.9  # Allow minor whitespace differences
 
 
-@test("Digest: notable section capped at 5 items")
+@_test("Digest: notable section capped at 5 items")
 def test_digest_notable_cap():
     from digest import format_weekly_digest
     posts = [
@@ -499,7 +500,7 @@ def test_digest_notable_cap():
     assert "+15 more" in digest
 
 
-@test("Digest: critical alert contains URL wrapped in angle brackets")
+@_test("Digest: critical alert contains URL wrapped in angle brackets")
 def test_critical_alert_url():
     from digest import format_critical_alert
     post = {
@@ -513,7 +514,7 @@ def test_critical_alert_url():
     assert "<https://www.chiefdelphi.com/t/critical/999>" in alert
 
 
-@test("Digest: empty posts list doesn't crash")
+@_test("Digest: empty posts list doesn't crash")
 def test_digest_empty():
     from digest import format_weekly_digest
     digest = format_weekly_digest(posts=[], total_scanned=0, db_total=0)
@@ -521,7 +522,7 @@ def test_digest_empty():
     assert "Relevant: 0" in digest
 
 
-@test("Digest: tracked teams grouped correctly")
+@_test("Digest: tracked teams grouped correctly")
 def test_digest_tracked_teams():
     from digest import _group_by_tracked_teams
     posts = [
@@ -540,7 +541,7 @@ def test_digest_tracked_teams():
 # SCRAPER PARSING TESTS (no network calls)
 # ═════════════════════════════════════════════════════════════════════
 
-@test("Scraper: _standardize_topic extracts fields correctly")
+@_test("Scraper: _standardize_topic extracts fields correctly")
 def test_scraper_standardize():
     from scraper import CDScraper
     scraper = CDScraper()
@@ -566,7 +567,7 @@ def test_scraper_standardize():
     assert "swerve" in result["tags"]
 
 
-@test("Scraper: _standardize_topic skips archived topics")
+@_test("Scraper: _standardize_topic skips archived topics")
 def test_scraper_skip_archived():
     from scraper import CDScraper
     scraper = CDScraper()
@@ -574,14 +575,14 @@ def test_scraper_skip_archived():
     assert scraper._standardize_topic(raw) is None
 
 
-@test("Scraper: _standardize_topic skips topics with no id")
+@_test("Scraper: _standardize_topic skips topics with no id")
 def test_scraper_skip_no_id():
     from scraper import CDScraper
     scraper = CDScraper()
     assert scraper._standardize_topic({}) is None
 
 
-@test("Scraper: _build_user_lookup maps user IDs to usernames")
+@_test("Scraper: _build_user_lookup maps user IDs to usernames")
 def test_scraper_user_lookup():
     from scraper import CDScraper
     scraper = CDScraper()
@@ -596,7 +597,7 @@ def test_scraper_user_lookup():
     assert lookup[2] == "bob"
 
 
-@test("Scraper: _standardize_topic resolves OP username from user lookup")
+@_test("Scraper: _standardize_topic resolves OP username from user lookup")
 def test_scraper_op_username():
     from scraper import CDScraper
     scraper = CDScraper()
@@ -613,7 +614,7 @@ def test_scraper_op_username():
     assert result["author"] == "Karthik"
 
 
-@test("Scraper: handles missing/null fields gracefully")
+@_test("Scraper: handles missing/null fields gracefully")
 def test_scraper_null_fields():
     from scraper import CDScraper
     scraper = CDScraper()
@@ -637,7 +638,7 @@ def test_scraper_null_fields():
 # BOT LOCKFILE TESTS
 # ═════════════════════════════════════════════════════════════════════
 
-@test("Lock: acquire succeeds when no lock exists")
+@_test("Lock: acquire succeeds when no lock exists")
 def test_lock_acquire_clean():
     if LOCK_FILE.exists():
         LOCK_FILE.unlink()
@@ -647,7 +648,7 @@ def test_lock_acquire_clean():
     release_lock()
 
 
-@test("Lock: acquire fails when held by live process")
+@_test("Lock: acquire fails when held by live process")
 def test_lock_held_by_live():
     if LOCK_FILE.exists():
         LOCK_FILE.unlink()
@@ -657,7 +658,7 @@ def test_lock_held_by_live():
     LOCK_FILE.unlink()
 
 
-@test("Lock: stale lock (dead PID) gets cleared")
+@_test("Lock: stale lock (dead PID) gets cleared")
 def test_lock_stale():
     if LOCK_FILE.exists():
         LOCK_FILE.unlink()
@@ -667,12 +668,12 @@ def test_lock_stale():
     release_lock()
 
 
-@test("Lock: second bot process exits with code 1")
+@_test("Lock: second bot process exits with code 1")
 def test_lock_second_process():
     if LOCK_FILE.exists():
         LOCK_FILE.unlink()
     LOCK_FILE.write_text(str(os.getpid()))
-    bot_path = Path(__file__).parent / "bot.py"
+    bot_path = _ANTENNA_DIR / "bot.py"
     result = subprocess.run(
         [sys.executable, str(bot_path)],
         capture_output=True, text=True, timeout=10,
@@ -683,7 +684,7 @@ def test_lock_second_process():
     LOCK_FILE.unlink()
 
 
-@test("Lock: release removes lockfile")
+@_test("Lock: release removes lockfile")
 def test_lock_release():
     from bot import acquire_lock, release_lock
     if LOCK_FILE.exists():
@@ -698,9 +699,9 @@ def test_lock_release():
 # SECURITY TESTS
 # ═════════════════════════════════════════════════════════════════════
 
-@test("Security: database uses parameterized queries (no string formatting in SQL)")
+@_test("Security: database uses parameterized queries (no string formatting in SQL)")
 def test_no_sql_string_formatting():
-    db_source = Path(__file__).parent / "database.py"
+    db_source = _ANTENNA_DIR / "database.py"
     content = db_source.read_text()
     # Check for f-string SQL (dangerous pattern)
     # The only f-string SQL should be in update_scrape_run which uses column names, not values
@@ -716,9 +717,9 @@ def test_no_sql_string_formatting():
     assert len(real_dangerous) == 0, f"Potential SQL injection:\n" + "\n".join(real_dangerous)
 
 
-@test("Security: .env file is not importable as Python")
+@_test("Security: .env file is not importable as Python")
 def test_env_not_python():
-    env_path = Path(__file__).parent / ".env"
+    env_path = _ANTENNA_DIR / ".env"
     if env_path.exists():
         content = env_path.read_text()
         # Should not contain Python code
@@ -727,9 +728,9 @@ def test_env_not_python():
         assert "eval(" not in content
 
 
-@test("Security: bot token not hardcoded in source files")
+@_test("Security: bot token not hardcoded in source files")
 def test_no_hardcoded_tokens():
-    for py_file in Path(__file__).parent.glob("*.py"):
+    for py_file in _ANTENNA_DIR.glob("*.py"):
         if py_file.name.startswith("test_"):
             continue
         content = py_file.read_text()
@@ -738,7 +739,7 @@ def test_no_hardcoded_tokens():
         assert len(tokens) == 0, f"Possible hardcoded token in {py_file.name}"
 
 
-@test("Security: rate limiter prevents rapid-fire requests")
+@_test("Security: rate limiter prevents rapid-fire requests")
 def test_rate_limiter_exists():
     from scraper import CDScraper
     scraper = CDScraper()
@@ -748,7 +749,7 @@ def test_rate_limiter_exists():
     assert CD_RATE_LIMIT_SECONDS >= 1.0, "Rate limit should be at least 1 second"
 
 
-@test("Security: user agent identifies the bot properly")
+@_test("Security: user agent identifies the bot properly")
 def test_user_agent():
     from config import CD_USER_AGENT
     assert "TheEngine" in CD_USER_AGENT
@@ -759,7 +760,7 @@ def test_user_agent():
 # EDGE CASE & ROBUSTNESS TESTS
 # ═════════════════════════════════════════════════════════════════════
 
-@test("Edge: very long title doesn't break digest")
+@_test("Edge: very long title doesn't break digest")
 def test_long_title():
     from digest import format_weekly_digest
     posts = [make_topic(
@@ -771,7 +772,7 @@ def test_long_title():
     assert len(digest) > 0
 
 
-@test("Edge: special characters in title don't break formatting")
+@_test("Edge: special characters in title don't break formatting")
 def test_special_chars_title():
     from digest import format_weekly_digest
     posts = [make_topic(
@@ -783,7 +784,7 @@ def test_special_chars_title():
     assert "@everyone" in digest  # Should not be sanitized at format level
 
 
-@test("Edge: zero-score topic has tier=ignore")
+@_test("Edge: zero-score topic has tier=ignore")
 def test_zero_score():
     from scorer import score_topic
     topic = make_topic(title="Completely irrelevant post about cooking")
@@ -792,7 +793,7 @@ def test_zero_score():
     assert result["tier"] == "ignore"
 
 
-@test("Edge: tags as dict list handled correctly")
+@_test("Edge: tags as dict list handled correctly")
 def test_tags_dict_list():
     from scorer import score_topic
     topic = make_topic(
@@ -803,7 +804,7 @@ def test_tags_dict_list():
     assert "swerve" in result["keywords_matched"]
 
 
-@test("Edge: tags as string list handled correctly")
+@_test("Edge: tags as string list handled correctly")
 def test_tags_string_list():
     from scorer import score_topic
     topic = make_topic(title="Some post", tags=["swerve", "build-log"])
@@ -811,7 +812,7 @@ def test_tags_string_list():
     assert "swerve" in result["keywords_matched"]
 
 
-@test("Edge: negative like_count treated as 0")
+@_test("Edge: negative like_count treated as 0")
 def test_negative_likes():
     from scorer import score_topic
     topic = make_topic(title="Test", like_count=-5)
@@ -820,7 +821,7 @@ def test_negative_likes():
     assert result["relevance_score"] >= 0
 
 
-@test("Edge: config score thresholds are ordered correctly")
+@_test("Edge: config score thresholds are ordered correctly")
 def test_threshold_ordering():
     from config import SCORE_THRESHOLDS
     assert SCORE_THRESHOLDS["ignore"] < SCORE_THRESHOLDS["notable"]
@@ -828,7 +829,7 @@ def test_threshold_ordering():
     assert SCORE_THRESHOLDS["high"] <= SCORE_THRESHOLDS["critical"]
 
 
-@test("Edge: all scan modes have required keys")
+@_test("Edge: all scan modes have required keys")
 def test_scan_modes_complete():
     from config import SCAN_MODES
     required_keys = {"scan_interval_hours", "digest_day", "digest_hour", "max_pages", "description"}
@@ -837,7 +838,7 @@ def test_scan_modes_complete():
         assert not missing, f"Scan mode '{mode_name}' missing keys: {missing}"
 
 
-@test("Edge: tracked teams are valid FRC numbers")
+@_test("Edge: tracked teams are valid FRC numbers")
 def test_tracked_teams_valid():
     from config import TRACKED_TEAMS
     for team in TRACKED_TEAMS:
