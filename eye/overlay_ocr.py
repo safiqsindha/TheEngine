@@ -46,6 +46,7 @@ MIN_CONF = 0.5          # Confidence floor for structured parsing
 MIN_SELECT_CONF = 0.4   # Softer floor for live overlay scraping
 TEAM_NUM_MIN = 200      # Team numbers must exceed this (filters out score values)
 TEAM_NUM_MAX = 99999
+SCORE_VALUE_MAX = 500   # FRC alliance scores rarely exceed this (Reefscape 2025 cap was ~250)
 LEFT_ALLIANCE_FRAC = 0.4    # x < width * 0.4 → red
 RIGHT_ALLIANCE_FRAC = 0.6   # x > width * 0.6 → blue
 
@@ -180,7 +181,7 @@ def _parse_breakdown(
     if not is_breakdown:
         return {"is_breakdown": False}
 
-    # Collect all high-confidence numeric detections with their centroid
+    # Collect all high-confidence numeric detections with centroid + bbox area
     numbers: list[dict[str, float]] = []
     for (bbox, text, conf) in results:
         if conf <= MIN_CONF or not text.isdigit():
@@ -189,7 +190,14 @@ def _parse_breakdown(
             continue
         cx = (bbox[0][0] + bbox[2][0]) / 2
         cy = (bbox[0][1] + bbox[2][1]) / 2
-        numbers.append({"value": int(text), "x": cx, "y": cy, "conf": conf})
+        # bbox area as a proxy for font size — alliance scores are rendered
+        # much larger than team numbers and sub-scores
+        bw = abs(bbox[2][0] - bbox[0][0])
+        bh = abs(bbox[2][1] - bbox[0][1])
+        numbers.append({
+            "value": int(text), "x": cx, "y": cy, "conf": conf,
+            "area": bw * bh,
+        })
 
     teams: dict[str, list[int]] = {"red": [], "blue": []}
     left_cut = img_width * LEFT_ALLIANCE_FRAC
@@ -203,11 +211,31 @@ def _parse_breakdown(
         elif n["x"] > right_cut:
             teams["blue"].append(val)
 
-    # Winner heuristic: if "WINNER" appears and there are large scores on the
-    # right half, call it blue; otherwise red. This is a weak signal — the
-    # authoritative winner comes from the structured score parse upstream.
+    # Score extraction: per side, the largest-area number ≤ SCORE_VALUE_MAX
+    # is almost always the alliance final score (rendered in huge type).
+    # Final scores are typically centered next to the RED/BLUE labels rather
+    # than at the far edges, so use a midline split (not the conservative
+    # 0.4/0.6 split that team-number detection uses).
+    scores: dict[str, Optional[int]] = {"red": None, "blue": None}
+    midline = img_width * 0.5
+    red_candidates = [n for n in numbers if n["x"] < midline and 0 <= n["value"] <= SCORE_VALUE_MAX]
+    blue_candidates = [n for n in numbers if n["x"] > midline and 0 <= n["value"] <= SCORE_VALUE_MAX]
+    if red_candidates:
+        scores["red"] = int(max(red_candidates, key=lambda n: n["area"])["value"])
+    if blue_candidates:
+        scores["blue"] = int(max(blue_candidates, key=lambda n: n["area"])["value"])
+
+    # Winner: prefer the score-derived answer when both sides have a score.
+    # Fall back to the WINNER-keyword heuristic if scores are missing.
     winner: Optional[str] = None
-    if "WINNER" in text_upper:
+    if scores["red"] is not None and scores["blue"] is not None:
+        if scores["red"] > scores["blue"]:
+            winner = "red"
+        elif scores["blue"] > scores["red"]:
+            winner = "blue"
+        else:
+            winner = "tie"
+    elif "WINNER" in text_upper:
         mid = img_width * 0.5
         right_big = any(n["x"] > mid and n["value"] > 50 for n in numbers)
         winner = "blue" if right_big else "red"
@@ -216,6 +244,7 @@ def _parse_breakdown(
         "is_breakdown": True,
         "raw_texts": texts,
         "teams": teams,
+        "scores": scores,
         "winner": winner,
     }
 

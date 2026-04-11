@@ -78,9 +78,9 @@ def test_parse_breakdown_rejects_unrelated_text():
 
 
 def test_parse_breakdown_detects_winner_and_teams():
-    # RED side (x < 768): teams 2950 + 1234
-    # BLUE side (x > 1152): teams 148 + 254
-    # WINNER shows up, blue has a 100 on the right → winner=blue
+    # RED side (x < 768): teams 2950 + 1234, score 88 (huge font)
+    # BLUE side (x > 1152): teams 254 (148 < TEAM_NUM_MIN), score 100 (huge font)
+    # Score bboxes are big (200x150) — much larger than team-number bboxes (20x10)
     results = [
         (_bbox(300, 50),  "WINNER", 0.95),
         (_bbox(300, 100), "RED", 0.9),
@@ -89,14 +89,70 @@ def test_parse_breakdown_detects_winner_and_teams():
         (_bbox(300, 300), "1234", 0.9),
         (_bbox(1600, 200), "148", 0.9),
         (_bbox(1600, 300), "254", 0.9),
-        (_bbox(1600, 400), "100", 0.9),   # blue's score, right side
-        (_bbox(300, 400), "88", 0.9),     # red's score — will be filtered (<200)
+        (_bbox(1600, 400, w=200, h=150), "100", 0.9),  # blue score, huge font
+        (_bbox(300, 400, w=200, h=150),  "88",  0.9),  # red score, huge font
     ]
     out = _parse_breakdown(results, 1920, 1080)
     assert out["is_breakdown"] is True
     assert out["teams"]["red"] == [2950, 1234]
     assert out["teams"]["blue"] == [254]   # 148 is < TEAM_NUM_MIN=200
+    assert out["scores"]["red"] == 88
+    assert out["scores"]["blue"] == 100
     assert out["winner"] == "blue"
+
+
+def test_parse_breakdown_score_picks_largest_area_per_side():
+    """The biggest-font number on each side should win, even if smaller
+    numbers are present (sub-scores like ranking points, fouls, auto pts)."""
+    results = [
+        (_bbox(960, 50), "RANKING POINTS", 0.9),    # triggers is_breakdown
+        (_bbox(200, 100), "12", 0.9),               # red ranking points (small)
+        (_bbox(200, 200), "20", 0.9),               # red auto pts (small)
+        (_bbox(200, 300, w=300, h=200), "142", 0.9),  # red FINAL score (huge)
+        (_bbox(1700, 100), "8", 0.9),               # blue ranking points (small)
+        (_bbox(1700, 200), "18", 0.9),              # blue auto pts (small)
+        (_bbox(1700, 300, w=300, h=200), "118", 0.9),  # blue FINAL score (huge)
+    ]
+    out = _parse_breakdown(results, 1920, 1080)
+    assert out["scores"] == {"red": 142, "blue": 118}
+    assert out["winner"] == "red"
+
+
+def test_parse_breakdown_score_returns_none_when_side_has_no_candidates():
+    """If one side has no <=SCORE_VALUE_MAX numbers, that side's score is None."""
+    results = [
+        (_bbox(960, 50), "WINNER", 0.95),
+        (_bbox(300, 200), "2950", 0.9),    # red team only — no score
+        (_bbox(1700, 200, w=300, h=200), "100", 0.9),  # blue score
+    ]
+    out = _parse_breakdown(results, 1920, 1080)
+    assert out["scores"]["red"] is None
+    assert out["scores"]["blue"] == 100
+    # Winner falls back to the WINNER-keyword heuristic since red is unknown
+    assert out["winner"] == "blue"
+
+
+def test_parse_breakdown_score_filters_above_max():
+    """Numbers above SCORE_VALUE_MAX (=500) are NOT score candidates."""
+    results = [
+        (_bbox(960, 50), "WINNER", 0.95),
+        (_bbox(300, 200, w=400, h=200), "9999", 0.9),  # huge but >500 → ignored as score
+        (_bbox(300, 300, w=200, h=150), "85", 0.9),    # smaller but <=500 → red score
+        (_bbox(1700, 200, w=200, h=150), "72", 0.9),
+    ]
+    out = _parse_breakdown(results, 1920, 1080)
+    assert out["scores"]["red"] == 85
+    assert out["scores"]["blue"] == 72
+
+
+def test_parse_breakdown_winner_tie_when_scores_equal():
+    results = [
+        (_bbox(960, 50), "WINNER", 0.95),
+        (_bbox(300, 300, w=200, h=150), "80", 0.9),
+        (_bbox(1700, 300, w=200, h=150), "80", 0.9),
+    ]
+    out = _parse_breakdown(results, 1920, 1080)
+    assert out["winner"] == "tie"
 
 
 def test_parse_breakdown_uses_ranking_points_signal():
