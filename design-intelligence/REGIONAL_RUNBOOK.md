@@ -171,11 +171,9 @@ Once FIRST posts the final qual rankings:
 # Update our_seed in the state file to match the posted ranking.
 # If we finished 4th, for example:
 python3 scout/pick_board.py setup 2026<event> --team 2950 --seed 4 --force
-# --force overwrites the existing state but PRESERVES picks + dnp + history.
-# Double-check --force is actually implemented before relying on it:
-grep -n "force" scout/pick_board.py | head
-# If not implemented, manually edit scout/.cache/draft/live_draft.json and
-# bump our_seed. That file is JSON; don't break it.
+# --force overwrites event_key/our_seed/our_team/captains/teams
+# but PRESERVES picks, history, dnp, and live_matches from the existing state.
+# Without --force the command will refuse to overwrite (safety guard).
 ```
 
 ---
@@ -364,8 +362,12 @@ You have a backup plan. On the iPhone, open the GitHub repo in Safari, navigate 
 !sim [n]               Monte Carlo playoff simulation (default 5000)
 !captains              Predicted captain pick order + backfill
 !lookup <team>         Team EPA + season history (hits Statbotics)
-!preview <team>        Pre-event report excerpt for a team
+!preview <team>        Pre-event report: EPA, trend, anomalies, pit questions
 !brief [event]         Latest strategic brief (needs synthesis worker)
+
+── SYSTEM HEALTH ──
+
+!status                Compact health snapshot: draft state, brief age, EYE counts
 
 ── READ-ONLY / STATUS ──
 
