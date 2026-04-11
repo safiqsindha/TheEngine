@@ -188,15 +188,16 @@ def record_from_file(video_path: Path, segment_duration: int = SEGMENT_DURATION_
 
 
 class MatchDetector:
-    """Detects match boundaries within video segments using OCR."""
+    """Detects match boundaries within video segments using OCR.
+
+    OCR is delegated to eye/overlay_ocr.py (PaddleOCR-backed). This class
+    only holds the gap-dedup bookkeeping needed to avoid double-counting
+    match ends on adjacent frames.
+    """
 
     def __init__(self):
-        try:
-            import easyocr
-            self.reader = easyocr.Reader(["en"], gpu=False, verbose=False)
-        except ImportError:
-            raise ImportError("pip3 install easyocr")
-
+        from overlay_ocr import OverlayOCR
+        self.ocr = OverlayOCR()
         self.last_match_end_time = 0
         self.match_count = 0
 
@@ -236,7 +237,7 @@ class MatchDetector:
                 continue
 
             # Check for transition screen (ALLIANCE WINS)
-            if self._is_transition(str(frame_path)):
+            if self.ocr.is_transition_screen(str(frame_path)):
                 events.append({
                     "type": "transition",
                     "timestamp_s": abs_time,
@@ -244,7 +245,7 @@ class MatchDetector:
                 })
 
             # Check for breakdown screen (post-match scores)
-            bd = self._read_breakdown(str(frame_path))
+            bd = self.ocr.read_breakdown_screen(str(frame_path))
             if bd.get("is_breakdown"):
                 self.match_count += 1
                 self.last_match_end_time = abs_time
@@ -264,50 +265,6 @@ class MatchDetector:
             f.unlink()
 
         return events
-
-    def _is_transition(self, frame_path: str) -> bool:
-        import cv2
-        img = cv2.imread(frame_path)
-        if img is None:
-            return False
-        h, w = img.shape[:2]
-        center = img[int(h * 0.3):int(h * 0.7), int(w * 0.2):int(w * 0.8)]
-        results = self.reader.readtext(center)
-        text = " ".join(t for (_, t, c) in results if c > 0.5).upper()
-        return "WINS" in text and "ALLIANCE" in text
-
-    def _read_breakdown(self, frame_path: str) -> dict:
-        import cv2
-        img = cv2.imread(frame_path)
-        if img is None:
-            return {}
-
-        results = self.reader.readtext(img)
-        texts = [t for (_, t, c) in results if c > 0.5]
-        text_str = " ".join(texts).upper()
-
-        is_breakdown = ("WINNER" in text_str or
-                        ("RANKING POINTS" in text_str and "FUEL" in text_str))
-        if not is_breakdown:
-            return {"is_breakdown": False}
-
-        h, w = img.shape[:2]
-        numbers = []
-        for (bbox, text, conf) in results:
-            if conf > 0.5 and text.isdigit():
-                cx = (bbox[0][0] + bbox[2][0]) / 2
-                numbers.append({"value": int(text), "x": cx})
-
-        teams = {"red": [], "blue": []}
-        for n in numbers:
-            if 200 <= n["value"] <= 99999:
-                if n["x"] < w * 0.4:
-                    teams["red"].append(n["value"])
-                elif n["x"] > w * 0.6:
-                    teams["blue"].append(n["value"])
-
-        return {"is_breakdown": True, "teams": teams, "raw_texts": texts}
-
 
 # ─── Match Clip Extraction ───
 

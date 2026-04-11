@@ -189,15 +189,8 @@ def select_scored_frames(frames: list, ocr: "OverlayOCR" = None,
                 selected.add(i)
                 continue
             # Quick OCR check — just read top overlay region for score text
-            import cv2
-            img = cv2.imread(f["path"])
-            if img is None:
-                continue
-            h, w = img.shape[:2]
-            top_bar = img[0:int(h * 0.12), :]
-            results = ocr.reader.readtext(top_bar)
-            text = " ".join(t for (_, t, c) in results if c > 0.4)
-            if text != prev_text and text.strip():
+            text = ocr.read_top_overlay(f["path"])
+            if text != prev_text and text:
                 selected.add(i)
                 prev_text = text
 
@@ -229,96 +222,11 @@ def select_frames_by_tier(frames: list, tier: str = DEFAULT_TIER,
 
 
 # ─── OCR Layer (Free) ───
+#
+# The OverlayOCR implementation lives in eye/overlay_ocr.py so the Live Scout
+# workers and this batch tool share a single PaddleOCR-backed reader.
 
-
-class OverlayOCR:
-    """OCR-based extraction from FRC score overlays and breakdown screens."""
-
-    def __init__(self):
-        try:
-            import easyocr
-            self.reader = easyocr.Reader(["en"], gpu=False, verbose=False)
-        except ImportError:
-            print("  Run: pip3 install easyocr")
-            sys.exit(1)
-
-    def read_breakdown_screen(self, frame_path: str) -> dict:
-        """Read the post-match score breakdown screen (clean fonts, high accuracy)."""
-        import cv2
-        img = cv2.imread(frame_path)
-        if img is None:
-            return {}
-
-        results = self.reader.readtext(img)
-        texts = [t for (_, t, c) in results if c > 0.5]
-        text_str = " ".join(texts).upper()
-
-        # Detect if this is a breakdown screen
-        is_breakdown = ("WINNER" in text_str or "RANKING POINTS" in text_str
-                        or ("RED" in text_str and "BLUE" in text_str
-                            and "FUEL" in text_str))
-        if not is_breakdown:
-            return {"is_breakdown": False}
-
-        # Extract structured data from breakdown
-        data = {"is_breakdown": True, "raw_texts": texts}
-
-        # Find scores — the two largest numbers near RED and BLUE
-        numbers = []
-        for (bbox, text, conf) in results:
-            if conf > 0.5 and text.isdigit():
-                cx = (bbox[0][0] + bbox[2][0]) / 2
-                cy = (bbox[0][1] + bbox[2][1]) / 2
-                numbers.append({"value": int(text), "x": cx, "y": cy, "conf": conf})
-
-        # Find team numbers (3-5 digits, but filter out common score values)
-        teams = {"red": [], "blue": []}
-        h, w = img.shape[:2]
-        for n in numbers:
-            val = n["value"]
-            # Team numbers are typically 3-5 digits, exclude small scores
-            # and common breakdown values (< 200 is likely a score)
-            if 200 <= val <= 99999:
-                if n["x"] < w * 0.4:
-                    teams["red"].append(val)
-                elif n["x"] > w * 0.6:
-                    teams["blue"].append(val)
-
-        data["teams"] = teams
-
-        # WINNER detection
-        data["winner"] = "blue" if "WINNER" in text_str and any(
-            t["x"] > w * 0.5 for t in numbers if t["value"] > 50
-        ) else "red"
-
-        return data
-
-    def is_transition_screen(self, frame_path: str) -> bool:
-        """Detect match transition screens (ALLIANCE WINS, sponsor slides)."""
-        import cv2
-        img = cv2.imread(frame_path)
-        if img is None:
-            return False
-
-        h, w = img.shape[:2]
-        center = img[int(h * 0.3):int(h * 0.7), int(w * 0.2):int(w * 0.8)]
-        results = self.reader.readtext(center)
-        text = " ".join(t for (_, t, c) in results if c > 0.5).upper()
-
-        return ("WINS" in text or "ALLIANCE" in text)
-
-    def detect_match_boundaries(self, frames: list) -> list:
-        """Find frames that mark match start/end boundaries."""
-        boundaries = []
-        for i, f in enumerate(frames):
-            if self.is_transition_screen(f["path"]):
-                boundaries.append({"frame_idx": i, "timestamp_s": f["timestamp_s"],
-                                   "type": "transition"})
-            bd = self.read_breakdown_screen(f["path"])
-            if bd.get("is_breakdown"):
-                boundaries.append({"frame_idx": i, "timestamp_s": f["timestamp_s"],
-                                   "type": "breakdown", "data": bd})
-        return boundaries
+from overlay_ocr import OverlayOCR  # noqa: E402
 
 
 # ─── Vision Backend (Swappable) ───

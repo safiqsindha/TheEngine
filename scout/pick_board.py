@@ -123,7 +123,8 @@ def _blank_state():
         "picks": [],             # [{alliance: int, team: int, round: int}]
         "teams": {},             # {team#: TeamData as dict}
         "history": [],           # for undo
-        "dnp": [],               # [team#] Do Not Pick — excluded from rec
+        "dnp": [],                  # [team#] Do Not Pick — excluded from rec
+        "live_matches": {},         # {match_key: LiveMatch.to_dict()} — from Live Scout workers
     }
 
 
@@ -137,6 +138,131 @@ def load_state() -> dict:
         print("  No active draft. Run 'setup' first.")
         sys.exit(1)
     return json.loads(STATE_FILE.read_text())
+
+
+# ─── Live Scout integration ───
+#
+# Live Scout workers produce LiveMatch records (see scout/live_match.py) and
+# feed them into pick_board state via append_live_match(). recompute_team_aggregates()
+# then walks every live match and updates the per-team real_sd / real_avg_score /
+# streak / match_count fields that cmd_enrich writes from TBA. This lets the
+# board stay fresh during an event without waiting on TBA's post-match delay.
+
+
+def append_live_match(state: dict, live_match) -> bool:
+    """Idempotent upsert of a LiveMatch into state['live_matches'].
+
+    Accepts either a LiveMatch instance or a plain dict (already-serialized
+    record). Records are keyed by match_key so re-processing the same match
+    overwrites the prior record. Matches for events other than
+    state['event_key'] are silently ignored.
+
+    Returns True if state was mutated, False otherwise.
+
+    Caller is responsible for calling save_state() and (usually)
+    recompute_team_aggregates() after batching updates.
+    """
+    if hasattr(live_match, "to_dict"):
+        record = live_match.to_dict()
+    else:
+        record = dict(live_match)
+
+    event_key = record.get("event_key")
+    match_key = record.get("match_key")
+    if not event_key or not match_key:
+        raise ValueError(
+            f"live_match missing event_key/match_key: {record!r}"
+        )
+
+    # Scope guard — don't cross-contaminate boards from different events
+    if state.get("event_key") and event_key != state["event_key"]:
+        return False
+
+    live_matches = state.setdefault("live_matches", {})
+    prior = live_matches.get(match_key)
+    if prior == record:
+        return False
+
+    live_matches[match_key] = record
+    return True
+
+
+def _aggregate_scores(scores: list) -> dict:
+    """Compute avg / per-robot SD / hot-cold streak from a list of
+    alliance scores. Matches the shape cmd_enrich writes."""
+    n = len(scores)
+    if n < 3:
+        return {}
+
+    avg = sum(scores) / n
+    variance = sum((s - avg) ** 2 for s in scores) / n
+    # Alliance score is 3 robots — divide by 3 to get per-robot SD
+    real_sd = math.sqrt(variance) / 3
+
+    recent = scores[-3:]
+    recent_avg = sum(recent) / len(recent)
+    streak = ""
+    if recent_avg > avg * 1.15:
+        streak = "HOT"
+    elif recent_avg < avg * 0.85:
+        streak = "COLD"
+
+    return {
+        "real_sd": round(real_sd, 1),
+        "real_avg_score": round(avg, 1),
+        "streak": streak,
+        "match_count": n,
+    }
+
+
+def recompute_team_aggregates(state: dict) -> int:
+    """Walk state['live_matches'] and rewrite per-team enrichment fields.
+
+    For every team in state['teams'], sum all alliance scores from live
+    matches where that team played (using whichever alliance they were on)
+    and recompute real_sd / real_avg_score / streak / match_count the same
+    way cmd_enrich does from TBA. Only considers `is_complete` matches
+    (both red and blue scores present) and only qualification matches
+    (comp_level == 'qm'), matching cmd_enrich's scope.
+
+    Returns the number of teams whose aggregates were updated.
+    """
+    live_matches = state.get("live_matches", {})
+    teams_db = state.get("teams", {})
+
+    # Collect per-team ordered score lists. Iterate matches in a stable
+    # order (by match_num within comp_level) so the "recent 3" streak
+    # window is deterministic.
+    def sort_key(record: dict):
+        return (record.get("comp_level", ""), int(record.get("match_num", 0)))
+
+    ordered = sorted(
+        (m for m in live_matches.values() if m.get("comp_level") == "qm"),
+        key=sort_key,
+    )
+
+    team_scores: dict = {}
+    for m in ordered:
+        red_score = m.get("red_score")
+        blue_score = m.get("blue_score")
+        if red_score is None or blue_score is None:
+            continue  # match not finalized yet
+        for team in m.get("red_teams", []):
+            team_scores.setdefault(team, []).append(red_score)
+        for team in m.get("blue_teams", []):
+            team_scores.setdefault(team, []).append(blue_score)
+
+    updated = 0
+    for team, scores in team_scores.items():
+        key = str(team)
+        if key not in teams_db:
+            continue
+        agg = _aggregate_scores(scores)
+        if not agg:
+            continue
+        teams_db[key].update(agg)
+        updated += 1
+    return updated
 
 
 # ─── Draft Logic ───
