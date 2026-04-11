@@ -38,7 +38,7 @@ env:
 
 jobs:
   test:
-    name: pytest live_scout
+    name: pytest scout
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -57,9 +57,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest numpy
 
-      - name: Run live_scout test suite
+      - name: Run scout test suite
         run: |
-          python -m pytest tests/live_scout/ -v --tb=short
+          python -m pytest tests/scout/ -v --tb=short
 
   build:
     name: Build & push image

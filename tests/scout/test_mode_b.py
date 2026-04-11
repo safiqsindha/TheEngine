@@ -803,7 +803,7 @@ def test_mode_b_result_to_dict_shape():
 
 # ─── Integration test: replay cached PaddleOCR fixture through Mode B ───
 #
-# Mirrors tests/live_scout/test_mode_a_integration.py — reuses the same
+# Mirrors tests/scout/test_mode_a_integration.py — reuses the same
 # wpzeax_ocr_cache.json fixture via _CachedOverlayOCR. Verifies Mode B
 # can backfill 2026txdri_qm32 end-to-end with source_tier='vod' from a
 # stub frame-resolver (no real frames needed — _CachedOverlayOCR keys

@@ -32,7 +32,7 @@ Source-tier rules:
 The HLS pull, frame extraction, OCR, and TBA fetch are all wired
 through injectable callables so the whole pipeline can be exercised
 end-to-end in unit tests against cached frames (see
-tests/live_scout/test_mode_a.py and test_mode_a_integration.py).
+tests/scout/test_mode_a.py and test_mode_a_integration.py).
 
 Usage:
     # Process the most-recently-finalized match for our event

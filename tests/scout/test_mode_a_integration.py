@@ -6,7 +6,7 @@ optional pick_board state mutation) end-to-end against a real cached set
 of frames pulled from a FIRST in Texas VOD (eye/.cache/WpzeaX1vgeQ/frames).
 
 The OCR layer is replayed from a frozen JSON snapshot of real PaddleOCR
-output (tests/live_scout/fixtures/wpzeax_ocr_cache.json) so that:
+output (tests/scout/fixtures/wpzeax_ocr_cache.json) so that:
 
   1. The test runs in milliseconds (no PaddleOCR in CI)
   2. The result is byte-stable across machines (no model randomness)
@@ -15,7 +15,7 @@ output (tests/live_scout/fixtures/wpzeax_ocr_cache.json) so that:
 
 To regenerate the OCR fixture from the cached frames (after a parsing
 heuristic change or on a new frame set), run this file directly with
-``python -m tests.live_scout.test_mode_a_integration --regen``.
+``python -m tests.scout.test_mode_a_integration --regen``.
 
 Golden record:
   match_key   : 2026txdri_qm32
@@ -115,7 +115,7 @@ def _load_ocr_cache() -> dict[str, list[dict[str, Any]]]:
     if not OCR_CACHE_PATH.exists():
         pytest.skip(
             f"OCR cache fixture missing: {OCR_CACHE_PATH}. "
-            f"Regenerate with: python -m tests.live_scout.test_mode_a_integration --regen"
+            f"Regenerate with: python -m tests.scout.test_mode_a_integration --regen"
         )
     return json.loads(OCR_CACHE_PATH.read_text())
 
