@@ -174,17 +174,19 @@ visual context (which usually we don't even need).
 
 ---
 
-## The three latency tiers
+## The tiers (T1 + backfill = Phase 1, T2 + T3 = Phase 2)
 
 Once a match is in the process queue (via Mode A or B or C.2), it
-runs through three tiers in sequence. None of them are sub-second
-because the cloud is strategic, not tactical.
+runs through tiers in sequence. None of them are sub-second because
+the cloud is strategic, not tactical.
 
-| Tier | Latency target | Trigger | Output |
-|---|---|---|---|
-| **T1** Score truth | 5 min @ home, 1 min @ ours | Mode A/B cron | Final scores, RPs, timer, phase |
-| **T2** Vision/cycle counting | 5 min post-match | After T1 completes for a match | Cycle counts, climb, defense events |
-| **T3** Strategic synthesis | End of qualification day | 11 PM CT cron @ our event | Alliance brief, picks, narrative |
+| Tier | Latency target | Trigger | Build effort | Phase |
+|---|---|---|---|---|
+| **T1** Score truth | 5 min (1 min at our event) | Azure cron every 5 min | ~12 h | **Phase 1** |
+| **T2** Vision/cycle counting | 5 min post-match | Azure cron every 10 min | ~10 h | **Phase 2** |
+| **T3** Strategic synthesis | End of qualification day | Azure cron at 11pm CT | ~6 h | **Phase 2** |
+| **Backfill** | Whenever | Manual + one-time bulk | ~3 h (mostly free from T1+T2) | **Phase 1** |
+| | | | **Total ~31 h** | |
 
 **Why 5 min is fine for T1+T2:** strategic data at 5-min latency is
 strategic. We don't drive the robot from cloud data. Drive team
@@ -242,11 +244,18 @@ Azure Container Apps Environment "engine-live-scout"
 │   ├── T3 generates digest
 │   └── Pushes digest to Discord
 │
-├── synthesis-worker (Container Apps Job, 11 PM CT @ our event days)
+├── synthesis-worker (Container Apps Job, 11 PM CT @ our event days) [PHASE 2]
 │   ├── Reads everything in Storage for our event
-│   ├── Runs Opus advisor for alliance brief
+│   ├── Runs Opus advisor for alliance brief (depends on T2 cycle data)
 │   ├── Pushes brief to Discord war-room channel
 │   └── Updates pick_board with end-of-day rankings
+│
+├── vision-worker (Container Apps Job, every 10 min) [PHASE 2]
+│   ├── Reads matches with T1 OCR complete but T2 not yet run
+│   ├── Pulls cached frames from Storage Blob
+│   ├── Runs Roboflow Universe FRC YOLO model
+│   ├── Extracts cycle counts, climb success, defense events
+│   └── Updates LiveMatch records with vision breakdown
 │
 └── backfill-worker (Container Apps Job, manual / one-time)
     ├── Iterates @FIRSTinTexas VOD list (2023-present)
@@ -329,6 +338,11 @@ gets you fewer requests than this would do in an hour.
 
 ## Build effort
 
+**Phase 1 = T1 (score truth) + Backfill.** Vision and synthesis come
+later in Phase 2. The full per-tier breakdown is in the table at the
+top of §"The tiers" above. The detailed gate-by-gate Phase 1 plan
+lives in [LIVE_SCOUT_PHASE1_BUILD.md](LIVE_SCOUT_PHASE1_BUILD.md).
+
 | Component | Effort |
 |---|---|
 | Discovery cron (YouTube + TBA) | 3 h |
@@ -336,55 +350,74 @@ gets you fewer requests than this would do in an hour.
 | Mode B end-of-quals fill | 3 h |
 | Mode C anomaly detector | 4 h |
 | Mode C event-end batch | 4 h |
-| T2 vision integration (uses on-robot YOLO + Roboflow Universe models) | 5 h |
-| T3 synthesis worker (Opus advisor calls) | 4 h |
 | Discord #engine-alerts push | 3 h |
 | pick_board live feed integration | 3 h |
 | Azure deploy + tests | 5 h |
-| **Total Phase 1** | **~42 h** |
+| **Total Phase 1** | **~33 h** |
 
 Spread across 2-3 weekends if focused.
 
 Backfill worker: ~3 h (mostly free since it shares Mode B + Event-End code).
 
+Note: T2 vision (~10 h) and T3 synthesis (~6 h) are now Phase 2.
+Earlier drafts of this doc folded them into Phase 1; the cleaner
+split is to ship pure score-truth first and add the heavier vision
++ synthesis layer as a single offseason capability push.
+
 ---
 
-## Phase 2: TBA video uploader (faster than @texasFRC)
+## Phase 2: Vision + Synthesis + TBA video uploader
 
-`youtube.com/@texasFRC/videos` is already doing the cut-and-upload
-work for FIT match videos to TBA. Verified: they exist, they upload,
-they're typically late by several days to a week.
+Phase 2 layers the heavier capabilities onto the Phase 1 foundation as
+a single offseason capability push. Three pieces:
 
-**Phase 2 differentiator: speed.** We'd target same-day or next-morning
-uploads vs the multi-day lag. Our advantage:
-- We're already OCR'ing the "Qualification N of M" header on every frame
-- We're already pulling the auto-VOD URL from YouTube
-- We're already cross-validating against TBA's match schedule
-- The match boundary detector is essentially free (state machine over data we already have)
+1. **T2 Vision/cycle counting** — Roboflow Universe FRC YOLO + the
+   on-robot vision pipeline running over cached frames. Produces
+   cycle counts, climb success, defense events. Adds the ~30% of
+   strategic data that OCR alone can't capture.
+2. **T3 Strategic synthesis** — the Opus advisor that reads everything
+   in state at end of qualification day and writes the alliance
+   selection brief. Requires T2 to be working so the brief has
+   per-team cycle data, not just scores.
+3. **TBA video uploader** — cut + upload per-match videos to TBA,
+   faster than `@texasFRC`. Gated on TBA Trusted User approval.
 
 ### Phase 2 effort
 
-| Piece | Effort |
-|---|---|
-| Match boundary state machine | 2 h |
-| Timestamp validation against TBA schedule | 1 h |
-| TBA write API client + retries | 2 h |
-| Tests against a real cached event | 1 h |
-| **Total Phase 2** | **~6 h** |
+| Piece | Detail | Effort |
+|---|---|---|
+| **T2 Vision** | Roboflow Universe FRC YOLO model integration into Mode A/B match processing; cycle counting + climb detection + defense event tagging; runs as a separate cron 10 min cadence after T1 completes | 10 h |
+| **T3 Synthesis** | `synthesis-worker` Container Apps Job at 11 PM CT cron; reads all `live_matches` for our event, calls Opus with the same prompt structure as the existing prediction engine, pushes brief to Discord war-room channel + updates `pick_board` with end-of-day rankings | 6 h |
+| **TBA video uploader** | Match boundary state machine (2 h), timestamp validation against TBA schedule (1 h), TBA write API client + retries (2 h), tests against a real cached event (1 h) | 6 h |
+| **Total Phase 2** | | **~22 h** |
 
-### Phase 2 prerequisites
+### T2 Vision prerequisites
 
-- **Mentor applies for TBA Trusted User status** — Safiq is doing this. Free, takes a few days for TBA to approve. Apply NOW even though Phase 2 is later.
+- Phase 1 shipped (Mode A/B writing `LiveMatch` records reliably)
+- Pick a Roboflow Universe FRC model (validate against backfill corpus first)
+- GPU-backed Container Apps revision OR Azure Container Instance with a small GPU SKU — vision is the only piece that benefits from GPU; everything else is CPU-bound
+
+### T3 Synthesis prerequisites
+
+- Phase 1 + T2 both shipped (synthesis depends on cycle counts)
+- Anthropic API key already provisioned in Phase 1 secrets
+- `pick_board` end-of-day rankings function exists (auditing this when we wire Mode A in Phase 1 — see [LIVE_SCOUT_PHASE1_BUILD.md](LIVE_SCOUT_PHASE1_BUILD.md) §F4)
+
+### TBA video uploader prerequisites
+
+- **Mentor applies for TBA Trusted User status** — apply ~30 days before targeted Phase 2 start so approval clears the queue. Free, takes a few days.
 - TBA write API key once approved
 - Confirm `@texasFRC` is still operating (so we don't duplicate effort needlessly — we want to be FASTER, not the only ones)
 
 ### Phase 2 schedule
 
-Defer until Phase 1 is shipped and stable. Probably target post-2026
-season as an offseason capability build, when there are no live events
-to scout and we can iterate the boundary detector against backfill.
+Defer until Phase 1 is shipped and stable. Target post-2026 season as
+an offseason capability build, when there are no live events to scout
+and we can iterate vision models + synthesis prompts + boundary
+detector against the Phase 1 backfill corpus.
 
-If `@texasFRC` stops operating mid-2026, Phase 2 jumps the queue.
+If `@texasFRC` stops operating mid-2026, the TBA video uploader piece
+of Phase 2 jumps the queue (vision + synthesis stay in offseason).
 
 ---
 
