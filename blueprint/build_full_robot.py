@@ -4,8 +4,7 @@ The Engine — Full Robot Assembly Builder
 Team 2950 — The Devastators
 
 Phase 1 (Blueprint Rev-2 MCP pivot): wires oracle output to MCP generators.
-Currently dispatches scorer == "elevator" to elevator_rev2.generate_elevator_assembly.
-Phase 2 will add swerve frame dispatcher.
+Phase 2 (B-MCP.3): adds swerve frame dispatcher → swerve_rev2.generate_swerve_assembly.
 
 See BLUEPRINT_REV2_COPY_PARAMETRIZE.md for the implementation spec.
 
@@ -30,11 +29,9 @@ def build_full_robot(
     """
     Dispatch oracle output to the appropriate MCP generator.
 
-    Currently supported scorers:
-      "elevator" → blueprint/generators/elevator_rev2.py
-
-    Phase 2 will add:
-      "swerve"   → blueprint/generators/swerve_rev2.py  (B-MCP.3)
+    Supported scorers:
+      "elevator" → blueprint/generators/elevator_rev2.py  (B-MCP.2)
+      "swerve"   → blueprint/generators/swerve_rev2.py   (B-MCP.3)
     """
     if spec_path is None:
         print("Usage: build_full_robot.py <blueprint_spec.json>", file=sys.stderr)
@@ -58,12 +55,16 @@ def build_full_robot(
         print(result)
         return result
 
-    # Phase 2 hook — swerve frame (B-MCP.3)
+    # Phase 2 — swerve frame (B-MCP.3)
     if scorer_type == "swerve":
-        raise NotImplementedError(
-            "build_full_robot: swerve generator is Phase 2 (B-MCP.3). "
-            "See BLUEPRINT_REV2_COPY_PARAMETRIZE.md."
+        from generators.swerve_rev2 import generate_swerve_assembly
+        result = generate_swerve_assembly(
+            oracle_json=oracle_json,
+            doc_id=doc_id,
+            dry_run=dry_run,
         )
+        print(result)
+        return result
 
     raise ValueError(
         f"build_full_robot: unknown scorer type '{scorer_type}'. "
