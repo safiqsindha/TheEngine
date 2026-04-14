@@ -1,4 +1,6 @@
 pytest
+pytest-benchmark>=4.0.0
+click>=8.1
 numpy
 onshape-client>=1.6.0
 discord.py>=2.3.0
