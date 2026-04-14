@@ -28,6 +28,18 @@ from statbotics_client import (
     epa_trend, epa_drop_pct, TeamEventEPA,
 )
 
+# Attribution β imports — optional import guard so the report degrades
+# gracefully if the blueprint package is not on the path.
+try:
+    _blueprint_dir = str(Path(__file__).parent.parent / "blueprint")
+    if _blueprint_dir not in sys.path:
+        # Append (not insert at 0) so scout/ statbotics_client takes priority
+        sys.path.append(_blueprint_dir)
+    from attribution_betas import get_attribution_beta, ATTRIBUTION_BETAS
+    _HAS_ATTRIBUTION_BETAS = True
+except ImportError:
+    _HAS_ATTRIBUTION_BETAS = False
+
 try:
     from tba_client import (
         event_teams, event_info, event_matches, event_rankings,
@@ -189,6 +201,140 @@ def assign_priority(profile: TeamProfile, event_avg_epa: float,
 
 
 # ═══════════════════════════════════════════════════════════════════
+# SEASON ATTRIBUTION β — Rule #18 regime classification
+# ═══════════════════════════════════════════════════════════════════
+
+def classify_beta_regime(beta: float) -> str:
+    """Classify β into Rule #18 regime label.
+
+    β < 0.7   → high-coupling   (specialists favored; complementarity dominates)
+    β ≥ 0.85  → low-coupling    (raw EPA favored; robots score independently)
+    in between → moderate
+    """
+    if beta < 0.7:
+        return "high-coupling"
+    if beta >= 0.85:
+        return "low-coupling"
+    return "moderate"
+
+
+def get_season_beta_info(year: Optional[int]) -> Optional[dict]:
+    """Return a dict with β details for the given year, or None if unavailable.
+
+    Returns None when:
+    - year is None (legacy / unknown-year mode)
+    - attribution_betas module is not importable
+    - year is not in the registry
+    """
+    if year is None or not _HAS_ATTRIBUTION_BETAS:
+        return None
+
+    entry = ATTRIBUTION_BETAS.get(year)
+    if entry is None:
+        return None
+
+    beta = get_attribution_beta(year)
+    regime = classify_beta_regime(beta)
+
+    empirical_beta = entry.get("empirical_beta")
+    empirical_ci = entry.get("empirical_ci")
+    game_name = entry.get("game_name", "")
+
+    # Build the CI string
+    if empirical_beta is not None and empirical_ci is not None:
+        beta_source = "empirical"
+        ci_str = f" (95% CI: {empirical_ci[0]:.2f}–{empirical_ci[1]:.2f})"
+    else:
+        beta_source = "prior"
+        ci_str = " (prior estimate — empirical data not yet run)"
+
+    # Plain-English explanation per regime
+    if regime == "high-coupling":
+        explanation = (
+            f"For {year} {game_name}, β*={beta:.2f} places this season in the "
+            f"high-coupling regime. The Oracle ranks alliances more heavily by "
+            f"complementarity because robots' contributions are tightly interdependent "
+            f"— one specialist role can unlock or bottleneck the others. Prefer drafting "
+            f"teams whose skills fill gaps rather than simply maximizing raw EPA sum."
+        )
+    elif regime == "low-coupling":
+        explanation = (
+            f"For {year} {game_name}, β*={beta:.2f} places this season in the "
+            f"low-coupling regime. The Oracle ranks alliances primarily by raw EPA "
+            f"because robots score largely independently — adding the highest-EPA "
+            f"available team is the dominant strategy."
+        )
+    else:
+        explanation = (
+            f"For {year} {game_name}, β*={beta:.2f} places this season in the "
+            f"moderate regime. The Oracle blends complementarity and raw EPA roughly "
+            f"equally. Draft the highest-EPA teams available, but watch for critical "
+            f"specialist gaps (e.g., endgame, auto path) that pure EPA misses."
+        )
+
+    return {
+        "year": year,
+        "game_name": game_name,
+        "beta": beta,
+        "beta_source": beta_source,
+        "empirical_beta": empirical_beta,
+        "empirical_ci": empirical_ci,
+        "ci_str": ci_str,
+        "regime": regime,
+        "explanation": explanation,
+    }
+
+
+def format_beta_section_text(beta_info: Optional[dict]) -> str:
+    """Return the plain-text Season Attribution β section string."""
+    if beta_info is None:
+        return ""
+
+    lines = [
+        "  SEASON ATTRIBUTION β  (Rule #18)",
+        f"  {'─' * 58}",
+        f"  Game : {beta_info['year']} {beta_info['game_name']}",
+        f"  β*   : {beta_info['beta']:.2f}{beta_info['ci_str']}",
+        f"  Regime: {beta_info['regime'].upper()}",
+        "",
+        # Word-wrap explanation at ~68 chars
+    ]
+    # Simple word-wrap
+    words = beta_info["explanation"].split()
+    line_buf = "  "
+    for word in words:
+        if len(line_buf) + len(word) + 1 > 70:
+            lines.append(line_buf)
+            line_buf = "  " + word
+        else:
+            line_buf = line_buf + (" " if line_buf.strip() else "") + word
+    if line_buf.strip():
+        lines.append(line_buf)
+
+    lines.append(f"  {'─' * 58}")
+    return "\n".join(lines)
+
+
+def format_beta_section_markdown(beta_info: Optional[dict]) -> str:
+    """Return the Markdown Season Attribution β section string."""
+    if beta_info is None:
+        return ""
+
+    lines = [
+        "## Season Attribution β (Rule #18)",
+        "",
+        f"**Game:** {beta_info['year']} {beta_info['game_name']}  ",
+        f"**β\\*:** {beta_info['beta']:.2f}{beta_info['ci_str']}  ",
+        f"**Regime:** {beta_info['regime'].upper()}",
+        "",
+        beta_info["explanation"],
+        "",
+        "---",
+    ]
+    return "\n".join(lines)
+
+
+# ═══════════════════════════════════════════════════════════════════
 # REPORT GENERATION
 # ═══════════════════════════════════════════════════════════════════
 
@@ -267,7 +413,8 @@ def build_profiles(event_key: str, year: int = 2025,
 
 
 def display_report(profiles: list[TeamProfile], event_key: str,
-                   our_team: Optional[int] = None, top_n: int = 0):
+                   our_team: Optional[int] = None, top_n: int = 0,
+                   year: Optional[int] = None):
     """Display the pre-event report."""
     if not profiles:
         print("No profiles to display.")
@@ -283,6 +430,15 @@ def display_report(profiles: list[TeamProfile], event_key: str,
     print(f"  Teams: {len(profiles)}")
     print(f"  Avg EPA: {avg_epa:.1f} ± {std_epa:.1f}")
     print(f"{'═' * 70}")
+
+    # Section 0: Season Attribution β (Rule #18)
+    beta_info = get_season_beta_info(year)
+    beta_text = format_beta_section_text(beta_info)
+    if beta_text:
+        print()
+        print(beta_text)
+    elif year is not None:
+        print(f"\n  SEASON ATTRIBUTION β: No data available for year {year}.")
 
     # Section 1: Event overview
     notable = [p for p in profiles if p.epa_total > avg_epa + std_epa]
@@ -314,6 +470,16 @@ def display_report(profiles: list[TeamProfile], event_key: str,
             print(f"      Location: {p.location}")
         print(f"      EPA: {p.epa_total:6.1f}  (auto={p.epa_auto:.1f}  teleop={p.epa_teleop:.1f}  endgame={p.epa_endgame:.1f})")
         print(f"      Trend: {p.trend} ({p.epa_change_pct:+.1f}%)  |  Events: {p.events_this_season}")
+
+        # β-adjusted attributed credit (from alliance_decomposition, if available)
+        carry = p.game_breakdown.get("carry_delta_ema")
+        if carry is not None and beta_info is not None:
+            beta_val = beta_info["beta"]
+            # β-adjusted credit: blend pure EPA with carry delta
+            # credit = beta * epa_total + (1-beta) * carry_delta_ema adjustment
+            # Positive carry_delta_ema means team consistently outperforms EPA expectation
+            beta_credit = p.epa_total + (1.0 - beta_val) * carry
+            print(f"      β-adj credit: {beta_credit:6.1f}  (carry_delta_ema={carry:+.2f}, β={beta_val:.2f})")
 
         if p.anomalies:
             for a in p.anomalies:
@@ -422,6 +588,24 @@ def build_report_for_team(event_key: str, team_num: int,
         for k, v in sorted(p.game_breakdown.items()):
             lines.append(f"  {k}: {v}")
 
+    # β-adjusted attributed credit (per-team, graceful if missing)
+    beta_info = get_season_beta_info(year)
+    carry = p.game_breakdown.get("carry_delta_ema")
+    if beta_info is not None and carry is not None:
+        beta_val = beta_info["beta"]
+        beta_credit = p.epa_total + (1.0 - beta_val) * carry
+        lines.append("")
+        lines.append(
+            f"β-adj credit: {beta_credit:.1f}  "
+            f"(β={beta_val:.2f}, carry_delta_ema={carry:+.2f}, regime={beta_info['regime']})"
+        )
+    elif beta_info is not None:
+        lines.append("")
+        lines.append(
+            f"Season β: {beta_info['beta']:.2f} ({beta_info['regime']}) — "
+            f"no alliance decomposition data for per-team β-credit"
+        )
+
     return "\n".join(lines)
 
 
@@ -471,7 +655,7 @@ def main():
     if json_output:
         save_report(profiles, event_key)
     else:
-        display_report(profiles, event_key, our_team=our_team, top_n=top_n)
+        display_report(profiles, event_key, our_team=our_team, top_n=top_n, year=year)
         save_report(profiles, event_key)
 
 
