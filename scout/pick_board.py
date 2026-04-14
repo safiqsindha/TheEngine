@@ -49,6 +49,18 @@ try:
 except Exception:
     HAS_TBA = False
 
+try:
+    from win_probability import win_prob_for_match, label_from_prob
+    HAS_WIN_PROB = True
+except Exception:
+    HAS_WIN_PROB = False
+
+try:
+    from spr import apply_spr_weights, get_scout_weight
+    HAS_SPR = True
+except Exception:
+    HAS_SPR = False
+
 STATE_DIR = Path(__file__).parent / ".cache" / "draft"
 STATE_FILE = STATE_DIR / "live_draft.json"
 
@@ -643,11 +655,18 @@ def sim_playoffs(state: dict, n_sims: int = 5000):
         tag_a = " ← US" if a == our_seed else ""
         tag_b = " ← US" if b == our_seed else ""
 
+        # NormalDist win probability (continuous, EPA-backed)
+        norm_str = ""
+        if HAS_WIN_PROB:
+            wp = win_prob_for_match(a_teams, b_teams, state["teams"])
+            norm_str = (f"  |  NormalDist: A{a} {wp['red_win_prob']*100:.1f}%"
+                        f" [{wp['label']}]")
+
         # Show from perspective of higher seed
         print(f"\n  QF: A{a} ({a_epa:.0f}){tag_a} vs A{b} ({b_epa:.0f}){tag_b}")
         print(f"    A{a} team: {a_teams}")
         print(f"    A{b} team: {b_teams}")
-        print(f"    A{a} wins: {win_pct:.1f}%  |  A{b} wins: {100-win_pct:.1f}%")
+        print(f"    A{a} wins: {win_pct:.1f}%  |  A{b} wins: {100-win_pct:.1f}%{norm_str}")
 
 
 # ─── CLI Commands ───
@@ -947,7 +966,23 @@ def cmd_rec(args):
         if top.get('comp_reason'):
             print(f"    Why: {top['comp_reason']}")
         if top.get('mc_win', 0) > 0:
-            print(f"    QF win probability: {top['mc_win']*100:.1f}%")
+            print(f"    QF win probability (MC): {top['mc_win']*100:.1f}%")
+        if HAS_WIN_PROB and state.get("our_team"):
+            our_members = [m for m in (state.get("captains", []) or [])
+                           if m == state["our_team"]] + [
+                t for p in (state.get("picks", []) or [])
+                if p.get("alliance") == state.get("our_seed")
+                for t in [p["team"]]
+            ]
+            if our_members:
+                candidate_alliance = our_members + [top["team"]]
+                opp_teams = [state["captains"][0]] if state.get("captains") else []
+                if opp_teams:
+                    wp = win_prob_for_match(candidate_alliance, opp_teams[:3],
+                                           state["teams"])
+                    print(f"    QF win probability (NormalDist): "
+                          f"{wp['red_win_prob']*100:.1f}%  [{wp['label']}]"
+                          f"{'  ⚠ fallback SD' if wp['used_fallback_sd'] else ''}")
         if top.get('eye_conf', 0) > 0:
             print(f"    EYE scouting: {top['eye_score']:.0f}/100 "
                   f"(reliability {top.get('eye_reliability', 0):.0f}, "
