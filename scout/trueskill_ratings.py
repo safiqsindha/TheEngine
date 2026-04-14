@@ -25,7 +25,7 @@ from typing import List
 
 import trueskill
 
-from math_utils import normal_cdf as _normal_cdf
+from scout.math_utils import normal_cdf as _normal_cdf
 
 # ---------------------------------------------------------------------------
 # TrueSkill environment — standard FRC parameters
