@@ -19,7 +19,7 @@ sys.path.insert(0, str(ROOT / "eye" / "pipeline"))
 sys.path.insert(0, str(ROOT / "eye"))
 
 import roboflow_config as rc
-from roboflow_config import Detection, batch_predict, load_model, predict, probe_api
+from roboflow_config import Detection, _SafeKey, batch_predict, load_model, predict, probe_api
 
 
 # ---------------------------------------------------------------------------
@@ -55,6 +55,44 @@ def _make_fake_model(prediction_group=None):
     pg = prediction_group if prediction_group is not None else _make_fake_prediction_group([])
     model.predict.return_value = pg
     return model
+
+
+# ---------------------------------------------------------------------------
+# 0. _SafeKey — key never leaks into repr/str (log-safe wrapper)
+# ---------------------------------------------------------------------------
+
+def test_safe_key_repr_is_redacted():
+    """_SafeKey repr must not contain the actual key value."""
+    key = _SafeKey("super-secret-api-key-12345")
+    assert "super-secret-api-key-12345" not in repr(key)
+    assert "REDACTED" in repr(key)
+
+
+def test_safe_key_str_is_redacted():
+    """_SafeKey str() must not contain the actual key value."""
+    key = _SafeKey("super-secret-api-key-12345")
+    assert "super-secret-api-key-12345" not in str(key)
+    assert "REDACTED" in str(key)
+
+
+def test_safe_key_raw_value_intact():
+    """_SafeKey must still work as a plain string for actual API calls."""
+    key = _SafeKey("real-key-value")
+    # Direct string comparison (using the str parent's __eq__) must hold
+    assert key == "real-key-value"
+    # str.__str__ gives the real value (used internally for HTTP calls)
+    assert str.__str__(key) == "real-key-value"
+
+
+def test_resolve_api_key_returns_safe_key(monkeypatch):
+    """_resolve_api_key returns a _SafeKey whose repr is redacted."""
+    monkeypatch.setenv("ROBOFLOW_API_KEY", "my-secret-key")
+    key = rc._resolve_api_key(None)
+    assert isinstance(key, _SafeKey)
+    assert "my-secret-key" not in repr(key)
+    assert "my-secret-key" not in str(key)
+    # But the raw value is correct for actual API usage
+    assert key == "my-secret-key"
 
 
 # ---------------------------------------------------------------------------
@@ -249,10 +287,40 @@ def test_probe_api_success(monkeypatch):
 
     mock_get.assert_called_once()
     call_url = mock_get.call_args[0][0]
-    assert "probe-key" in call_url
+    # Security: key must NOT appear in the URL (sent via Authorization header instead)
+    assert "probe-key" not in call_url, (
+        "API key must not be embedded in the URL — use Authorization header"
+    )
     assert result["ok"] is True
     assert result["workspace"] == "team-2950"
     assert result["project_count"] == 2
+
+
+def test_probe_api_key_in_authorization_header_not_url(monkeypatch):
+    """probe_api sends the key via Authorization header, never in the URL."""
+    monkeypatch.setenv("ROBOFLOW_API_KEY", "secret-key-xyz")
+
+    fake_response = MagicMock()
+    fake_response.json.return_value = {"workspace": "w", "projects": []}
+    fake_response.raise_for_status = MagicMock()
+
+    with patch("roboflow_config.requests.get", return_value=fake_response) as mock_get:
+        probe_api()
+
+    mock_get.assert_called_once()
+    call_url = mock_get.call_args[0][0]
+    call_kwargs = mock_get.call_args[1]
+    headers = call_kwargs.get("headers", {})
+
+    # Key must NOT appear anywhere in the URL string
+    assert "secret-key-xyz" not in call_url, (
+        "API key must not appear in URL query string (visible in proxy/server logs)"
+    )
+    # Key MUST appear in Authorization header
+    assert "Authorization" in headers, "Authorization header must be set"
+    assert "secret-key-xyz" in headers["Authorization"], (
+        "Authorization header must contain the API key"
+    )
 
 
 def test_probe_api_bad_key_raises(monkeypatch):

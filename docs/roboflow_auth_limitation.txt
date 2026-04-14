@@ -1,0 +1,60 @@
+Roboflow SDK Auth Limitation — API Key in URL Query Parameter
+=============================================================
+Date noted: 2026-04-14
+File:        eye/pipeline/roboflow_config.py
+
+FINDING
+-------
+The official Roboflow Python SDK (roboflow>=1.0) authenticates all internal
+HTTP calls via the ``?api_key=<value>`` URL query parameter.  This applies to:
+
+  - Roboflow(api_key=...) → internal check_key() POST to /?api_key=...
+  - rf.workspace()        → GET /?api_key=...
+  - workspace.project()   → GET /<workspace>/<project>?api_key=...
+  - version.model         → GET /<workspace>/<project>/<version>?api_key=...
+
+Query parameters appear in:
+  - Proxy access logs (Nginx, Squid, corporate MITM proxies)
+  - Web server access logs (Apache combined log format)
+  - Browser history / network tab if accessed via a browser
+  - Cloud load balancer request logs (AWS ALB, GCP LB, Azure AG)
+
+MITIGATIONS IN THIS CODEBASE
+------------------------------
+1. probe_api() — which we own fully — uses the ``Authorization: Bearer``
+   header and never puts the key in the URL.  Verified in test:
+   test_probe_api_key_in_authorization_header_not_url.
+
+2. _SafeKey wrapper: _resolve_api_key() returns a _SafeKey(str) subclass
+   whose __repr__ and __str__ return "<REDACTED_API_KEY>".  This prevents
+   accidental log exposure via logger.debug("%r", key) or f"{key}" in
+   application-layer log statements.  The SDK receives the raw string value
+   (via str.__str__) so API calls continue to work correctly.
+
+3. The key is loaded from the environment at call-time only (never stored as
+   a module-level constant or class attribute in our code).
+
+4. No log.info / log.debug / print calls in roboflow_config.py reference the
+   key value.
+
+WHAT WE CANNOT FIX WITHOUT FORKING THE SDK
+-------------------------------------------
+The Roboflow SDK's internal HTTP calls (workspace, project, version lookups)
+still use URL query params.  To fully eliminate this exposure:
+
+  Option A: Use the Roboflow Inference Server (localhost:9001) instead of the
+            cloud API for inference — keys are sent once at startup, not per
+            call.  This is the recommended production path anyway.
+
+  Option B: Fork/patch the SDK to inject an Authorization header.  Not
+            recommended — maintenance burden outweighs benefit for a
+            development/scouting tool.
+
+  Option C: Rotate the key after each event and restrict it to read-only
+            inference permissions in the Roboflow dashboard.
+
+REFERENCES
+----------
+- Roboflow SDK source: site-packages/roboflow/__init__.py (check_key, workspace)
+- Security finding: CODE_REVIEW_2026-04-14.md, roboflow_config.py:177
+- Tests: tests/eye/test_roboflow_config.py (section 0 + probe_api tests)
