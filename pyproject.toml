@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "the-engine"
+version = "1.0.0"
+description = "The Engine — FRC Team 2950 prediction, scouting, and tuning toolkit."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Team 2950 The Devastators" }]
+dependencies = [
+    "click>=8.1",
+    "numpy",
+    "requests>=2.28",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "mypy>=1.19",
+]
+
+[project.scripts]
+engine = "engine.cli:main"
+
+[tool.setuptools]
+# Limit packaging to the first-party Python packages; the repo also contains
+# Java/Gradle robot code and vendor dirs that must not be shipped as Python.
+packages = [
+    "engine",
+    "blueprint",
+    "scout",
+    "antenna",
+    "pitcrew",
+    "eye",
+]
