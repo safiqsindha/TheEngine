@@ -51,9 +51,17 @@ import math
 import sys
 from dataclasses import dataclass, field, asdict, fields
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 BASE_DIR = Path(__file__).parent
+
+# Import attribution β lookup — tolerant import so oracle works without
+# the attribution_betas module (e.g. in isolated test environments).
+try:
+    from attribution_betas import get_attribution_beta as _get_attribution_beta  # type: ignore
+except ImportError:
+    def _get_attribution_beta(year: int, phase: str = "overall") -> float:  # type: ignore
+        return 1.0
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -129,6 +137,7 @@ def epa_win_confidence(
 
 def compute_alliance_complementarity(
     team_epas: List[Dict[str, float]],
+    beta: Optional[float] = None,
 ) -> float:
     """Score how well-balanced an alliance is across game phases.
 
@@ -144,11 +153,25 @@ def compute_alliance_complementarity(
                   ``teleop``   — teleop-phase component EPA
                   ``endgame``  — endgame-phase component EPA
                 Each dict represents one team on the alliance (typically 3).
+    beta : optional float — attribution β for the current season.
+           When provided, weights the balance score (phase CV) vs raw total
+           contribution:
+
+             - β < 0.7  (high coupling): balance score weighted more heavily.
+               Complementary specialist alliances matter more.
+             - β ≥ 0.85 (independent):   raw per-team totals weighted more heavily.
+               High-EPA generalists are preferred over balanced specialists.
+             - 0.7 ≤ β < 0.85:           linear blend between the two regimes.
+
+           When ``beta`` is None the function returns the legacy CV-based score
+           unchanged (full backward compatibility).
 
     Returns
     -------
     float in [0.0, 1.0]
         1.0 = perfectly balanced (each team specialises in a different phase)
+              — or, when β is high, a raw-total-dominant score approaching 1.0
+              for a high-EPA alliance.
         0.0 = all three robots identical across all phases (full redundancy)
 
     Notes
@@ -195,7 +218,97 @@ def compute_alliance_complementarity(
     if not cv_scores:
         return 0.5
 
-    return round(sum(cv_scores) / len(cv_scores), 4)
+    balance_score = round(sum(cv_scores) / len(cv_scores), 4)
+
+    # Legacy path: no beta → return raw CV-based balance score unchanged.
+    if beta is None:
+        return balance_score
+
+    # β-weighted blend: mix balance_score (role coverage) with raw_total_score.
+    # raw_total_score is a normalised proxy for how much EPA the alliance has
+    # in total — we cap normalisation at 150 pts (a strong 3-robot alliance).
+    raw_total_score = min(total / 150.0, 1.0)
+
+    # β thresholds defined in Rule #18 specification:
+    _BETA_HIGH_COUPLING = 0.70    # below → complementarity dominates
+    _BETA_INDEPENDENT   = 0.85    # above → raw totals dominate
+
+    if beta < _BETA_HIGH_COUPLING:
+        # High coupling: role coverage matters most — return balance_score.
+        return balance_score
+    elif beta >= _BETA_INDEPENDENT:
+        # Independent game: raw EPA totals matter most.
+        return raw_total_score
+    else:
+        # Linear blend over [0.70, 0.85].
+        t = (beta - _BETA_HIGH_COUPLING) / (_BETA_INDEPENDENT - _BETA_HIGH_COUPLING)
+        return round((1.0 - t) * balance_score + t * raw_total_score, 4)
+
+
+# ─── Rule #18: Alliance complementarity ranking ─────────────────────────────
+
+def rank_alliances_r18(
+    alliances: List[List[Dict[str, float]]],
+    year: Optional[int] = None,
+) -> List[Tuple[int, float]]:
+    """Rule #18 — Rank candidate alliances by complementarity, β-weighted.
+
+    Uses ``compute_alliance_complementarity`` with an attribution β looked up
+    from ``attribution_betas.get_attribution_beta(year)`` when *year* is given.
+
+    Ranking behaviour by β regime
+    ──────────────────────────────
+    β < 0.70  (high coupling — e.g. 2024 Crescendo β=0.55)
+        Role coverage dominates. Complementary specialist alliances score
+        higher than high-EPA generalist alliances.
+
+    0.70 ≤ β < 0.85  (moderate)
+        Linear blend: both role coverage and raw EPA sum matter.
+
+    β ≥ 0.85  (independent — e.g. 2014 Aerial Assist β=0.95)
+        Raw EPA sum dominates. High-total alliances rank above balanced
+        but lower-EPA alliances.
+
+    Default (year=None)
+        β is treated as None in ``compute_alliance_complementarity``,
+        preserving the legacy CV-only ranking — full backward compatibility.
+
+    Parameters
+    ----------
+    alliances : list of candidate alliances.  Each alliance is a list of
+                per-team component-EPA dicts with keys ``auto``, ``teleop``,
+                ``endgame`` (same format as ``compute_alliance_complementarity``).
+    year      : FRC season year.  When provided, β is looked up via
+                ``get_attribution_beta(year)``.  When None, legacy scoring
+                applies (no β adjustment).
+
+    Returns
+    -------
+    List of ``(original_index, score)`` tuples sorted descending by score
+    (best alliance first).  Scores are in [0.0, 1.0].
+
+    Edge cases
+    ----------
+    - Unknown year (not in registry): β falls back to 1.0 → raw-total scoring.
+    - Empty alliances list: returns [].
+    - Alliance with all-zero EPA: scores 0.5 (neutral, legacy behaviour).
+    """
+    if not alliances:
+        return []
+
+    # Resolve beta: None for legacy, float from registry when year provided.
+    beta: Optional[float] = None
+    if year is not None:
+        beta = _get_attribution_beta(year)
+
+    scored = []
+    for idx, alliance in enumerate(alliances):
+        score = compute_alliance_complementarity(alliance, beta=beta)
+        scored.append((idx, score))
+
+    # Sort descending — highest score first.
+    scored.sort(key=lambda x: x[1], reverse=True)
+    return scored
 
 
 # ═══════════════════════════════════════════════════════════════════

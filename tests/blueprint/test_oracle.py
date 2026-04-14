@@ -27,6 +27,7 @@ from oracle import (  # noqa: E402
     CONFIDENCE_POLICY,
     epa_win_confidence,
     compute_alliance_complementarity,
+    rank_alliances_r18,
     _normal_cdf,
 )
 
@@ -841,3 +842,101 @@ def test_complementarity_single_team():
     """Single team — no cross-team variance possible; score is in valid range."""
     score = compute_alliance_complementarity([{"auto": 10, "teleop": 20, "endgame": 5}])
     assert 0.0 <= score <= 1.0
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Rule #18 — rank_alliances_r18  (β-weighted complementarity ranking)
+# ─────────────────────────────────────────────────────────────────────
+
+# Fixture alliances used across multiple tests.
+# Alliance A: specialist roles — high complementarity, moderate raw EPA.
+_ALLIANCE_SPECIALIST = [
+    {"auto": 30, "teleop": 2, "endgame": 2},
+    {"auto": 2, "teleop": 30, "endgame": 2},
+    {"auto": 2, "teleop": 2, "endgame": 30},
+]
+# Alliance B: identical high-EPA generalists — low complementarity, high raw EPA.
+_ALLIANCE_GENERALIST = [
+    {"auto": 20, "teleop": 20, "endgame": 20},
+    {"auto": 20, "teleop": 20, "endgame": 20},
+    {"auto": 20, "teleop": 20, "endgame": 20},
+]
+
+
+def test_r18_year_2024_beta_055_favors_complementarity():
+    """2024 Crescendo: β=0.55 (high coupling) — specialist alliance ranks first."""
+    # β < 0.70 → balance/role-coverage dominates → specialists beat generalists.
+    ranked = rank_alliances_r18([_ALLIANCE_GENERALIST, _ALLIANCE_SPECIALIST], year=2024)
+    assert len(ranked) == 2
+    # Specialist alliance (original index 1) should rank first.
+    first_idx, first_score = ranked[0]
+    assert first_idx == 1, (
+        f"Expected specialist alliance (idx=1) to rank first under β=0.55, "
+        f"but got idx={first_idx}"
+    )
+    second_idx, second_score = ranked[1]
+    assert first_score > second_score
+
+
+def test_r18_year_2023_beta_065_moderate_weight():
+    """2023 Charged Up: β=0.65 (high coupling) — complementarity still wins."""
+    # β < 0.70, so role coverage weight applies → specialists beat generalists.
+    ranked = rank_alliances_r18([_ALLIANCE_GENERALIST, _ALLIANCE_SPECIALIST], year=2023)
+    first_idx, _ = ranked[0]
+    assert first_idx == 1, (
+        "Specialist alliance should rank first for β=0.65 (high-coupling regime)"
+    )
+
+
+def test_r18_year_2014_beta_095_favors_raw_totals():
+    """2014 Aerial Assist: β=0.95 (independent) — generalist/high-EPA ranks first."""
+    # β ≥ 0.85 → raw EPA sum dominates → generalists (high raw total) beat specialists.
+    ranked = rank_alliances_r18([_ALLIANCE_SPECIALIST, _ALLIANCE_GENERALIST], year=2014)
+    first_idx, _ = ranked[0]
+    assert first_idx == 1, (
+        f"Expected generalist alliance (idx=1) to rank first under β=0.95, "
+        f"but got idx={first_idx}"
+    )
+
+
+def test_r18_year_none_preserves_legacy_ranking():
+    """year=None must preserve the legacy CV-only ranking (backward compat)."""
+    legacy_ranked = rank_alliances_r18([_ALLIANCE_SPECIALIST, _ALLIANCE_GENERALIST], year=None)
+    # Legacy path: compute_alliance_complementarity with beta=None, pure CV.
+    spec_score_legacy = compute_alliance_complementarity(_ALLIANCE_SPECIALIST, beta=None)
+    gen_score_legacy = compute_alliance_complementarity(_ALLIANCE_GENERALIST, beta=None)
+    # Specialist should outscore generalist in the legacy (CV-based) path.
+    assert spec_score_legacy > gen_score_legacy
+    # rank_alliances_r18 with year=None must produce same ordering.
+    first_idx, first_score = legacy_ranked[0]
+    assert first_idx == 0  # specialists were at index 0
+    assert abs(first_score - spec_score_legacy) < 1e-6, (
+        "rank_alliances_r18 with year=None must return unmodified CV scores"
+    )
+
+
+def test_r18_complementarity_weight_changes_with_beta():
+    """compute_alliance_complementarity score changes monotonically with β regime."""
+    # For a pure specialist alliance:
+    #   low β  → balance_score (high CV → high score)
+    #   high β → raw_total_score (lower, capped by 150-pt normalisation)
+    score_low_beta = compute_alliance_complementarity(_ALLIANCE_SPECIALIST, beta=0.55)
+    score_high_beta = compute_alliance_complementarity(_ALLIANCE_SPECIALIST, beta=0.95)
+    # Specialist alliance has high balance_score (role spread) but moderate raw totals.
+    # At low β the balance_score dominates → higher score.
+    assert score_low_beta > score_high_beta, (
+        f"Specialist alliance should score higher under low β "
+        f"(got {score_low_beta} vs {score_high_beta} at β=0.95)"
+    )
+
+
+def test_r18_unknown_year_falls_back_to_raw_totals():
+    """Unknown year not in registry → β=1.0 → raw-total scoring (independent regime)."""
+    # β=1.0 ≥ 0.85 → raw_total_score dominates.
+    # Generalist alliance has higher total EPA → should rank first.
+    ranked = rank_alliances_r18([_ALLIANCE_SPECIALIST, _ALLIANCE_GENERALIST], year=9999)
+    first_idx, _ = ranked[0]
+    assert first_idx == 1, (
+        "Unknown year should fall back to β=1.0 (raw-total dominance); "
+        "generalist alliance (idx=1) should rank first"
+    )
