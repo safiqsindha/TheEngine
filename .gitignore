@@ -63,6 +63,9 @@ MASTER_DISPATCH_PROMPT.md
 blueprint/.env
 blueprint/*_spec.json
 
+# Statbotics bulk cache (beta tuning data — ~300MB, do not commit)
+.cache/statbotics/
+
 # Scout cache (API responses, draft state)
 scout/.cache/
 scout/.state/
@@ -72,6 +75,8 @@ scout/report_*.json
 
 # EYE cache (videos, frames, results)
 eye/.cache/
+# EYE capture directory (raw MP4s, ~300MB/session, do not commit)
+eye/.capture/
 
 # API keys
 .anthropic_key
