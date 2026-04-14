@@ -54,7 +54,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 # Allow importing defense_adjusted_epa from the same scout/ directory
 _SCOUT_DIR = Path(__file__).resolve().parent
@@ -93,17 +93,17 @@ def _extract_float(d: dict, keys: tuple) -> Optional[float]:
     return None
 
 
-def _alliance_epa(team_epas: dict[int, dict], team_nums: list[int]) -> float:
+def _alliance_epa(team_epas: dict[int, dict[str, Any]], team_nums: list[int]) -> float:
     """Sum component EPA for a given phase key across alliance members."""
-    return sum(team_epas.get(t, {}).get("epa", 0.0) for t in team_nums)
+    return float(sum(float(team_epas.get(t, {}).get("epa", 0.0)) for t in team_nums))
 
 
 def _alliance_component_epa(
-    team_epas: dict[int, dict], team_nums: list[int], component: str
+    team_epas: dict[int, dict[str, Any]], team_nums: list[int], component: str
 ) -> float:
     """Sum per-phase EPA (auto/teleop/endgame) across alliance members."""
     comp_key = f"epa_{component}"
-    return sum(team_epas.get(t, {}).get(comp_key, 0.0) for t in team_nums)
+    return float(sum(float(team_epas.get(t, {}).get(comp_key, 0.0)) for t in team_nums))
 
 
 # ─── Core synergy computation ─────────────────────────────────────────────────
@@ -320,7 +320,7 @@ def compute_pair_synergy(
                 return _da_epa_a
             if use_defense_adjustment and t == team_b and _da_epa_b is not None:
                 return _da_epa_b
-            return team_epas.get(t, {}).get("epa", 0.0)
+            return float(team_epas.get(t, {}).get("epa", 0.0))
 
         expected_total = sum(_epa_for(t) for t in alliance_teams)
         overall_deltas.append(actual_total - expected_total)

@@ -25,6 +25,7 @@ import json
 import sys
 import time
 from pathlib import Path
+from typing import Any, Optional
 
 from statbotics_client import (
     get_team_events_in_year, get_event_teams, parse_event_team,
@@ -38,7 +39,7 @@ from tba_client import (
 CACHE_DIR = Path(__file__).parent / ".cache" / "trajectory"
 
 
-def team_trajectory(team: int, year: int) -> dict:
+def team_trajectory(team: int, year: int) -> Optional[dict[str, Any]]:
     """Get a team's EPA trajectory across all events in a year."""
     events = get_team_events_in_year(team, year)
     if not events:

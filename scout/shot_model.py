@@ -67,11 +67,13 @@ class ShotModel:
     def predict_hood_angle(self, distance_m: float) -> float:
         """Return predicted hood angle (degrees) for a given distance."""
         self._require_fit()
+        assert self._hood_coeffs is not None  # guaranteed by _require_fit()
         return float(np.polyval(self._hood_coeffs, distance_m))
 
     def predict_flywheel_rpm(self, distance_m: float) -> float:
         """Return predicted flywheel RPM for a given distance."""
         self._require_fit()
+        assert self._rpm_coeffs is not None  # guaranteed by _require_fit()
         return float(np.polyval(self._rpm_coeffs, distance_m))
 
     def shot_probability(

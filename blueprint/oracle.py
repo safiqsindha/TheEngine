@@ -63,9 +63,9 @@ if str(_REPO_ROOT / "scout") not in sys.path:
 # Import attribution β lookup — tolerant import so oracle works without
 # the attribution_betas module (e.g. in isolated test environments).
 try:
-    from attribution_betas import get_attribution_beta as _get_attribution_beta  # type: ignore
+    from attribution_betas import get_attribution_beta as _get_attribution_beta
 except ImportError:
-    def _get_attribution_beta(year: int, phase: str = "overall") -> float:  # type: ignore
+    def _get_attribution_beta(year: int, phase: str = "overall") -> float:  # type: ignore[no-redef]
         return 1.0
 
 from math_utils import normal_cdf as _normal_cdf  # noqa: E402

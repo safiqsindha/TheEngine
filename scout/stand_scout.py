@@ -33,6 +33,7 @@ import sys
 import time
 from dataclasses import dataclass, asdict
 from pathlib import Path
+from typing import Any, Optional
 
 SCOUT_DATA_DIR = Path(__file__).parent / ".state" / "stand_scout"
 
@@ -105,7 +106,7 @@ def parse_scout_input(team_num: int, tags: list, note: str = "",
     {team, alliance, auto, teleop, endgame, defense,
      mechanism_observations, overall, _meta}
     """
-    obs = {
+    obs: dict[str, Any] = {
         "team": team_num,
         "alliance": "unknown",
         "auto": {"moved": False, "scored": False, "notes": ""},
@@ -259,7 +260,7 @@ def save_observation(obs: dict, event_key: str = ""):
     return path
 
 
-def load_all_observations(event_key: str = None) -> list:
+def load_all_observations(event_key: Optional[str] = None) -> list[Any]:
     """Load all stand scout observations, optionally filtered by event."""
     if not SCOUT_DATA_DIR.exists():
         return []
@@ -277,7 +278,7 @@ def load_all_observations(event_key: str = None) -> list:
     return reports
 
 
-def get_team_observations(team_num: int, event_key: str = None) -> list:
+def get_team_observations(team_num: int, event_key: Optional[str] = None) -> list[Any]:
     """Get all observations for a specific team."""
     reports = load_all_observations(event_key)
     obs = []
@@ -288,7 +289,7 @@ def get_team_observations(team_num: int, event_key: str = None) -> list:
     return obs
 
 
-def get_observation_summary(event_key: str = None) -> dict:
+def get_observation_summary(event_key: Optional[str] = None) -> dict[str, Any]:
     """Get summary statistics for all stand scout data."""
     reports = load_all_observations(event_key)
 
@@ -396,7 +397,7 @@ def format_team_summary_discord(team_num: int, observations: list) -> str:
 
     # Speed distribution
     speeds = [o.get("teleop", {}).get("cycle_speed", "?") for o in observations]
-    speed_counts = {}
+    speed_counts: dict[str, int] = {}
     for s in speeds:
         speed_counts[s] = speed_counts.get(s, 0) + 1
     speed_str = ", ".join(f"{k}:{v}" for k, v in sorted(speed_counts.items()))
@@ -416,7 +417,7 @@ def format_team_summary_discord(team_num: int, observations: list) -> str:
         elif "average" in ol or "functional" in ol:
             quality_tags.append("average")
     if quality_tags:
-        q_counts = {}
+        q_counts: dict[str, int] = {}
         for q in quality_tags:
             q_counts[q] = q_counts.get(q, 0) + 1
         q_str = ", ".join(f"{k}:{v}" for k, v in sorted(q_counts.items()))

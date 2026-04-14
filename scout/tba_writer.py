@@ -105,7 +105,7 @@ def _default_transport() -> HttpTransport:
     import requests  # lazy: tests never import requests
 
     class _RequestsTransport:
-        def post(self, url: str, *, data: bytes, headers: dict[str, str], timeout: float):
+        def post(self, url: str, *, data: bytes, headers: dict[str, str], timeout: float) -> Any:
             return requests.post(url, data=data, headers=headers, timeout=timeout)
 
     return _RequestsTransport()

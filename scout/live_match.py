@@ -146,9 +146,9 @@ class LiveMatch:
 
         if not isinstance(self.climb_results, dict):
             raise ValueError(f"climb_results must be a dict, got {type(self.climb_results).__name__}")
-        for k, v in self.climb_results.items():
-            if not isinstance(k, str) or v not in VALID_CLIMB_RESULTS:
-                raise ValueError(f"climb_results entry must be str→{VALID_CLIMB_RESULTS}, got {k!r}: {v!r}")
+        for climb_k, climb_v in self.climb_results.items():
+            if not isinstance(climb_k, str) or climb_v not in VALID_CLIMB_RESULTS:
+                raise ValueError(f"climb_results entry must be str→{VALID_CLIMB_RESULTS}, got {climb_k!r}: {climb_v!r}")
 
     # ─── Serialization ───
 
@@ -189,8 +189,11 @@ class LiveMatch:
         """Compute winner from current scores; returns None if not complete."""
         if not self.is_complete:
             return None
-        if self.red_score > self.blue_score:
+        # is_complete guarantees both scores are not None
+        red = self.red_score or 0
+        blue = self.blue_score or 0
+        if red > blue:
             return "red"
-        if self.blue_score > self.red_score:
+        if blue > red:
             return "blue"
         return "tie"

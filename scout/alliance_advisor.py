@@ -334,7 +334,7 @@ def save_picks(candidates: list[PickCandidate], event_key: str, our_team: int) -
 # CLI
 # ═══════════════════════════════════════════════════════════════════
 
-def main():
+def main() -> None:
     if len(sys.argv) < 2:
         print("The Scout — Alliance Selection Advisor")
         print()

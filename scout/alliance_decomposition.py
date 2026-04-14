@@ -79,7 +79,7 @@ import math
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 # ---------------------------------------------------------------------------
 # Lazy import of get_attribution_beta from blueprint/attribution_betas.py.
@@ -90,11 +90,14 @@ from typing import Optional
 # sys.path is configured by the caller.
 # ---------------------------------------------------------------------------
 
-def _load_get_attribution_beta():
+def _load_get_attribution_beta() -> Any:
     """Load get_attribution_beta from blueprint/attribution_betas.py at call time."""
+    import types
     _blueprint_path = Path(__file__).resolve().parents[1] / "blueprint" / "attribution_betas.py"
     spec = importlib.util.spec_from_file_location("attribution_betas", _blueprint_path)
+    assert spec is not None, "Could not find attribution_betas.py"
     mod = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None and hasattr(spec.loader, "exec_module"), "No loader"
     spec.loader.exec_module(mod)
     return mod.get_attribution_beta
 

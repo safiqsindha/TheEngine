@@ -35,7 +35,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Any, Optional
 
 MIN_ENTRIES = 3        # fewer entries → neutral score
 NEUTRAL_SCORE = 0.5    # returned when insufficient data
@@ -238,7 +238,7 @@ def build_entry_from_obs(
     tba_endgame = breakdown.get("endgamePoints") or breakdown.get("endgame_points")
 
     # Divide alliance totals by 3 teams for per-team estimate
-    def _per_team(val) -> Optional[float]:
+    def _per_team(val: Any) -> Optional[float]:
         if val is None:
             return None
         try:

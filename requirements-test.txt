@@ -7,3 +7,5 @@ schedule>=1.2.0
 dslogparser>=1.0.0
 trueskill>=0.4.5
 roboflow>=1.1.0
+mypy>=1.19.0
+types-requests

@@ -40,7 +40,7 @@ import random
 import sys
 from dataclasses import dataclass, asdict
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from statbotics_client import get_event_teams
 
@@ -53,7 +53,7 @@ DEFAULT_YEAR: int = 2025
 try:
     from blueprint.attribution_betas import get_attribution_beta as _get_attribution_beta
 except ImportError:
-    def _get_attribution_beta(year: int, phase: str = "overall") -> float:  # type: ignore  # noqa: E302
+    def _get_attribution_beta(year: int, phase: str = "overall") -> float:  # noqa: E302
         return 1.0
 
 
@@ -212,11 +212,11 @@ def save_state(state: dict):
     STATE_FILE.write_text(json.dumps(state, indent=2))
 
 
-def load_state() -> dict:
+def load_state() -> dict[str, Any]:
     if not STATE_FILE.exists():
         print("  No active draft. Run 'setup' first.")
         sys.exit(1)
-    return json.loads(STATE_FILE.read_text())
+    return dict(json.loads(STATE_FILE.read_text()))
 
 
 # ─── Live Scout integration ───
@@ -405,9 +405,9 @@ def current_pick_position(state: dict) -> tuple:
         return n_cap - r2_pick, 2
 
 
-def picks_before_us(state: dict, round_num: int) -> int:
+def picks_before_us(state: dict[str, Any], round_num: int) -> int:
     """How many picks happen before our team in a given round."""
-    seed = state["our_seed"]
+    seed = int(state["our_seed"])
     if round_num == 1:
         return seed - 1  # Alliance 1 picks first
     else:
@@ -1290,7 +1290,7 @@ def cmd_sim(args):
 # ─── Captain Prediction ───
 
 
-def predict_captains(state: dict) -> list:
+def predict_captains(state: dict[str, Any]) -> tuple[list[Any], list[Any]]:
     """
     Predict which initial captains will get picked by higher seeds,
     and who backfills. Returns predicted final captain list.
@@ -1492,8 +1492,8 @@ def cmd_enrich(args):
     print(f"  {len(matches)} matches ({len(quals)} quals, {len(elims)} elims)")
 
     # Compute real scores per team from match data
-    team_scores = {}  # team -> [scores]
-    team_breakdowns = {}  # team -> [breakdown_dicts]
+    team_scores: dict[int, list[Any]] = {}  # team -> [scores]
+    team_breakdowns: dict[int, list[Any]] = {}  # team -> [breakdown_dicts]
 
     for m in quals:
         alliances = m.get("alliances", {})

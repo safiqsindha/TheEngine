@@ -15,6 +15,7 @@ import logging
 import time
 from pathlib import Path
 from dataclasses import dataclass
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +82,7 @@ def _cache_path(endpoint: str) -> Path:
     return CACHE_DIR / f"{safe}.json"
 
 
-def _get(endpoint: str, ttl: int = CACHE_TTL_S):
+def _get(endpoint: str, ttl: int = CACHE_TTL_S) -> Any:
     """GET from Statbotics API with local caching."""
     cp = _cache_path(endpoint)
     if cp.exists():
@@ -206,7 +207,7 @@ def epa_drop_pct(events: list[TeamEventEPA]) -> float:
 # ─── Cache management ───
 
 
-def clear_cache():
+def clear_cache() -> None:
     """Remove all cached Statbotics responses."""
     if CACHE_DIR.exists():
         for f in CACHE_DIR.glob("*.json"):

@@ -23,6 +23,7 @@ import sys
 import time
 from pathlib import Path
 from dataclasses import dataclass
+from typing import Any, Optional
 
 from statbotics_client import get_event_teams
 from tba_client import (
@@ -51,7 +52,7 @@ class EventResult:
     captain_pred_total: int
 
 
-def load_event_data(event_key: str) -> dict:
+def load_event_data(event_key: str) -> Optional[dict[str, Any]]:
     """Load EPA + TBA alliance data for an event."""
     raw = get_event_teams(event_key)
     if not raw:
@@ -90,7 +91,7 @@ def extract_actual_picks(alliances_data: list) -> list:
     return results
 
 
-def backtest_event(event_key: str, verbose: bool = False) -> EventResult:
+def backtest_event(event_key: str, verbose: bool = False) -> Optional[EventResult]:
     """Run the pick recommendation algorithm for each alliance at an event
     and compare against actual picks."""
 

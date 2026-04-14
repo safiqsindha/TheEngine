@@ -53,7 +53,7 @@ class DCMotor:
     b: float = 0.0          # viscous damping (N·m·s/rad)
     free_speed_rads: float = 0.0
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.free_speed_rads = self.free_speed_rpm * RPM_TO_RADS
         self.R = V_NOMINAL / self.stall_current_a
         self.kV = self.free_speed_rads / (V_NOMINAL - self.R * self.free_current_a)
@@ -229,7 +229,7 @@ def simulate_linear_motion(
     j_total = j_load + j_rotor * motor_count
 
     # Conversion: motor rad/s → linear in/s
-    def motor_to_linear(omega_rads):
+    def motor_to_linear(omega_rads: float) -> float:
         return omega_rads * spool_radius_m * gear_ratio / IN_TO_M  # back to inches
 
     # Wait, let me think about the rigging. For continuous rigging with 2:1,

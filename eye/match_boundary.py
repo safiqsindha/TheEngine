@@ -255,7 +255,7 @@ def _shape_match_key(event_key: str, tba_match: dict[str, Any]) -> Optional[str]
         return f"{event_key}_qm{match_num}"
     set_num = tba_match.get("set_number")
     try:
-        set_num_int = int(set_num)
+        set_num_int = int(set_num)  # type: ignore[arg-type]  # Optional[Any] from dict.get
     except (TypeError, ValueError):
         return None
     return f"{event_key}_{comp_level}{set_num_int}m{match_num}"

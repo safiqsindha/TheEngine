@@ -24,6 +24,7 @@ modules are removed in a future pass, delete this file along with them.
 import os
 import json
 from pathlib import Path
+from typing import Any
 from onshape_client.client import Client
 
 # ── Load .env ─────────────────────────────────────────────────────
@@ -88,7 +89,7 @@ def list_documents(query: str = "Engine", limit: int = 10) -> list[dict]:
         "document_filter": 0,  # My documents
         "limit": limit,
     })
-    results = []
+    results: list[Any] = []
     if not response or not hasattr(response, 'items') or not response.items:
         return results
     for item in response.items:

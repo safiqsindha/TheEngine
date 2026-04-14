@@ -52,7 +52,7 @@ import requests  # noqa: F401  (imported here so tests can patch roboflow_config
 try:
     from roboflow import Roboflow  # noqa: F401  (imported here so tests can patch roboflow_config.Roboflow)
 except ImportError:  # pragma: no cover
-    Roboflow = None  # type: ignore[assignment,misc]
+    Roboflow = None  # noqa: F841  # Roboflow import sentinel for test patching
 
 # ---------------------------------------------------------------------------
 # Detection result
