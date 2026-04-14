@@ -133,30 +133,44 @@ def extract_frames(video_path: Path, output_dir: Path,
 
 
 def select_key_frames(frames: list, max_frames: int = 12) -> list:
-    """Select most informative frames: auto, mid-teleop, endgame, final."""
+    """Select most informative frames: auto, mid-teleop, endgame, final.
+
+    The last frame is always included regardless of how many endgame frames
+    appear before it.  Implementation uses Option B: reserve the final slot for
+    ``frames[-1]``, fill the remaining ``max_frames - 1`` slots from the
+    scored candidates, then append the last frame back.
+    """
     if len(frames) <= max_frames:
         return frames
 
+    last_idx = len(frames) - 1
+
     selected = set()
     selected.add(0)
-    selected.add(len(frames) - 1)
 
-    # All auto and endgame frames
+    # All auto and endgame frames (excluding the very last to keep it reserved)
     for i, f in enumerate(frames):
+        if i == last_idx:
+            continue
         if f["phase"] in ("auto", "endgame"):
             selected.add(i)
 
-    # Evenly-spaced teleop
-    teleop = [i for i, f in enumerate(frames) if f["phase"] == "teleop"]
+    # Evenly-spaced teleop to fill up to max_frames - 1 slots
+    teleop = [i for i, f in enumerate(frames)
+              if f["phase"] == "teleop" and i != last_idx]
     if teleop:
-        remaining = max_frames - len(selected)
+        remaining = (max_frames - 1) - len(selected)
         step = max(1, len(teleop) // max(1, remaining))
         for j in range(0, len(teleop), step):
             selected.add(teleop[j])
-            if len(selected) >= max_frames:
+            if len(selected) >= max_frames - 1:
                 break
 
-    return [frames[i] for i in sorted(selected)][:max_frames]
+    # Trim to max_frames - 1, then always append the last frame
+    result_indices = sorted(selected)[:max_frames - 1]
+    result_indices.append(last_idx)
+
+    return [frames[i] for i in result_indices]
 
 
 def select_scored_frames(frames: list, ocr: "OverlayOCR" = None,

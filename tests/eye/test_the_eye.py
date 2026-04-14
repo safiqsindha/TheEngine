@@ -217,6 +217,21 @@ class TestFrameSelection:
         result = the_eye.select_frames_by_tier(frames, tier="scored", ocr=None)
         assert len(result) <= 50
 
+    def test_select_key_frames_last_frame_always_included(self):
+        """Regression: last frame must survive the [:max_frames] trim even when
+        many endgame frames appear before it and push it out of the slice."""
+        # Build a frame list where endgame starts early so there are many
+        # endgame frames — enough to fill max_frames before the last index.
+        # 40 frames at 5 s each → frames 30-39 are endgame (ts 150-195).
+        frames = _make_frames(40, interval=5)
+        max_frames = 12
+        result = the_eye.select_key_frames(frames, max_frames=max_frames)
+
+        assert len(result) <= max_frames, "must not exceed max_frames"
+        assert result[-1] is frames[-1], (
+            "last frame must always be present regardless of endgame frame count"
+        )
+
 
 # ===========================================================================
 # 3. parse_common_args
