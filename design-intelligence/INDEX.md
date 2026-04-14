@@ -3,7 +3,7 @@
 Entry point for all design, prediction, and operational docs.
 **Start here** when onboarding a new agent or planning a session.
 
-*Last updated: 2026-04-11. 53 docs across 4 buckets + 2 subfolders.*
+*Last updated: 2026-04-12. 54 docs across 4 buckets + 2 subfolders.*
 *Test suite: **944 tests** in tests/ (503 scout + 64 antenna + 377 blueprint + 2 skip + 3 xfail). Oracle + assembly_composer suites added 2026-04-11. GameRules I/O fix added 2026-04-11.*
 
 ---
@@ -112,6 +112,13 @@ Dated session summaries and one-shot planning docs. Preserved for audit trail.
 | `GATE_2_HANDOFF.md` | 2026-04 | Gate 2 design handoff milestone document |
 | `SESSION_2026-04-11_EVENING_SUMMARY.md` | 2026-04-11 | Evening session: !status, --force, 2026 validation |
 | `SESSION_2026-04-11_SUMMARY.md` | 2026-04-11 | Morning/afternoon session: Live Scout command layer |
+| `MONDAY_KICKOFF_2026-04-13.md` | 2026-04-11 | Full arch review + Mon 4/13 kickoff plan + week-of-4/13 scope (read first Monday) |
+| `EYE_RUNBOOK_FIT_DCMP_2026-04-15.md` | 2026-04-11 | Eye local-only runbook for FIT DCMP 4/15-4/18 dress rehearsal (Mode H Haiku, regression set for Worlds Mode L) |
+| `LANDSCAPE_SCAN_ROBOFLOW_2026-04-12.md` | 2026-04-12 | Roboflow ecosystem scan: 8 repos reshape V0a Path A, per-team attribution now possible via sports OCR |
+| `LANDSCAPE_SCAN_254_BINNER_2026-04-12.md` | 2026-04-12 | **MASTER SCAN**: 8 batches, 150+ repos, 500+ org repos, ~130 Einstein teams. 18 adopt, 36 study. 471h→310h. |
+| `SESSION_2026-04-12_LANDSCAPE_SCAN_FINAL_REPORT.md` | 2026-04-12 | Saturday landscape scan final report: all 7 batches, impact analysis, updated roadmap (Rev-4) |
+| `BLUEPRINT_MCP_SMOKE_TEST.md` | 2026-04-13 | A2 output: onshape-mcp install verified, FRCDesign docs have no Variable Studios (2/2 sampled) |
+| `BLUEPRINT_REV2_DECISION.md` | 2026-04-13 | **A3 decision**: MCP pivot confirmed but via mate-composition, not Variable Studio. Deletes cad_builder/assembly_builder/insert_cots, shrinks plate/turret/composer. Supersedes BLUEPRINT_NEXT_6_PHASES.md. |
 
 ---
 

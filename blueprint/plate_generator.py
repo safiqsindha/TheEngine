@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-The Blueprint — Custom Plate Generator (CAD Evolution P3)
+The Blueprint — Custom Plate Generator (CAD Evolution P3, Rev-2 MCP pivot)
 Team 2950 — The Devastators
 
-Generates the 2-3 custom plates per mechanism that don't exist as COTS.
+Computes sizing and load physics for custom plates per mechanism.
 These are simple rectangular plates with bolt holes derived from the COTS
 parts they connect to.
 
@@ -12,8 +12,11 @@ Custom plates in FRC are almost always:
   - Rectangular with bolt holes
   - Sometimes with lightening pockets for weight savings
 
-This module generates FeatureScript for each custom plate, ready to
-paste into an OnShape Part Studio.
+Rev-2 scope (MCP pivot):
+  - KEPT: plate sizing/load physics, weight computation, bolt pattern helpers
+  - DELETED: `plates_to_featurescript` — FeatureScript string generation is
+    replaced by MCP `create_extrude` + `create_fillet` calls at generation
+    time. See BLUEPRINT_REV2_DECISION.md.
 
 Usage:
   from plate_generator import generate_mechanism_plates
@@ -482,54 +485,6 @@ def generate_mechanism_plates(spec: dict) -> list[CustomPlate]:
     return plates
 
 
-def plates_to_featurescript(plates: list[CustomPlate]) -> str:
-    """Convert custom plates to FeatureScript geometry."""
-    body = []
-
-    for plate in plates:
-        name = plate.name
-        w = plate.width_mm
-        h = plate.height_mm
-        t = plate.thickness_mm
-
-        # Create plate body
-        body.append(f"        // {name} ({plate.mechanism}) — {plate.material}, {plate.quantity}x")
-        body.append(f"        fCuboid(context, id + \"{name}\", {{")
-        body.append(f"            \"corner1\" : vector(0, 0, 0) * millimeter,")
-        body.append(f"            \"corner2\" : vector({w:.2f}, {h:.2f}, {t:.2f}) * millimeter")
-        body.append(f"        }});")
-
-        # Drill bolt holes
-        for i, hole in enumerate(plate.bolt_holes):
-            body.append(f"        // {name} bolt {i}: {hole.purpose}")
-            body.append(f"        fCylinder(context, id + \"{name}_hole_{i}\", {{")
-            body.append(f"            \"topCenter\" : vector({hole.x_mm:.2f}, {hole.y_mm:.2f}, {t + 1:.2f}) * millimeter,")
-            body.append(f"            \"bottomCenter\" : vector({hole.x_mm:.2f}, {hole.y_mm:.2f}, -1) * millimeter,")
-            body.append(f"            \"radius\" : {hole.radius_mm:.2f} * millimeter")
-            body.append(f"        }});")
-            body.append(f"        opBoolean(context, id + \"{name}_drill_{i}\", {{")
-            body.append(f"            \"tools\" : qCreatedBy(id + \"{name}_hole_{i}\", EntityType.BODY),")
-            body.append(f"            \"targets\" : qCreatedBy(id + \"{name}\", EntityType.BODY),")
-            body.append(f"            \"operationType\" : BooleanOperationType.SUBTRACTION")
-            body.append(f"        }});")
-
-        # Cut lightening pockets
-        for i, pocket in enumerate(plate.pockets):
-            body.append(f"        // {name} pocket {i}: lightening")
-            depth = t * 0.8  # 80% depth
-            body.append(f"        fCuboid(context, id + \"{name}_pocket_{i}\", {{")
-            body.append(f"            \"corner1\" : vector({pocket.x_mm - pocket.width_mm/2:.2f}, {pocket.y_mm - pocket.height_mm/2:.2f}, {t - depth:.2f}) * millimeter,")
-            body.append(f"            \"corner2\" : vector({pocket.x_mm + pocket.width_mm/2:.2f}, {pocket.y_mm + pocket.height_mm/2:.2f}, {t + 1:.2f}) * millimeter")
-            body.append(f"        }});")
-            body.append(f"        opBoolean(context, id + \"{name}_pocket_cut_{i}\", {{")
-            body.append(f"            \"tools\" : qCreatedBy(id + \"{name}_pocket_{i}\", EntityType.BODY),")
-            body.append(f"            \"targets\" : qCreatedBy(id + \"{name}\", EntityType.BODY),")
-            body.append(f"            \"operationType\" : BooleanOperationType.SUBTRACTION")
-            body.append(f"        }});")
-
-    return "\n".join(body)
-
-
 def display_plates(plates: list[CustomPlate]):
     """Pretty-print custom plates summary."""
     total_weight = sum(p.weight_lb * p.quantity for p in plates)
@@ -561,7 +516,3 @@ if __name__ == "__main__":
 
     plates = generate_mechanism_plates(spec)
     display_plates(plates)
-
-    # Generate FeatureScript
-    fs_body = plates_to_featurescript(plates)
-    print(f"\n  FeatureScript: {len(fs_body)} chars, {len(fs_body.splitlines())} lines")

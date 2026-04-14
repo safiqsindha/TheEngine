@@ -1,7 +1,15 @@
 #!/usr/bin/env python3
 """
-The Blueprint — Part Resolver (CAD Evolution P0a)
+The Blueprint — Part Resolver (CAD Evolution P0a) — DEPRECATED
 Team 2950 — The Devastators
+
+PHASE 0 NOTE (Blueprint Rev-2 MCP pivot):
+  This module is slated for REPLACE in Phase 1. The hardcoded
+  OnShape search strategy will be replaced by a thin FRCDesignLib
+  Firestore-backed catalog resolver (~50 LOC).
+  See BLUEPRINT_REV2_COPY_PARAMETRIZE.md for the Phase 1 spec.
+  Nothing in the live codebase imports this module — it is preserved
+  only for reference during the Phase 1 rewrite.
 
 Resolves COTS catalog part names to OnShape document/element/part IDs.
 Uses the OnShape search API to find FRCDesignLib parts, then caches

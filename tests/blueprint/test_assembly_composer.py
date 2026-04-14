@@ -19,7 +19,6 @@ from assembly_composer import (  # noqa: E402
     MechanismPlacement,
     RobotLayout,
     compose_robot,
-    _check_overlap,
     _in_to_mm,
     PLACEMENT_ZONES,
 )
@@ -245,52 +244,10 @@ def test_flywheel_envelope_mm_consistent_with_in():
 
 
 # ─────────────────────────────────────────────────────────────────────
-# Phase 3 — _check_overlap, CoG, assembly order
+# Phase 3 — CoG, assembly order
+# (_check_overlap tests removed — function deleted in Rev-2 MCP pivot.
+#  Interference detection is now done by MCP check_assembly_interference.)
 # ─────────────────────────────────────────────────────────────────────
-
-def test_overlap_identical_placements():
-    p1 = _make_placement(0, 0, 0, 10, 10, 10)
-    p2 = _make_placement(0, 0, 0, 10, 10, 10)
-    assert _check_overlap(p1, p2) is True
-
-
-def test_no_overlap_separated_x():
-    p1 = _make_placement(0, 0, 0, 4, 4, 4)
-    p2 = _make_placement(10, 0, 0, 4, 4, 4)
-    assert _check_overlap(p1, p2) is False
-
-
-def test_no_overlap_separated_y():
-    p1 = _make_placement(0, 0, 0, 4, 4, 4)
-    p2 = _make_placement(0, 10, 0, 4, 4, 4)
-    assert _check_overlap(p1, p2) is False
-
-
-def test_no_overlap_separated_z():
-    p1 = _make_placement(0, 0, 0, 4, 4, 4)
-    p2 = _make_placement(0, 0, 10, 4, 4, 4)
-    assert _check_overlap(p1, p2) is False
-
-
-def test_overlap_all_axes():
-    p1 = _make_placement(0, 0, 0, 10, 10, 10)
-    p2 = _make_placement(3, 3, 3, 10, 10, 10)
-    assert _check_overlap(p1, p2) is True
-
-
-def test_touching_face_to_face_no_overlap():
-    """Face-to-face touching (p1_max == p2_min) should NOT count as overlap."""
-    # p1 occupies x: -5 to +5; p2 starts at x=5
-    p1 = _make_placement(0, 0, 0, 10, 10, 10)   # x: -5 to +5
-    p2 = _make_placement(10, 0, 0, 10, 10, 10)  # x: +5 to +15
-    assert _check_overlap(p1, p2) is False
-
-
-def test_overlap_xy_but_not_z():
-    p1 = _make_placement(0, 0, 0, 10, 10, 4)
-    p2 = _make_placement(2, 2, 20, 10, 10, 4)
-    assert _check_overlap(p1, p2) is False
-
 
 # CoG tests
 def test_frame_only_cog_at_origin():
@@ -363,29 +320,6 @@ def test_historical_layout_has_placements(year):
     assert len(layout.placements) >= 2
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "compose_robot uses axis-aligned bounding boxes (AABB) to detect overlap. "
-        "For large game pieces (e.g. 2024 Crescendo 14\" note, depth=18\"), the intake "
-        "AABB extends far back into the robot center, falsely flagging adjacent mechanisms "
-        "(conveyor, climber) as overlapping. This is AABB over-conservatism, NOT a real "
-        "interference in the shipping robots. Fix requires switching to tighter geometry "
-        "models (e.g. deployed vs stowed envelopes). Bug in compose_robot — fix separately."
-    ),
-)
-@pytest.mark.parametrize("year", sorted(HISTORICAL_SPECS.keys()))
-def test_historical_no_mechanism_interference(year):
-    """The 3 historical designs were real shipping robots.
-    Their mechanisms must not physically overlap — currently xfail because
-    the AABB model is too conservative (see xfail reason above)."""
-    layout = compose_robot(HISTORICAL_SPECS[year])
-    overlap_warnings = [w for w in layout.interference_warnings if "overlap" in w]
-    assert overlap_warnings == [], (
-        f"{year}: unexpected interference: {overlap_warnings}"
-    )
-
-
 @pytest.mark.parametrize("year", sorted(HISTORICAL_SPECS.keys()))
 def test_historical_cog_inside_frame(year):
     layout = compose_robot(HISTORICAL_SPECS[year])
@@ -446,20 +380,6 @@ def test_height_warning_when_tall():
     layout = compose_robot(_minimal_spec(elevator={"travel_height_in": 60.0}))
     height_warnings = [w for w in layout.interference_warnings if "height" in w.lower()]
     assert height_warnings, "should warn when robot is >48 inches tall"
-
-
-def test_two_overlapping_mechanisms_triggers_warning():
-    """If two mechanism envelopes overlap, interference_warnings should be populated."""
-    # Fabricate a spec where both elevator and conveyor occupy the same space
-    # by giving them identical positions — can't control positions directly via spec,
-    # so place conveyor (center Y=0) and turret on top (also center Y=0) with large envelopes
-    spec = _minimal_spec(
-        conveyor={"path_length_in": 60.0, "game_piece_diameter_in": 20.0, "staging_count": 1},
-        turret={"turret_od_in": 60.0, "total_weight_lb": 5.0},
-    )
-    layout = compose_robot(spec)
-    overlap_warnings = [w for w in layout.interference_warnings if "overlap" in w]
-    assert overlap_warnings, "oversized conveyor + turret should produce overlap warning"
 
 
 def test_total_height_equals_max_mechanism_z():

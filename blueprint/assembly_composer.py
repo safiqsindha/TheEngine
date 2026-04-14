@@ -4,17 +4,24 @@ Team 2950 — The Devastators
 
 Takes frame spec + mechanism specs and computes the physical layout
 of the robot — where each mechanism mounts, volume allocations,
-interference checks, and assembly instructions.
+and assembly instructions.
 
 This is the integration layer: subsystems snap onto the frame.
+
+Scope (Rev-2 MCP pivot):
+  - CoG computation and mass rollup (KEPT)
+  - Mechanism mount positions and volume envelopes (KEPT)
+  - Assembly order generation (KEPT)
+  - AABB interference checking REMOVED — replaced by MCP
+    `check_assembly_interference` at generation time (see
+    BLUEPRINT_REV2_DECISION.md). The 3 xfail tests that exercised
+    the buggy AABB surface have been deleted along with the function.
 
 Input: Full blueprint spec JSON (frame + intake + scorer + endgame + conveyor)
 Output: RobotLayout with:
   - Mechanism mount positions (x, y, z relative to frame origin)
   - Volume envelopes for each mechanism
-  - Interference warnings
   - Assembly order with notes
-  - CAD placement data for cad_builder.py
 
 Usage:
   python3 assembly_composer.py compose <full_blueprint.json>
@@ -335,12 +342,9 @@ def compose_robot(spec: dict) -> RobotLayout:
         layout.center_of_gravity_in = [round(cg_x, 2), round(cg_y, 2), round(cg_z, 2)]
 
     # ── Interference checks ──
-    for i, p1 in enumerate(layout.placements):
-        for p2 in layout.placements[i+1:]:
-            if _check_overlap(p1, p2):
-                layout.interference_warnings.append(
-                    f"{p1.name} and {p2.name} volumes overlap — review clearances"
-                )
+    # AABB overlap checking removed (Rev-2 MCP pivot). Interference detection
+    # is now done by MCP `check_assembly_interference` at generation time.
+    # See BLUEPRINT_REV2_DECISION.md for rationale.
 
     # Height warning
     if layout.total_height_in > 48:
@@ -387,18 +391,6 @@ def compose_robot(spec: dict) -> RobotLayout:
     layout.assembly_order.append({"step": step + 1, "task": "Bumpers — attach + verify frame perimeter", "subsystem": "bumpers"})
 
     return layout
-
-
-def _check_overlap(p1: MechanismPlacement, p2: MechanismPlacement) -> bool:
-    """Check if two mechanism bounding boxes overlap."""
-    for axis in range(3):
-        p1_min = p1.position_in[axis] - p1.envelope_in[axis] / 2
-        p1_max = p1.position_in[axis] + p1.envelope_in[axis] / 2
-        p2_min = p2.position_in[axis] - p2.envelope_in[axis] / 2
-        p2_max = p2.position_in[axis] + p2.envelope_in[axis] / 2
-        if p1_max <= p2_min or p2_max <= p1_min:
-            return False  # separated on this axis
-    return True
 
 
 def display_layout(layout: RobotLayout):

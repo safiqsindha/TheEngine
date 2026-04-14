@@ -1,8 +1,8 @@
 """
-The Blueprint — Parametric Turret Generator (B.5)
+The Blueprint — Parametric Turret Generator (B.5, Rev-2 MCP pivot)
 Team 2950 — The Devastators
 
-Generates a turret specification from parameters:
+Physics model for turret sizing:
   - Turret diameter (bearing OD)
   - Payload weight (everything above the turret)
   - Angular range (continuous 360° or limited arc)
@@ -13,15 +13,15 @@ Physics: DC motor torque vs friction torque + payload inertia,
 Euler-integrated motion profile for slew time.
 Based on 254 (2020 turret), 1678 (2022 turret), 2056 (2020 turret).
 
-Usage:
-  python3 turret_generator.py generate --preset shooter_turret
-  python3 turret_generator.py presets
+Rev-2 scope (MCP pivot):
+  - KEPT: physics model (inertia, gear ratio, slew time simulation)
+  - DELETED: geometry emission (PRESETS, display_spec, main CLI,
+    parts_list generation) — geometry is now driven by MCP feature
+    composition calls. See BLUEPRINT_REV2_DECISION.md.
 """
 
-import json
 import math
-import sys
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from motor_model import DCMotor, MOTOR_DB, V_NOMINAL, LB_TO_N, IN_TO_M, GRAVITY_MPS2, RPM_TO_RADS
@@ -320,59 +320,13 @@ def generate_turret(
         "BACKLASH_DEG": drive["backlash_deg"],
     }
 
-    # Parts list
-    spec.parts_list = [
-        {"qty": 1, "item": bearing["name"], "notes": f"Max load {bearing['max_load_lb']} lb"},
-        {"qty": motor_count, "item": f"{dc_motor.name} motor", "notes": f"With {dc_motor.controller}"},
-        {"qty": 1, "item": f"Gearbox ({gear_ratio}:1)", "notes": "MAXPlanetary or belt reduction"},
-    ]
-
-    if drive_type == "gear":
-        spec.parts_list.extend([
-            {"qty": 1, "item": f"Ring gear ({spec.ring_teeth}T, 20DP)", "notes": f"Mounts to bearing OD ({spec.turret_od_in}\")"},
-            {"qty": 1, "item": f"Pinion gear ({spec.pinion_teeth}T, 20DP)", "notes": "On gearbox output shaft"},
-        ])
-    elif drive_type == "belt":
-        belt_length = round(math.pi * spec.turret_od_in + 6, 1)  # belt around ring + tensioner
-        spec.parts_list.extend([
-            {"qty": 1, "item": f"HTD5 timing belt ({belt_length}\")", "notes": "Wraps around turret ring"},
-            {"qty": 1, "item": "Drive pulley (HTD5, 18T)", "notes": "On gearbox output shaft"},
-            {"qty": 1, "item": "Belt tensioner", "notes": "Spring-loaded idler"},
-        ])
-    elif drive_type == "chain":
-        spec.parts_list.extend([
-            {"qty": 1, "item": f"#25 chain sprocket ({spec.ring_teeth}T)", "notes": f"Bolts to bearing OD"},
-            {"qty": 1, "item": f"#25 chain sprocket ({spec.pinion_teeth}T)", "notes": "On gearbox output"},
-            {"qty": 1, "item": "#25 roller chain", "notes": "Wraps turret + tensioner"},
-        ])
-
-    spec.parts_list.extend([
-        {"qty": 1, "item": "Turret platform plate (1/4\" aluminum)", "notes": f"{spec.turret_od_in}\" dia or square"},
-        {"qty": 1, "item": "Absolute encoder (through-bore)", "notes": "REV Through Bore or equivalent"},
-        {"qty": 1, "item": "Slip ring (6 circuit)", "notes": "Power + CAN through rotation"},
-        {"qty": 1, "item": "Hardware assortment", "notes": "Bolts, standoffs, spacers"},
-    ])
-
-    # Notes
-    spec.notes = []
-    if spec.slew_time_180_sec > 0.5:
-        spec.notes.append(f"180° slew > 0.5s ({spec.slew_time_180_sec}s) — consider higher ratio or more motors")
-    if spec.slew_time_180_sec <= 0.3:
-        spec.notes.append(f"180° slew {spec.slew_time_180_sec}s — very fast, verify mechanical limits")
-    if payload_weight_lb > bearing["max_load_lb"] * 0.8:
-        spec.notes.append(f"Payload near bearing limit ({bearing['max_load_lb']} lb) — upgrade bearing")
-    if continuous_rotation:
-        spec.notes.append("Continuous rotation — slip ring required for power/CAN")
-    else:
-        spec.notes.append(f"Limited rotation ({min_angle_deg}° to {max_angle_deg}°) — hard stops recommended")
-    if drive["backlash_deg"] > 0.5:
-        spec.notes.append(f"Drive backlash {drive['backlash_deg']}° — use vision feedback for fine aiming")
-
     return spec
 
 
 # ═══════════════════════════════════════════════════════════════════
 # PRESETS
+# Kept for bom_rollup.py compatibility (bom_rollup imports PRESETS).
+# bom_rollup.py is KEEP UNCHANGED per BLUEPRINT_REV2_DECISION.md.
 # ═══════════════════════════════════════════════════════════════════
 
 PRESETS = {
@@ -384,7 +338,7 @@ PRESETS = {
             "payload_weight_lb": 15.0,
             "motor_type": "neo_550",
             "motor_count": 1,
-            "gear_ratio": 10.0,  # × 15:1 ring = 150:1 total
+            "gear_ratio": 10.0,
             "min_angle_deg": -135.0,
             "max_angle_deg": 135.0,
             "continuous_rotation": False,
@@ -398,7 +352,7 @@ PRESETS = {
             "payload_weight_lb": 12.0,
             "motor_type": "neo_550",
             "motor_count": 1,
-            "gear_ratio": 8.0,  # × 15:1 ring = 120:1 total
+            "gear_ratio": 8.0,
             "min_angle_deg": -180.0,
             "max_angle_deg": 180.0,
             "continuous_rotation": True,
@@ -412,7 +366,7 @@ PRESETS = {
             "payload_weight_lb": 6.0,
             "motor_type": "neo_550",
             "motor_count": 1,
-            "gear_ratio": 5.0,  # × 7.5:1 ring = 37.5:1 total
+            "gear_ratio": 5.0,
             "min_angle_deg": -90.0,
             "max_angle_deg": 90.0,
             "continuous_rotation": False,
@@ -426,90 +380,10 @@ PRESETS = {
             "payload_weight_lb": 25.0,
             "motor_type": "neo",
             "motor_count": 1,
-            "gear_ratio": 8.0,  # × 12.5:1 ring = 100:1 total
+            "gear_ratio": 8.0,
             "min_angle_deg": -135.0,
             "max_angle_deg": 135.0,
             "continuous_rotation": False,
         },
     },
 }
-
-
-def display_spec(spec: TurretSpec):
-    motor = MOTOR_DB[spec.motor_type]
-    bearing = TURRET_BEARINGS[spec.bearing_type]
-    drive = TURRET_DRIVES[spec.drive_type]
-    title = f"2950 {spec.preset_name.replace('_', ' ').title()} Turret" if spec.preset_name else "2950 Custom Turret"
-
-    print(f"\n{'═' * 60}")
-    print(f"  {title}")
-    print(f"  Generated by The Blueprint B.5")
-    print(f"{'═' * 60}")
-    print(f"\n  CONFIGURATION")
-    print(f"    Bearing:           {bearing['name']} (OD {spec.turret_od_in}\")")
-    print(f"    Drive:             {drive['name']}")
-    print(f"    Payload:           {spec.payload_weight_lb} lb")
-    print(f"    Motors:            {spec.motor_count}x {motor.name}")
-    print(f"    Motor ratio:       {spec.gear_ratio}:1")
-    print(f"    Ring ratio:        {spec.ring_gear_ratio:.1f}:1 ({spec.ring_teeth}T / {spec.pinion_teeth}T)")
-    print(f"    Total ratio:       {spec.total_ratio:.1f}:1")
-    range_str = "Continuous" if spec.continuous_rotation else f"{spec.min_angle_deg}° to {spec.max_angle_deg}°"
-    print(f"    Range:             {range_str}")
-
-    print(f"\n  PERFORMANCE (simulated with {spec.current_limit_a}A limit)")
-    print(f"    180° slew time:    {spec.slew_time_180_sec}s")
-    print(f"    Max slew rate:     {spec.max_slew_rate_deg_s}°/s")
-    print(f"    Peak current:      {spec.peak_current_a}A")
-    print(f"    Holding current:   {spec.holding_current_a}A")
-    print(f"    Payload MOI:       {spec.payload_moi_kg_m2} kg·m²")
-    print(f"    Backlash:          {drive['backlash_deg']}°")
-
-    print(f"\n  WEIGHT: {spec.total_weight_lb} lb (turret only, not payload)")
-
-    print(f"\n  SOFTWARE CONSTANTS")
-    print(f"    ```java")
-    for k, v in spec.software_constants.items():
-        if isinstance(v, bool):
-            print(f"    public static final boolean {k} = {str(v).lower()};")
-        else:
-            print(f"    public static final double {k} = {v};")
-    print(f"    ```")
-
-    if spec.notes:
-        print(f"\n  NOTES")
-        for n in spec.notes:
-            print(f"    • {n}")
-    print(f"\n{'═' * 60}\n")
-
-
-def main():
-    args = sys.argv[1:]
-    if not args:
-        print("Usage: python3 turret_generator.py generate --preset shooter_turret")
-        print("       python3 turret_generator.py presets")
-        return
-    if args[0] == "presets":
-        for name, p in PRESETS.items():
-            print(f"  {name:20s} {p['description']}")
-        return
-    if args[0] == "generate":
-        preset_name = None
-        i = 1
-        while i < len(args):
-            if args[i] == "--preset" and i + 1 < len(args):
-                preset_name = args[i + 1]; i += 2
-            else:
-                i += 1
-        if preset_name and preset_name in PRESETS:
-            spec = generate_turret(**PRESETS[preset_name]["params"], preset_name=preset_name)
-        else:
-            spec = generate_turret()
-        display_spec(spec)
-        filepath = BASE_DIR / f"2950_{spec.preset_name or 'custom'}_turret_spec.json"
-        with open(filepath, "w") as f:
-            json.dump(asdict(spec), f, indent=2)
-        print(f"Spec saved to: {filepath}")
-
-
-if __name__ == "__main__":
-    main()
