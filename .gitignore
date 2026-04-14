@@ -66,6 +66,9 @@ blueprint/*_spec.json
 # Statbotics bulk cache (beta tuning data — ~300MB, do not commit)
 .cache/statbotics/
 
+# Manual cache (fetched game manual text, do not commit)
+.cache/manuals/
+
 # Scout cache (API responses, draft state)
 scout/.cache/
 scout/.state/

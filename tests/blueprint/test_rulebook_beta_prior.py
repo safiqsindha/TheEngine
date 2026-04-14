@@ -6,6 +6,13 @@ Bayesian posterior update.
 
 All tests use crafted text fragments or synthetic inputs; no real game manual
 PDFs are required.
+
+Item 4 execution additions (2026-04-14):
+  - test_reefscape_signals_predict_within_015_of_empirical: sanity check that
+    Reefscape expert-assigned signals predict β within ±0.15 of empirical 0.65.
+  - TestCoefficientSigns: verify fitted coefficient signs are reasonable
+    (possession_limit and coop_rp must be negative; handoff must be negative).
+    Flags unexpected signs as documented in RULEBOOK_BETA_METHODOLOGY.md.
 """
 
 import sys
@@ -18,6 +25,13 @@ sys.path.insert(0, str(_BLUEPRINT_DIR))
 
 from rulebook_beta_prior import (  # noqa: E402
     RulebookSignals,
+    _INTERCEPT,
+    _W_HANDOFF,
+    _W_ALLIANCE,
+    _W_FEEDER,
+    _W_POSSESSION,
+    _W_COOP_RP,
+    _W_HRULE,
     beta_posterior,
     extract_signals,
     predict_beta,
@@ -306,3 +320,134 @@ class TestBetaPosterior:
             match_count=100,
         )
         assert 0.4 <= result <= 1.0
+
+
+# ---------------------------------------------------------------------------
+# Item 4 execution additions — sanity checks on fitted coefficients
+# ---------------------------------------------------------------------------
+
+class TestCoefficientSigns:
+    """
+    Verify that fitted regression coefficients have reasonable signs.
+
+    The regression was fit on 10 seasons (2013-2025, excl. 2015 and 2019).
+    Two coefficients have unexpected signs documented in RULEBOOK_BETA_METHODOLOGY.md:
+      - _W_ALLIANCE: expected negative, fitted positive (~+0.033, SE=0.209 >> coef)
+      - _W_HRULE:    expected negative, fitted positive (+0.066)
+
+    Critical coefficients (possession_limit, coop_rp, handoff_verb_density) must
+    be negative — these are the most reliable signals.
+    """
+
+    def test_possession_limit_coefficient_is_negative(self):
+        """has_possession_limit coefficient must be negative (coupling signal)."""
+        assert _W_POSSESSION < 0, (
+            f"Expected _W_POSSESSION < 0 (possession limit → lower β), got {_W_POSSESSION:.4f}"
+        )
+
+    def test_coop_rp_coefficient_is_negative(self):
+        """has_coop_rp coefficient must be negative (explicit inter-robot coordination)."""
+        assert _W_COOP_RP < 0, (
+            f"Expected _W_COOP_RP < 0 (co-op RP → lower β), got {_W_COOP_RP:.4f}"
+        )
+
+    def test_handoff_verb_density_coefficient_is_negative(self):
+        """handoff_verb_density coefficient must be negative (handoff mechanics → lower β)."""
+        assert _W_HANDOFF < 0, (
+            f"Expected _W_HANDOFF < 0 (handoff verbs → lower β), got {_W_HANDOFF:.4f}"
+        )
+
+    def test_feeder_zones_coefficient_is_negative(self):
+        """named_feeder_zones coefficient must be negative (role specialization → lower β)."""
+        assert _W_FEEDER < 0, (
+            f"Expected _W_FEEDER < 0 (feeder zones → lower β), got {_W_FEEDER:.4f}"
+        )
+
+    def test_alliance_scope_coefficient_documented_anomaly(self):
+        """
+        alliance_scope_ratio coefficient may be positive (documented anomaly — SE >> coef).
+        This test documents the known limitation: the coefficient is effectively zero.
+        If the sign flips negative in a future re-fit, that is acceptable.
+        """
+        # The coefficient is near zero (±0.033) with large SE (0.209).
+        # We assert it's within ±0.15 of zero rather than requiring a specific sign.
+        assert abs(_W_ALLIANCE) < 0.15, (
+            f"alliance_scope_ratio coefficient magnitude {abs(_W_ALLIANCE):.4f} unexpectedly large. "
+            f"Expected ~0 (SE >> coef). Review regression if |coef| > 0.15."
+        )
+
+    def test_hrule_coefficient_documented_anomaly(self):
+        """
+        h_rule_count coefficient may be positive (documented confound with 2016 Stronghold).
+        This test documents the known limitation rather than asserting a specific sign.
+        If sign flips negative in a future re-fit with more data, that is acceptable.
+        """
+        # The coefficient is +0.066 with SE=0.018 — statistically significant but confounded.
+        # We don't assert sign but do check magnitude is bounded (not wildly large).
+        assert abs(_W_HRULE) < 0.20, (
+            f"h_rule_count coefficient magnitude {abs(_W_HRULE):.4f} unexpectedly large. "
+            f"Review regression with more training seasons."
+        )
+
+
+class TestReefscapeSanityCheck:
+    """
+    Sanity check: Reefscape 2025 expert-assigned signals should predict β
+    within ±0.15 of the empirical value (0.65).
+
+    These are the expert-assigned signals from fit_rulebook_regression.py
+    (not from regex extraction, which is unreliable on short texts).
+    The empirical β* = 0.65 (verified by kl26436 community analysis).
+    """
+
+    _REEFSCAPE_SIGNALS = RulebookSignals(
+        handoff_verb_density=0.70,   # CORAL STATION delivery; PROCESSOR indirect transfer
+        alliance_scope_ratio=0.55,   # mostly per-robot REEF scoring; BARGE shared
+        named_feeder_zones=3,        # CORAL STATIONS + PROCESSORS + REEF processing zones
+        has_possession_limit=True,   # 1 CORAL + 1 ALGAE per robot stated in manual
+        has_coop_rp=False,           # no explicit COOPERTITION RP in Reefscape
+        h_rule_count=10,             # BARGE proximity rules
+    )
+    _EMPIRICAL_BETA = 0.65
+
+    def test_reefscape_prediction_within_015_of_empirical(self):
+        """
+        predict_beta on Reefscape expert signals should return β within ±0.15
+        of the empirical 0.65 (verified by kl26436).
+        """
+        beta, confidence = predict_beta(self._REEFSCAPE_SIGNALS)
+        error = abs(beta - self._EMPIRICAL_BETA)
+        assert error <= 0.15, (
+            f"Reefscape prediction {beta:.3f} is more than ±0.15 from empirical {self._EMPIRICAL_BETA}. "
+            f"Absolute error: {error:.3f}. Check regression coefficients."
+        )
+
+    def test_reefscape_prediction_in_valid_range(self):
+        """Reefscape prediction must be in [0.4, 1.0]."""
+        beta, confidence = predict_beta(self._REEFSCAPE_SIGNALS)
+        assert 0.4 <= beta <= 1.0
+
+    def test_reefscape_confidence_is_valid(self):
+        """Reefscape confidence must be in [0.0, 1.0]."""
+        _, confidence = predict_beta(self._REEFSCAPE_SIGNALS)
+        assert 0.0 <= confidence <= 1.0
+
+    def test_reefscape_prediction_below_aerial_assist(self):
+        """
+        Reefscape (moderate coupling, β≈0.65) should predict lower β than
+        a high-β game like Rapid React 2022 (β≈0.95, minimal coupling signals).
+        """
+        rapid_react_signals = RulebookSignals(
+            handoff_verb_density=0.60,
+            alliance_scope_ratio=0.55,
+            named_feeder_zones=1,
+            has_possession_limit=False,
+            has_coop_rp=False,
+            h_rule_count=8,
+        )
+        reefscape_beta, _ = predict_beta(self._REEFSCAPE_SIGNALS)
+        rapid_react_beta, _ = predict_beta(rapid_react_signals)
+        assert reefscape_beta < rapid_react_beta, (
+            f"Reefscape ({reefscape_beta:.3f}) should predict lower β than "
+            f"Rapid React ({rapid_react_beta:.3f}) due to possession limit + feeder zones."
+        )
