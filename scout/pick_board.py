@@ -76,6 +76,17 @@ try:
 except Exception:
     HAS_ANOMALY = False
 
+try:
+    from alliance_decomposition import (
+        aggregate_team_delta_ema,
+        compute_alliance_decomposition,
+        flag_carry_variance_by_scout,
+        format_carry_delta_row,
+    )
+    HAS_ALLIANCE_DECOMP = True
+except Exception:
+    HAS_ALLIANCE_DECOMP = False
+
 STATE_DIR = Path(__file__).parent / ".cache" / "draft"
 STATE_FILE = STATE_DIR / "live_draft.json"
 
@@ -948,6 +959,53 @@ def cmd_board(args):
                     name = td.get("name", "")[:20]
                     summary = anomaly_summary_line(flags)
                     print(f"  {team_num:6d} {name:>20}  {summary}")
+
+    # ── Alliance Decomposition (carry/ride delta) section ─────────────────────
+    if HAS_ALLIANCE_DECOMP:
+        decomp_matches = state.get("_decomp_matches", [])
+        if decomp_matches:
+            # Collect all teams that appear in any match decomposition
+            all_decomp_teams: set = set()
+            for match_decomp in decomp_matches:
+                all_decomp_teams.update(match_decomp.keys())
+
+            if all_decomp_teams:
+                print(f"\n  ALLIANCE DECOMPOSITION (carry/ride delta over event):")
+                print(f"  {'─' * 75}")
+                print(f"  {'Team':>6} {'Name':>20}  Carry Signal")
+                print(f"  {'─' * 75}")
+
+                # Sort by carry_delta descending (best carries first)
+                ema_rows = []
+                for team_num in all_decomp_teams:
+                    ema = aggregate_team_delta_ema(team_num, decomp_matches)
+                    td = state["teams"].get(str(team_num), {})
+                    name = td.get("name", "")[:20]
+                    ema_rows.append((team_num, name, ema))
+
+                ema_rows.sort(key=lambda x: x[2].carry_delta, reverse=True)
+
+                for team_num, name, ema in ema_rows:
+                    row = format_carry_delta_row(ema, "")
+                    print(f"  {team_num:6d} {name:>20}  {row}")
+
+                # Cross-wire: flag scouts whose carry variance is suspiciously high
+                if HAS_ANOMALY:
+                    scout_obs_by_match = state.get("_scout_obs_by_match", {})
+                    if scout_obs_by_match:
+                        suspect_scouts: set = set()
+                        for team_num in all_decomp_teams:
+                            suspects = flag_carry_variance_by_scout(
+                                team_num, decomp_matches, scout_obs_by_match
+                            )
+                            suspect_scouts.update(suspects)
+                        if suspect_scouts:
+                            print(
+                                f"\n  CARRY VARIANCE SUSPECTS — scouts with wild per-match "
+                                f"carry_delta vs stable aggregate:"
+                            )
+                            for s in sorted(suspect_scouts):
+                                print(f"    {s} — review entries for recording inconsistency")
 
     print()
 
