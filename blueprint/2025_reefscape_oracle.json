@@ -1,0 +1,140 @@
+{
+  "game_name": "Reefscape",
+  "year": 2025,
+  "drivetrain": {
+    "type": "swerve",
+    "module": "sds_mk4i",
+    "speed_fps": 14.0,
+    "gear_for": "acceleration",
+    "frame_length": 27.0,
+    "frame_width": 27.0,
+    "reasoning": "Swerve mandatory post-2022. Every Einstein competitor uses swerve."
+  },
+  "intake": {
+    "type": "over_bumper",
+    "width": "full",
+    "roller_material": "flex_wheels",
+    "deploy": true,
+    "motors": 2,
+    "game_piece": "coral (cylindrical tube)",
+    "reasoning": "Full-width bumper-to-bumper intake. Every champion since 2019. Cylindrical piece \u2192 flex wheels with floating roller"
+  },
+  "scorer": {
+    "method": "elevator",
+    "height_in": 72,
+    "stages": 2,
+    "motors": 2,
+    "has_wrist": true,
+    "turret": "none",
+    "reasoning": "Placement scoring targets \u2192 elevator + wrist. Height 72\" \u2192 two-stage (3-stage too complex, R5 70%). Placement + distributed \u2192 SKIP turret (90%) R19: Capped methods (204 max pts) will saturate. Uncapped method (Processor) is the differentiator."
+  },
+  "endgame": {
+    "type": "telescope",
+    "height_in": 48,
+    "motors": 2,
+    "reasoning": "Endgame is 15% of winning score, MUST climb"
+  },
+  "autonomous": {
+    "priority_actions": [
+      "score_preload",
+      "intake_nearby",
+      "score_second",
+      "intake_nearby",
+      "score_second"
+    ],
+    "cycle_time_s": 4.0,
+    "preload_score": true,
+    "estimated_pieces": 4,
+    "reasoning": "Target 4-piece auto. Known positions: True. Cycle target: 4.0s (R11)."
+  },
+  "weight_budget": {
+    "drivetrain_lb": 42,
+    "intake_lb": 10,
+    "scorer_lb": 22,
+    "endgame_lb": 8,
+    "electronics_lb": 15,
+    "bumpers_lb": 10,
+    "margin_lb": 18,
+    "total_limit_lb": 125
+  },
+  "build_order": [
+    "drivetrain",
+    "scorer",
+    "intake",
+    "autonomous",
+    "endgame"
+  ],
+  "rule_log": [
+    {
+      "rule": "R1",
+      "applies": true,
+      "recommendation": "swerve",
+      "confidence": 1.0,
+      "reasoning": "Swerve mandatory post-2022. Every Einstein competitor uses swerve."
+    },
+    {
+      "rule": "R2",
+      "applies": true,
+      "recommendation": "full_width_intake",
+      "confidence": 0.95,
+      "reasoning": "Full-width bumper-to-bumper intake. Every champion since 2019."
+    },
+    {
+      "rule": "R3",
+      "applies": true,
+      "recommendation": "flex_wheels",
+      "confidence": 0.85,
+      "reasoning": "Cylindrical piece \u2192 flex wheels with floating roller"
+    },
+    {
+      "rule": "R4",
+      "applies": true,
+      "recommendation": "elevator",
+      "confidence": 0.9,
+      "reasoning": "Placement scoring targets \u2192 elevator + wrist"
+    },
+    {
+      "rule": "R5",
+      "applies": true,
+      "recommendation": "2_stage",
+      "confidence": 0.85,
+      "reasoning": "Height 72\" \u2192 two-stage (3-stage too complex, R5 70%)"
+    },
+    {
+      "rule": "R6",
+      "applies": true,
+      "recommendation": "none",
+      "confidence": 0.9,
+      "reasoning": "Placement + distributed \u2192 SKIP turret (90%)"
+    },
+    {
+      "rule": "R7",
+      "applies": true,
+      "recommendation": "climb",
+      "confidence": 0.95,
+      "reasoning": "Endgame is 15% of winning score, MUST climb"
+    },
+    {
+      "rule": "R8",
+      "applies": true,
+      "recommendation": "4_piece_auto",
+      "confidence": 0.85,
+      "reasoning": "Target 4-piece auto. Known positions: True"
+    },
+    {
+      "rule": "R10",
+      "applies": false,
+      "recommendation": "none",
+      "confidence": 0.85,
+      "reasoning": "No detection needed \u2014 known positions + wide intake"
+    },
+    {
+      "rule": "R19",
+      "applies": true,
+      "recommendation": "uncapped_priority",
+      "confidence": 0.88,
+      "reasoning": "Capped methods (204 max pts) will saturate. Uncapped method (Processor) is the differentiator."
+    }
+  ],
+  "confidence": 0.9
+}

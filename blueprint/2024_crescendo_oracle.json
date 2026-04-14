@@ -1,24 +1,23 @@
 {
   "game_name": "Crescendo",
-  "season_year": 2024,
-  "confidence_overall": 0.87,
+  "year": 2024,
   "drivetrain": {
     "type": "swerve",
     "module": "sds_mk4i",
-    "speed_fps": 16.5,
+    "speed_fps": 16.0,
     "gear_for": "speed",
-    "frame_length_in": 27.0,
-    "frame_width_in": 27.0,
-    "reasoning": "R1: Swerve mandatory. Fast cycles between source and speaker/amp. MK4i L2 for balance of speed and pushing."
+    "frame_length": 27.0,
+    "frame_width": 27.0,
+    "reasoning": "Swerve mandatory post-2022. Every Einstein competitor uses swerve."
   },
   "intake": {
-    "type": "under_bumper",
+    "type": "over_bumper",
     "width": "full",
-    "roller_material": "flex_wheels",
-    "deploy": false,
-    "motors": 1,
-    "game_piece": "NOTE (14\" foam ring, 0.44 lb)",
-    "reasoning": "R5: 14\" foam ring is large and light — under-bumper ground intake with flex wheels. Full-width for maximum capture zone. No deploy needed for under-bumper."
+    "roller_material": "mecanum_funnel",
+    "deploy": true,
+    "motors": 2,
+    "game_piece": "note (flat disc (14\" ring))",
+    "reasoning": "Full-width bumper-to-bumper intake. Every champion since 2019. Flat/disc piece \u2192 mecanum funneling wheels"
   },
   "scorer": {
     "method": "flywheel",
@@ -27,50 +26,108 @@
     "motors": 2,
     "has_wrist": false,
     "turret": "none",
-    "reasoning": "R4+R6: Speaker at 6'6\" with angled opening — flywheel shooter is ideal. Notes are light (0.44 lb) so dual flywheel with backspin. Amp is low scoring and capped. R19: Speaker is UNCAPPED and primary differentiator. Amp is SEMI-CAPPED (max 2 notes stored, 5 pts per amplified cycle)."
+    "reasoning": "Ranged scoring targets \u2192 flywheel shooter. Non-elevator scorer, stages N/A. Ranged + fixed targets \u2192 turret optional, skipping (65%)"
   },
   "endgame": {
     "type": "hook_winch",
-    "height_in": 26.0,
-    "motors": 2,
-    "reasoning": "R8: Stage chain at ~5' height. Climb for 3 pts (single), 8 pts (harmony with 2), 10 pts (3-robot). Winch climber to hook on chain. R19: Stage is SEMI-CAPPED but Harmony bonus makes it high value."
+    "height_in": 30,
+    "motors": 1,
+    "reasoning": "Endgame is 10% of winning score, strongly recommended"
   },
   "autonomous": {
-    "priority_actions": ["score_preload_speaker", "intake_centerline_note", "score_speaker", "intake_second_note", "score_speaker"],
-    "cycle_time_target_s": 3.0,
+    "priority_actions": [
+      "score_preload",
+      "intake_nearby",
+      "score_second",
+      "intake_nearby",
+      "score_second"
+    ],
+    "cycle_time_s": 5.0,
     "preload_score": true,
     "estimated_pieces": 3,
-    "reasoning": "R7: Auto scoring same as teleop (2 pts/speaker). R18: 3-note auto from starting position + 2 centerline notes. Preload + 2 floor pickups."
+    "reasoning": "Target 3-piece auto. Known positions: True. Cycle target: 5.0s (R11)."
   },
   "weight_budget": {
     "drivetrain_lb": 42,
-    "intake_lb": 8,
-    "scorer_lb": 12,
-    "endgame_lb": 10,
+    "intake_lb": 10,
+    "scorer_lb": 15,
+    "endgame_lb": 8,
     "electronics_lb": 15,
     "bumpers_lb": 10,
-    "margin_lb": 28,
+    "margin_lb": 18,
     "total_limit_lb": 125
   },
   "build_order": [
     "drivetrain",
-    "scorer",
     "intake",
-    "endgame",
-    "autonomous"
+    "scorer",
+    "autonomous",
+    "endgame"
   ],
-  "scoring_analysis": {
-    "methods": [
-      {"name": "Speaker", "type": "UNCAPPED", "pts_per_unit": 2, "cap": "none"},
-      {"name": "Speaker (Amplified)", "type": "UNCAPPED", "pts_per_unit": 5, "cap": "none"},
-      {"name": "Amp", "type": "SEMI-CAPPED", "pts_per_unit": 1, "cap": "2 notes stored"},
-      {"name": "Stage (Single)", "type": "SEMI-CAPPED", "pts_per_unit": 3, "cap": "1 per chain"},
-      {"name": "Stage (Harmony)", "type": "SEMI-CAPPED", "pts_per_unit": 4, "cap": "2 per chain bonus"},
-      {"name": "Trap", "type": "SEMI-CAPPED", "pts_per_unit": 5, "cap": "1 per trap"},
-      {"name": "Ensemble RP", "type": "CAPPED", "threshold": 10, "cap": "binary"},
-      {"name": "Melody RP", "type": "CAPPED", "threshold": 18, "cap": "binary"}
-    ],
-    "primary_method": "Speaker throughput (UNCAPPED, amplified for 5 pts)",
-    "reasoning": "R19: Speaker is fully uncapped and primary differentiator. Amplification doubles+ value. Amp is semi-capped feeder mechanism. Stage is worth doing but secondary."
-  }
+  "rule_log": [
+    {
+      "rule": "R1",
+      "applies": true,
+      "recommendation": "swerve",
+      "confidence": 1.0,
+      "reasoning": "Swerve mandatory post-2022. Every Einstein competitor uses swerve."
+    },
+    {
+      "rule": "R2",
+      "applies": true,
+      "recommendation": "full_width_intake",
+      "confidence": 0.95,
+      "reasoning": "Full-width bumper-to-bumper intake. Every champion since 2019."
+    },
+    {
+      "rule": "R3",
+      "applies": true,
+      "recommendation": "mecanum_funnel",
+      "confidence": 0.85,
+      "reasoning": "Flat/disc piece \u2192 mecanum funneling wheels"
+    },
+    {
+      "rule": "R4",
+      "applies": true,
+      "recommendation": "flywheel",
+      "confidence": 0.9,
+      "reasoning": "Ranged scoring targets \u2192 flywheel shooter"
+    },
+    {
+      "rule": "R5",
+      "applies": false,
+      "recommendation": "0_stage",
+      "confidence": 0.85,
+      "reasoning": "Non-elevator scorer, stages N/A"
+    },
+    {
+      "rule": "R6",
+      "applies": true,
+      "recommendation": "none",
+      "confidence": 0.65,
+      "reasoning": "Ranged + fixed targets \u2192 turret optional, skipping (65%)"
+    },
+    {
+      "rule": "R7",
+      "applies": true,
+      "recommendation": "climb",
+      "confidence": 0.95,
+      "reasoning": "Endgame is 10% of winning score, strongly recommended"
+    },
+    {
+      "rule": "R8",
+      "applies": true,
+      "recommendation": "3_piece_auto",
+      "confidence": 0.85,
+      "reasoning": "Target 3-piece auto. Known positions: True"
+    },
+    {
+      "rule": "R10",
+      "applies": true,
+      "recommendation": "yolo_neural",
+      "confidence": 0.85,
+      "reasoning": "Detection: yolo_neural"
+    }
+  ],
+  "confidence": 0.87
 }
