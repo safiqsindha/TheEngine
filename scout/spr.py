@@ -167,6 +167,9 @@ def get_scout_weight(scores: dict[str, float], scout_name: str) -> float:
 def apply_spr_weights(
     observations: list[dict],
     spr_scores: dict[str, float],
+    *,
+    anomaly_suspect_scouts: Optional[list] = None,
+    anomaly_penalty: float = 0.2,
 ) -> list[dict]:
     """
     Annotate a list of stand_scout observation dicts with a 'spr_weight' field.
@@ -178,15 +181,24 @@ def apply_spr_weights(
     ----------
     observations : list of obs dicts from stand_scout.get_team_observations()
     spr_scores   : output of compute_spr()
+    anomaly_suspect_scouts : optional list of scout names from
+        anomaly.filter_anomaly_scouts() — scouts who consistently drive outlier
+        flags get an additional penalty applied to their SPR weight.
+    anomaly_penalty : penalty subtracted from SPR weight for anomaly suspects.
+        Default 0.2 (a scout at 0.7 SPR drops to 0.5 if flagged). Clamped ≥ 0.
 
     Returns
     -------
     Same list, each dict augmented with 'spr_weight' key.
     """
+    suspect_set = set(anomaly_suspect_scouts or [])
     for obs in observations:
         meta = obs.get("_meta", {})
         scout = meta.get("scout", "")
-        obs["spr_weight"] = get_scout_weight(spr_scores, scout)
+        weight = get_scout_weight(spr_scores, scout)
+        if scout in suspect_set:
+            weight = max(0.0, weight - anomaly_penalty)
+        obs["spr_weight"] = weight
     return observations
 
 

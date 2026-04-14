@@ -61,6 +61,21 @@ try:
 except Exception:
     HAS_SPR = False
 
+try:
+    from defense_adjusted_epa import (
+        compute_defense_adjusted_epa_for_event,
+        format_defense_adj_row,
+    )
+    HAS_DEFENSE_ADJ = True
+except Exception:
+    HAS_DEFENSE_ADJ = False
+
+try:
+    from anomaly import detect_anomalies_all_teams, anomaly_summary_line
+    HAS_ANOMALY = True
+except Exception:
+    HAS_ANOMALY = False
+
 STATE_DIR = Path(__file__).parent / ".cache" / "draft"
 STATE_FILE = STATE_DIR / "live_draft.json"
 
@@ -894,6 +909,45 @@ def cmd_board(args):
             for t in picks
         ) if picks else "—"
         print(f"  A{a}: {cap} ({state['teams'].get(str(cap), {}).get('epa', 0):.0f}) + {pick_str} = {epa_total:.0f}{tag}")
+
+    # ── Defense-Adjusted EPA section ─────────────────────────────────────────
+    if HAS_DEFENSE_ADJ:
+        obs_by_team = state.get("_defense_obs", {})
+        if obs_by_team:
+            teams_raw = {int(k): v.get("epa", 0.0) for k, v in state["teams"].items()}
+            # Convert string keys to int
+            obs_by_team_int = {int(k): v for k, v in obs_by_team.items()}
+            adj_results = compute_defense_adjusted_epa_for_event(obs_by_team_int, teams_raw)
+            has_pressure = any(
+                r.defense_pressure_index > 0 for r in adj_results.values()
+            )
+            if has_pressure:
+                print(f"\n  DEFENSE-ADJUSTED EPA  (raw EPA | offensive EPA | defense pressure):")
+                print(f"  {'─' * 75}")
+                for team_num, result in sorted(
+                    adj_results.items(),
+                    key=lambda x: x[1].defense_pressure_index,
+                    reverse=True,
+                ):
+                    if result.defense_pressure_index > 0 or not result.used_fallback:
+                        td = state["teams"].get(str(team_num), {})
+                        name = td.get("name", "")[:20]
+                        row = format_defense_adj_row(result)
+                        print(f"  {team_num:6d} {name:>20}  {row}")
+
+    # ── Anomaly review section ────────────────────────────────────────────────
+    if HAS_ANOMALY:
+        all_obs = state.get("_scout_obs", [])
+        if all_obs:
+            anomaly_map = detect_anomalies_all_teams(all_obs)
+            if anomaly_map:
+                print(f"\n  ANOMALY REVIEW — {len(anomaly_map)} team(s) with flagged entries:")
+                print(f"  {'─' * 65}")
+                for team_num, flags in sorted(anomaly_map.items()):
+                    td = state["teams"].get(str(team_num), {})
+                    name = td.get("name", "")[:20]
+                    summary = anomaly_summary_line(flags)
+                    print(f"  {team_num:6d} {name:>20}  {summary}")
 
     print()
 
