@@ -3,8 +3,8 @@ tests/blueprint/test_attribution_betas.py
 -------------------------------------------
 Tests for blueprint.attribution_betas — config lookup, phase resolution, fallbacks.
 
-No empirical β values are tested here (they are all None until the Item 1 data run).
-Tests validate the lookup logic, not the numeric values themselves.
+After the Item 1 data run, most years have empirical β values populated.
+Tests validate the lookup logic AND that empirical values are in the valid range.
 """
 
 import sys
@@ -140,18 +140,29 @@ class TestRegistryStructure:
         assert not missing, f"Year {year} missing keys: {missing}"
 
     @pytest.mark.parametrize("year", sorted(ATTRIBUTION_BETAS.keys()))
-    def test_empirical_beta_is_none_until_data_run(self, year: int):
-        """Empirical β should be None in this scaffold commit — no fabricated values."""
-        assert ATTRIBUTION_BETAS[year]["empirical_beta"] is None, (
-            f"Year {year} has a non-None empirical_beta. "
-            "Empirical values must come from the Item 1 data run, not this scaffold."
-        )
+    def test_empirical_beta_is_valid_if_set(self, year: int):
+        """When empirical_beta is populated, it must be a float in [0.4, 1.0]."""
+        emp = ATTRIBUTION_BETAS[year]["empirical_beta"]
+        if emp is None:
+            return  # Not yet tuned (e.g. 2015, 2019) — OK
+        if isinstance(emp, dict):
+            for phase, val in emp.items():
+                assert 0.4 <= val <= 1.0, (
+                    f"Year {year} phase={phase} empirical_beta={val} out of [0.4, 1.0]"
+                )
+        else:
+            assert 0.4 <= float(emp) <= 1.0, (
+                f"Year {year} empirical_beta={emp} out of [0.4, 1.0]"
+            )
 
     @pytest.mark.parametrize("year", sorted(ATTRIBUTION_BETAS.keys()))
-    def test_tuned_on_match_count_is_zero(self, year: int):
-        assert ATTRIBUTION_BETAS[year]["tuned_on_match_count"] == 0, (
-            f"Year {year} tuned_on_match_count should be 0 before the data run"
+    def test_tuned_on_match_count_non_negative(self, year: int):
+        """tuned_on_match_count must be a non-negative integer."""
+        count = ATTRIBUTION_BETAS[year]["tuned_on_match_count"]
+        assert isinstance(count, int), (
+            f"Year {year} tuned_on_match_count={count} should be int"
         )
+        assert count >= 0, f"Year {year} tuned_on_match_count={count} should be >= 0"
 
     def test_2019_prior_is_dict(self):
         """2019 must have a per-phase prior dict, not a scalar."""

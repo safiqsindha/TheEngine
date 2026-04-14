@@ -32,17 +32,17 @@ ATTRIBUTION_BETAS: dict[int, dict] = {
         "game_name": "Ultimate Ascent",
         "prior_expected_beta": 0.70,
         "prior_reason": "Frisbee alliance coupling — robots share shooting lanes",
-        "empirical_beta": None,   # TODO(Item 1 data run): fill after Statbotics pull
-        "empirical_ci": None,     # TODO(Item 1 data run): bootstrap CI (low, high)
-        "tuned_on_match_count": 0,
+        "empirical_beta": 0.6,
+        "empirical_ci": (0.5, 1.0),
+        "tuned_on_match_count": 13748,
     },
     2014: {
         "game_name": "Aerial Assist",
         "prior_expected_beta": 0.60,
         "prior_reason": "Ball passing = extreme coupling; assist chains dominate scoring",
-        "empirical_beta": None,   # TODO(Item 1 data run)
-        "empirical_ci": None,     # TODO(Item 1 data run)
-        "tuned_on_match_count": 0,
+        "empirical_beta": 0.95,
+        "empirical_ci": (0.6, 1.0),
+        "tuned_on_match_count": 17854,
     },
     2015: {
         "game_name": "Recycle Rush",
@@ -56,25 +56,25 @@ ATTRIBUTION_BETAS: dict[int, dict] = {
         "game_name": "Stronghold",
         "prior_expected_beta": 0.60,
         "prior_reason": "Shooter + feeder + crosser roles; high inter-robot coupling",
-        "empirical_beta": None,   # TODO(Item 1 data run)
-        "empirical_ci": None,     # TODO(Item 1 data run)
-        "tuned_on_match_count": 0,
+        "empirical_beta": 1.0,
+        "empirical_ci": (0.4, 1.0),
+        "tuned_on_match_count": 21834,
     },
     2017: {
         "game_name": "Steamworks",
         "prior_expected_beta": 0.70,
         "prior_reason": "Gears coupled (require human player + loader), fuel independent",
-        "empirical_beta": None,   # TODO(Item 1 data run)
-        "empirical_ci": None,     # TODO(Item 1 data run)
-        "tuned_on_match_count": 0,
+        "empirical_beta": 0.85,
+        "empirical_ci": (0.4, 1.0),
+        "tuned_on_match_count": 24936,
     },
     2018: {
         "game_name": "Power Up",
         "prior_expected_beta": 0.75,
         "prior_reason": "Vault + switch coupled; exchange requires human player hand-off",
-        "empirical_beta": None,   # TODO(Item 1 data run)
-        "empirical_ci": None,     # TODO(Item 1 data run)
-        "tuned_on_match_count": 0,
+        "empirical_beta": 0.8,
+        "empirical_ci": (0.4, 1.0),
+        "tuned_on_match_count": 28234,
     },
     2019: {
         "game_name": "Deep Space",
@@ -84,49 +84,53 @@ ATTRIBUTION_BETAS: dict[int, dict] = {
             "Cycle phase: mostly independent cargo/hatch placement (β~0.85). "
             "Climb phase: HAB level 3 often requires buddy-climb assistance (β~0.60)."
         ),
-        "empirical_beta": None,   # TODO(Item 1 data run): dict {"cycle": float, "climb": float}
-        "empirical_ci": None,     # TODO(Item 1 data run): dict {"cycle": (lo,hi), "climb": (lo,hi)}
-        "tuned_on_match_count": 0,
+        # empirical_beta kept None for 2019: bulk Statbotics data does not separate
+        # cycle vs climb phases.  Overall tune returned β=1.0 (n=29232, CI=(0.75,1.0))
+        # but the per-phase prior (cycle:0.85 / climb:0.60) is retained as the best
+        # available estimate.  Set empirical_beta only when per-phase data is available.
+        "empirical_beta": None,
+        "empirical_ci": None,
+        "tuned_on_match_count": 29232,  # overall qual matches tuned; no per-phase β
     },
     2020: {
         "game_name": "Infinite Recharge",
         "prior_expected_beta": 0.75,
         "prior_reason": "Power cells cycling; trench run coordination creates moderate coupling",
-        "empirical_beta": None,   # TODO(Item 1 data run)
-        "empirical_ci": None,     # TODO(Item 1 data run)
-        "tuned_on_match_count": 0,
+        "empirical_beta": 1.0,
+        "empirical_ci": (0.65, 1.0),
+        "tuned_on_match_count": 7558,
     },
     2022: {
         "game_name": "Rapid React",
         "prior_expected_beta": 0.70,
         "prior_reason": "Ball coupling strong; terminal + human player handoff coordination",
-        "empirical_beta": None,   # TODO(Item 1 data run)
-        "empirical_ci": None,     # TODO(Item 1 data run)
-        "tuned_on_match_count": 0,
+        "empirical_beta": 0.95,
+        "empirical_ci": (0.55, 1.0),
+        "tuned_on_match_count": 23750,
     },
     2023: {
         "game_name": "Charged Up",
         "prior_expected_beta": 0.80,
         "prior_reason": "Grid scoring largely independent per robot; charge station shared",
-        "empirical_beta": None,   # TODO(Item 1 data run)
-        "empirical_ci": None,     # TODO(Item 1 data run)
-        "tuned_on_match_count": 0,
+        "empirical_beta": 0.65,
+        "empirical_ci": (0.7, 1.0),
+        "tuned_on_match_count": 26804,
     },
     2024: {
         "game_name": "Crescendo",
         "prior_expected_beta": 0.70,
         "prior_reason": "Speaker carries dominant; note passing from source creates coupling",
-        "empirical_beta": None,   # TODO(Item 1 data run)
-        "empirical_ci": None,     # TODO(Item 1 data run)
-        "tuned_on_match_count": 0,
+        "empirical_beta": 0.55,
+        "empirical_ci": (0.5, 1.0),
+        "tuned_on_match_count": 27874,
     },
     2025: {
         "game_name": "Reefscape",
         "prior_expected_beta": 0.70,
         "prior_reason": "Algae staging effects verified by kl26436 community analysis",
-        "empirical_beta": None,   # TODO(Item 1 data run)
-        "empirical_ci": None,     # TODO(Item 1 data run)
-        "tuned_on_match_count": 0,
+        "empirical_beta": 0.65,
+        "empirical_ci": (0.5, 1.0),
+        "tuned_on_match_count": 32442,
     },
 }
 

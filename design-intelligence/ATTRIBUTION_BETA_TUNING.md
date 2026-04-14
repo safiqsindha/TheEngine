@@ -73,20 +73,20 @@ All empirical values are **TBD — pending data run**.
 `prior_β` values are documented prior expectations from TOMORROW_POWER_CURVE_WORK.md,
 NOT empirical fits.
 
-| Year    | Game              | prior_β (documented) | empirical_β* | CI (90% bootstrap) | n_matches |
-|---------|-------------------|----------------------|--------------|--------------------|-----------|
-| 2013    | Ultimate Ascent   | 0.70                 | TBD          | TBD                | TBD       |
-| 2014    | Aerial Assist     | 0.60                 | TBD          | TBD                | TBD       |
-| 2015    | Recycle Rush      | 0.85                 | TBD          | TBD                | TBD       |
-| 2016    | Stronghold        | 0.60                 | TBD          | TBD                | TBD       |
-| 2017    | Steamworks        | 0.70                 | TBD          | TBD                | TBD       |
-| 2018    | Power Up          | 0.75                 | TBD          | TBD                | TBD       |
-| 2019    | Deep Space        | 0.85 cycle / 0.60 climb | TBD (per-phase) | TBD          | TBD       |
-| 2020-21 | Infinite Recharge | 0.75                 | TBD          | TBD                | TBD       |
-| 2022    | Rapid React       | 0.70                 | TBD          | TBD                | TBD       |
-| 2023    | Charged Up        | 0.80                 | TBD          | TBD                | TBD       |
-| 2024    | Crescendo         | 0.70                 | TBD          | TBD                | TBD       |
-| 2025    | Reefscape         | 0.70                 | TBD          | TBD                | TBD       |
+| Year    | Game              | prior_β (documented) | empirical_β* | CI (90% bootstrap) | n_matches | status |
+|---------|-------------------|----------------------|--------------|--------------------|-----------|--------|
+| 2013    | Ultimate Ascent   | 0.7                  | 0.6          | (0.5, 1.0)         | 13748     | OK |
+| 2014    | Aerial Assist     | 0.6                  | 0.95         | (0.6, 1.0)         | 17854     | OK |
+| 2015    | Recycle Rush      | 0.85                 | —            | —                  | 0         | FAILED: no qual match records after filtering |
+| 2016    | Stronghold        | 0.6                  | 1.0          | (0.4, 1.0)         | 21834     | OK |
+| 2017    | Steamworks        | 0.7                  | 0.85         | (0.4, 1.0)         | 24936     | OK |
+| 2018    | Power Up          | 0.75                 | 0.8          | (0.4, 1.0)         | 28234     | OK |
+| 2019    | Deep Space        | cycle:0.85 / climb:0.6 | 1.0          | (0.75, 1.0)        | 29232     | OK |
+| 2020    | Infinite Recharge | 0.75                 | 1.0          | (0.65, 1.0)        | 7558      | OK |
+| 2022    | Rapid React       | 0.7                  | 0.95         | (0.55, 1.0)        | 23750     | OK |
+| 2023    | Charged Up        | 0.8                  | 0.65         | (0.7, 1.0)         | 26804     | OK |
+| 2024    | Crescendo         | 0.7                  | 0.55         | (0.5, 1.0)         | 27874     | OK |
+| 2025    | Reefscape         | 0.7                  | 0.65         | (0.5, 1.0)         | 32442     | OK |
 
 *Note: 2020 and 2021 are merged as Infinite Recharge because 2021 had no in-person
 competition; match data is sparse.  They share one row and one β estimate.*
