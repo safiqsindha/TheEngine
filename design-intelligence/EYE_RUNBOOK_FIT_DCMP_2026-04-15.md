@@ -1,4 +1,354 @@
-# Eye Runbook — FIT DCMP Live Test (Wed 2026-04-15 → Sat 2026-04-18)
+# Eye Runbook — FIT DCMP 2026 Capture + Validation (Wed 4/15 → Sat 4/18)
+## E.1 Validation Window — Remote Stream Capture, No On-Site Presence
+## Last updated: 2026-04-13 (extended with capture harness + minute-by-minute checklist)
+
+> **If we miss this window, the next live FRC footage is January 2027 kickoff.**
+> 2950 is NOT competing. This is 100% remote — stream capture from Safiq's Mac.
+> Entire pipeline runs locally. No Azure. No cloud. No teammates needed.
+
+---
+
+## QUICK REFERENCE — Stream Discovery
+
+FIT DCMP streams go live each morning on:
+- **Primary:** https://www.youtube.com/@FIRSTinTexas/streams
+  - Visit this URL on the morning of each event day. The top card(s) = live streams.
+  - Copy the URL from the browser address bar (format: `youtube.com/watch?v=XXXXXXXXXXX`).
+  - Historically 1–2 concurrent streams (one per competition field). Both broadcast simultaneously.
+- **Per-match VODs:** https://www.youtube.com/@texasFRC/videos
+  - @texasFRC posts per-match cuts within 30 min of match end. These are the preferred
+    source for post-match analysis (Mode A in this runbook).
+- **Backup/simulcast:** https://www.twitch.tv/firstinspires (lower quality, 720p cap)
+- **TBA event page:** https://www.thebluealliance.com/event/2026txcmp
+  - Has links to streams + live match schedule as quals progress.
+- **FIRST Updates Now (FUN):** https://www.youtube.com/@FIRSTUpdatesNow/streams
+  - Sometimes simulcasts championship events. Check if @FIRSTinTexas is down.
+
+**TBA event key:** `2026txcmp`
+**Time zone:** All FIT DCMP match times are **Central Time (CT)**.
+**Typical schedule:** Quals 8 AM–6 PM, Playoffs 9 AM–4 PM.
+
+---
+
+## STORAGE PLAN
+
+Local storage layout:
+```
+TheEngine/eye/.capture/fit_dcmp_2026/
+  fit_dcmp_2026-04-15_QM01_field1.mp4   ← per-match VODs from @texasFRC
+  fit_dcmp_2026-04-15_QM02_field1.mp4
+  ...
+TheEngine/eye/.cache/
+  <video_id>/match.mp4                   ← full VODs downloaded by the_eye.py
+  <video_id>/frames/                     ← extracted frames (JPEGs, ~2–5 MB/match)
+  results/<video_id>_report.json         ← Eye analysis output
+```
+
+Size estimates:
+- Per-match VOD at 720p (~2 min): **80–150 MB**
+- Frame cache per match (every 5s, ~30 frames): **~5–15 MB**
+- Report JSON per match: **~50–200 KB**
+- Total for ~50 quals over 4 days: **~5–8 GB** (VODs) + **~1 GB** (frames)
+- **Recommended: capture 10–15 selected matches, not all 50.** Focus on
+  high-profile alliances and teams likely to appear at Worlds.
+
+What to capture vs skip:
+- **Capture:** Qualification matches. Playoff matches (especially finals).
+- **Skip:** Practice day (Wed 4/15 AM), opening ceremony, awards ceremonies,
+  inspection queues, down time between divisions.
+- **Skip:** Matches where the stream freezes or is clearly broken.
+
+---
+
+## PRE-FLIGHT CHECKLIST (Tuesday 2026-04-14 night — do this before Wed)
+
+**Goal:** confirm the full pipeline works end-to-end so Wed is not debugging day.
+
+**Time required:** ~30 minutes.
+
+### Step 1 — Verify tools (5 min)
+```bash
+cd "/Users/safiqsindha/Desktop/The Engine/TheEngine"
+
+# Check yt-dlp
+yt-dlp --version
+# Expected: 2024.x.x or later
+
+# Check ffmpeg
+ffmpeg -version | head -1
+# Expected: ffmpeg version 6.x or 7.x
+
+# Check Python deps
+python3 -c "import pytubefix; print('pytubefix OK')"
+python3 -c "import yt_dlp; print('yt-dlp module OK')"
+python3 -c "import anthropic; print('anthropic OK')"
+
+# Check API key
+python3 -c "import os; k=os.environ.get('ANTHROPIC_API_KEY',''); print('Key set' if k else 'KEY MISSING')"
+```
+
+### Step 2 — Test capture harness (10 min)
+Use any past FRC YouTube VOD — NOT a FIT DCMP stream (event hasn't started):
+```bash
+# Dry-run: just print the command
+python -m eye.capture.fit_dcmp \
+    --url "https://www.youtube.com/watch?v=WpzeaX1vgeQ" \
+    --match QM99 --field test --dry-run
+
+# Real capture: grab 60 seconds of a past FRC VOD
+python -m eye.capture.fit_dcmp \
+    --url "https://www.youtube.com/watch?v=WpzeaX1vgeQ" \
+    --match QM99 --field test --duration 60
+
+# Confirm file appeared
+ls -lh eye/.capture/fit_dcmp_2026/
+```
+
+### Step 3 — Test full Eye pipeline (15 min)
+```bash
+# Run full analyze on any past FRC YouTube match
+python3 eye/the_eye.py analyze \
+    "https://www.youtube.com/watch?v=WpzeaX1vgeQ" \
+    --tier key --backend haiku
+
+# Expected output:
+#   THE EYE — MATCH SCOUTING REPORT
+#   Final: Red X — Blue Y
+#   ...
+#   Saved: eye/.cache/results/WpzeaX1vgeQ_report.json
+```
+
+If Step 3 succeeds → you're ready for Wednesday. If it fails → see Troubleshooting below.
+
+### Step 4 — Confirm storage space (1 min)
+```bash
+df -h ~/Desktop
+# Need at least 10 GB free for the weekend captures.
+# If tight: clear old cache dirs in eye/.cache/ before Wed.
+```
+
+---
+
+## MINUTE-BY-MINUTE RUNBOOK — Each Event Day (Wed 4/15 → Sat 4/18)
+
+**Context:** Quals run most of the day. You check in 2–3 times per day, not continuously.
+Total active time per day: ~30–45 minutes. This is not a "watch every match" operation.
+
+---
+
+### MORNING CHECK-IN (8:00–8:15 AM CT each day)
+
+**8:00 AM** — Open @FIRSTinTexas/streams in browser
+- URL: https://www.youtube.com/@FIRSTinTexas/streams
+- Look for cards labeled "LIVE" — those are today's streams.
+- Copy the URL of each live stream (usually 1–2 streams labeled by field or division).
+- Note the URL(s) in a scratch doc or Slack message to yourself:
+  ```
+  Wed 4/15 Field 1: https://www.youtube.com/watch?v=XXXXXXXXXXX
+  Wed 4/15 Field 2: https://www.youtube.com/watch?v=YYYYYYYYYYY
+  ```
+
+**8:05 AM** — Open TBA event page and note match schedule
+- URL: https://www.thebluealliance.com/event/2026txcmp#matches
+- Note which match numbers are quals (QM01, QM02...) vs practice vs playoffs.
+- The day's match list gives you a sense of when to check @texasFRC for per-match VODs.
+
+**8:10 AM** — Spot-check stream quality (optional)
+- Play 30 seconds of the live stream in the browser.
+- Confirm the scoreboard overlay is visible (top of frame, red/blue score + timer).
+- If the overlay is missing or too small → note it. OCR will struggle; plan for Mode A only.
+
+---
+
+### MID-DAY CHECK-IN (1:00–1:30 PM CT each day)
+
+**1:00 PM** — Open @texasFRC/videos
+- URL: https://www.youtube.com/@texasFRC/videos
+- Sort by "Latest". Look for matches posted since morning.
+- @texasFRC naming convention: "[Event] Qualification Match XX" or similar.
+- Pick 2–3 interesting matches to capture. Prioritize:
+  - High-scoring matches (look for title mentions of high scores)
+  - Top-ranked teams (cross-reference TBA rankings if curious)
+  - Any teams likely at Worlds (nationally known Texas teams: 3310, 2056 if TX, etc.)
+
+**1:05 PM** — Capture 2–3 per-match VODs using the harness
+```bash
+cd "/Users/safiqsindha/Desktop/The Engine/TheEngine"
+
+# Replace QM12 and the URL with real values from @texasFRC
+python -m eye.capture.fit_dcmp \
+    --url "https://www.youtube.com/watch?v=VOD_ID_1" \
+    --match QM12 --date 2026-04-15
+
+python -m eye.capture.fit_dcmp \
+    --url "https://www.youtube.com/watch?v=VOD_ID_2" \
+    --match QM15 --date 2026-04-15
+```
+
+**1:10 PM** — Run Eye pipeline against the first captured file
+```bash
+# Option A: analyze the downloaded file directly (preferred — avoids re-download)
+python3 eye/the_eye.py analyze \
+    "https://www.youtube.com/watch?v=VOD_ID_1" \
+    --tier scored --backend haiku
+
+# The URL is used to check the cache. If already downloaded, it uses the cached file.
+# The report lands in: eye/.cache/results/<video_id>_report.json
+```
+
+**1:20 PM** — Sanity check 1 report
+```bash
+python3 -c "
+import json
+r = json.load(open('eye/.cache/results/<video_id>_report.json'))
+print('Final scores:', r.get('final_scores'))
+print('Teams observed:', list(r.get('teams', {}).keys()))
+print('Frames analyzed:', r.get('n_frames'))
+"
+```
+
+Compare final_scores against TBA. If within ±10 points → pipeline working.
+
+---
+
+### EVENING CHECK-IN (7:00–7:30 PM CT each day)
+
+**7:00 PM** — Check @texasFRC/videos for afternoon matches
+- Capture 1–2 playoff or high-scoring qual matches posted since 1 PM.
+- Use the same capture harness command as above.
+
+**7:10 PM** — Run Eye on 1 playoff match if available
+- Playoffs have cleaner strategy signal (fewer robots, more defined roles).
+- Use `--tier key` for speed (playoffs are longer — key tier caps at 12 frames).
+
+**7:20 PM** — Log observations in scratch notes
+Write 2–3 bullet points per match:
+- Did the pipeline run without crashing?
+- Did the report show the right approximate winner?
+- Any notable robot behavior the Eye caught?
+
+---
+
+### SATURDAY FINAL SESSION (4/18, after Playoffs wrap, ~5 PM CT)
+
+**5:00 PM** — Capture 2–3 playoff/finals matches from @texasFRC
+- Finals VODs usually posted within 60 min of match end.
+- Run Eye on all of them: `--tier scored --backend haiku`
+
+**5:30 PM** — File inventory
+```bash
+# Count captured files
+ls -1 eye/.capture/fit_dcmp_2026/ | wc -l
+
+# Total size
+du -sh eye/.capture/fit_dcmp_2026/
+du -sh eye/.cache/
+
+# List any zero-byte or tiny files (potential corrupt captures)
+find eye/.capture/fit_dcmp_2026/ -name "*.mp4" -size -1k
+```
+
+**5:45 PM** — Sample run on 3 matches end-to-end
+Pick 3 matches (1 early qual, 1 late qual, 1 playoff) and run the full pipeline:
+```bash
+for VIDEO_ID in ID1 ID2 ID3; do
+    python3 eye/the_eye.py analyze \
+        "https://www.youtube.com/watch?v=$VIDEO_ID" \
+        --tier scored --backend haiku
+    echo "---"
+done
+```
+
+**6:00 PM** — Write the debrief doc
+Save to: `design-intelligence/EYE_FIT_CMP_RESULTS_2026-04-18.md`
+Template:
+```
+# Eye FIT DCMP 2026 — Weekend Results
+Date: 2026-04-18
+
+## Matches processed
+- QM01: [winner correct? y/n] [notes]
+- QM12: ...
+- SF1M1: ...
+
+## What worked
+- ...
+
+## What broke / surprised
+- ...
+
+## OCR accuracy
+- Score within ±10 pts: X/Y matches
+- Overlay readable: [720p vs 480p stream quality notes]
+
+## Recommendation for Worlds
+- Mode A (post-match VOD) or Mode B (live segment)?
+- Backend: haiku sufficient or switch to sonnet?
+- Tier: key or scored?
+```
+
+---
+
+## POST-CAPTURE CHECKLIST (Sunday 4/19 or Monday 4/20)
+
+### 1. File inventory
+```bash
+cd "/Users/safiqsindha/Desktop/The Engine/TheEngine"
+
+echo "=== Capture files ==="
+ls -lh eye/.capture/fit_dcmp_2026/
+
+echo "=== Report files ==="
+ls -lh eye/.cache/results/
+
+echo "=== Corrupt check (files < 1MB are suspect) ==="
+find eye/.capture/fit_dcmp_2026/ -name "*.mp4" -size -1M -print
+
+echo "=== Frame dirs ==="
+du -sh eye/.cache/*/frames/ 2>/dev/null | sort -h
+```
+
+### 2. Sample run — 3 matches end-to-end
+If you haven't already done the Saturday session, do it now:
+- Pick 1 qual from Wed, 1 qual from Fri, 1 playoff from Sat.
+- Run `python3 eye/the_eye.py analyze <url> --tier scored --backend haiku` on each.
+- Document what worked, what broke.
+
+### 3. What NOT to attempt this weekend
+- No bumper OCR or per-team attribution (that's Week 2 Roboflow wire-up)
+- No model training or labeling (off-season scope, June/July)
+- No Scout integration or pick_board feed (Eye E.3, deferred to October)
+- No Azure deployment (that's the Worlds test)
+- No YOLO backend (model doesn't exist for the 2026 game yet)
+
+### 4. Commit the results
+```bash
+cd "/Users/safiqsindha/Desktop/The Engine/TheEngine"
+git add design-intelligence/EYE_FIT_CMP_RESULTS_2026-04-18.md
+git add eye/.cache/results/  # report JSONs only, not full MP4s
+git commit -m "Eye E.1: FIT DCMP 2026 capture results + debrief"
+```
+
+### 5. Decide for Monday kickoff
+Add a one-liner to `MONDAY_KICKOFF_2026-04-13.md` under Section 1:
+```
+FIT DCMP smoke test complete (4/15-4/18). Results: EYE_FIT_CMP_RESULTS_2026-04-18.md.
+[Pipeline works / has issues — next: ...].
+```
+
+---
+
+## WHAT THIS UNLOCKS
+
+If FIT DCMP capture is solid:
+- **Worlds (4/29–5/2):** Azure deploy test with Mode A live cron. Same pipeline,
+  just running in the cloud instead of on Safiq's Mac.
+- **Week 2 (4/20–4/27):** Wire Roboflow supervision pipeline using cached FIT DCMP
+  VODs as the test corpus. W2.2a–W2.4 tasks from ENGINE_AUDIT_2026-04-13.md.
+- **Off-season (June/July):** Use FIT DCMP + Worlds footage as training data for
+  bumper OCR validation and zone polygon calibration.
+
+---
 
 **Purpose:** Run The Eye locally against the FIRST In Texas District Championship
 broadcast (4/15-4/18). Confirm the vision pipeline works end-to-end on real
@@ -238,6 +588,29 @@ When FIT CMP wraps Sunday night:
 
 ---
 
-*Written by Opus 2026-04-11 in the same session as MONDAY_KICKOFF_2026-04-13.md.
-Consume Anthropic API credits, not Claude Code conversation cap. Run from the
-TheEngine working directory.*
+## CAPTURE HARNESS REFERENCE
+
+Capture script: `eye/capture/fit_dcmp.py`
+```bash
+# Full help
+python -m eye.capture.fit_dcmp --help
+
+# List stream channel URLs
+python -m eye.capture.fit_dcmp --list-channels
+
+# Dry-run any URL
+python -m eye.capture.fit_dcmp --url "https://youtube.com/watch?v=..." --match QM01 --dry-run
+```
+
+Roboflow config stub: `eye/pipeline/roboflow_config.py`
+```bash
+# Print pipeline summary + what's needed for Week 2 wire-up
+python -m eye.pipeline.roboflow_config
+```
+
+---
+
+*Originally written by Opus 2026-04-11. Extended 2026-04-13 with capture harness,
+minute-by-minute checklist, storage plan, and post-capture section.
+API spend uses Anthropic API account credits, NOT Claude Code weekly cap.
+Run all commands from the TheEngine working directory.*
