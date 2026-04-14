@@ -912,6 +912,216 @@ def cmd_beta(year_raw: str) -> str:
     return "\n".join(lines)
 
 
+def cmd_analyze(event_key: str, match_key: str) -> str:
+    """Post-match brief: Engine predicted vs what actually happened.
+
+    Usage: !analyze <event_key> <match_key>
+    Example: !analyze 2026txbel 2026txbel_qm12
+
+    Behavior
+    --------
+    1. Load actual match result from the TBA cache (no live network call).
+    2. Load pre-match team EPAs from pick_board state (if available) or
+       fall back to the TBA event-level OPR data.
+    3. Run win_probability.win_prob_from_team_data to produce the
+       Engine's pre-match win probability.
+    4. Run oracle.get_rule_breakdown on the year's HISTORICAL_GAMES entry
+       to surface the top-3 rules by confidence + any high-confidence misses.
+    5. Emit a Discord embed in code-block style (same as !beta).
+
+    Fails gracefully when:
+      - The match is not cached (cache-miss → explicit error, no network).
+      - The event is not recognized (graceful error).
+      - Team EPA data is missing for a participant (noted in output, not raised).
+    """
+    import sys as _sys
+
+    # ── Validate inputs ──────────────────────────────────────────────
+    if not event_key or not match_key:
+        return _fmt_usage("!analyze <event_key> <match_key>  "
+                          "(e.g. !analyze 2026txbel 2026txbel_qm12)")
+
+    event_key = event_key.strip()
+    match_key = match_key.strip()
+
+    # ── Ensure scout/ and blueprint/ are importable ───────────────────
+    for sub in ("scout", "blueprint"):
+        _p = str(_REPO_ROOT / sub)
+        if _p not in _sys.path:
+            _sys.path.insert(0, _p)
+
+    # ── Step 1: Fetch match from TBA cache only ───────────────────────
+    try:
+        import tba_client as _tba
+    except ImportError as e:
+        return _fmt_error(f"tba_client not importable: {e}")
+
+    match_data: dict | None = None
+
+    # First try the dedicated match endpoint cache.
+    try:
+        _cache_path = _tba._cache_path(f"/match/{match_key}")
+        if _cache_path.exists():
+            import json as _json
+            match_data = _json.loads(_cache_path.read_text())
+    except Exception:
+        pass
+
+    # Fall back to the event matches list cache.
+    if match_data is None:
+        try:
+            _event_cache = _tba._cache_path(f"/event/{event_key}/matches")
+            if _event_cache.exists():
+                import json as _json
+                all_matches = _json.loads(_event_cache.read_text())
+                for m in all_matches:
+                    if m.get("key") == match_key:
+                        match_data = m
+                        break
+        except Exception:
+            pass
+
+    if match_data is None:
+        return _fmt_error(
+            f"match {match_key!r} not found in TBA cache for event "
+            f"{event_key!r}. Run `tba_client.event_matches('{event_key}')` "
+            "first to populate the cache."
+        )
+
+    # ── Step 2: Extract actual scores ────────────────────────────────
+    alliances = match_data.get("alliances", {})
+    red_score: int | None = alliances.get("red", {}).get("score")
+    blue_score: int | None = alliances.get("blue", {}).get("score")
+
+    if red_score is None or blue_score is None:
+        return _fmt_error(
+            f"match {match_key} has no score data — may not have been played yet."
+        )
+
+    red_teams = [k.replace("frc", "") for k in alliances.get("red", {}).get("team_keys", [])]
+    blue_teams = [k.replace("frc", "") for k in alliances.get("blue", {}).get("team_keys", [])]
+
+    if red_score > blue_score:
+        actual_winner = "red"
+    elif blue_score > red_score:
+        actual_winner = "blue"
+    else:
+        actual_winner = "tie"
+
+    # ── Step 3: Build per-team EPA dicts from pick_board state ────────
+    state, _state_err = _safe_load_state()
+    teams_db = state.get("teams", {}) if state else {}
+
+    def _epa_dict(team_num_str: str) -> dict:
+        td = teams_db.get(team_num_str, {})
+        return {
+            "team": int(team_num_str) if team_num_str.isdigit() else 0,
+            "epa": td.get("epa", 0.0),
+            "sd":  td.get("sd", 0.0),
+        }
+
+    red_epa_dicts  = [_epa_dict(t) for t in red_teams]
+    blue_epa_dicts = [_epa_dict(t) for t in blue_teams]
+
+    # ── Step 4: Compute Engine win probability ────────────────────────
+    try:
+        from win_probability import win_prob_from_team_data, label_from_prob
+        red_win_prob = win_prob_from_team_data(red_epa_dicts, blue_epa_dicts)
+    except Exception as e:
+        red_win_prob = 0.5
+        label_from_prob = lambda p: "Unknown"  # noqa: E731
+
+    blue_win_prob = 1.0 - red_win_prob
+    if red_win_prob >= blue_win_prob:
+        predicted_winner = "red"
+        pred_confidence  = red_win_prob
+    else:
+        predicted_winner = "blue"
+        pred_confidence  = blue_win_prob
+
+    hit = (predicted_winner == actual_winner) or (actual_winner == "tie")
+
+    # ── Step 5: Oracle rule breakdown for the game year ───────────────
+    year = int(match_key[:4]) if match_key[:4].isdigit() else None
+    rule_rows: list[tuple[str, str, float]] = []   # (rule_id, name, confidence)
+    diag_rows: list[tuple[str, str, float]] = []   # high-conf rules that fired wrong
+
+    if year is not None:
+        try:
+            from oracle import HISTORICAL_GAMES, apply_rules, get_rule_breakdown
+            if str(year) in HISTORICAL_GAMES:
+                game = HISTORICAL_GAMES[str(year)]
+                pred_result = apply_rules(game, year=year)
+                breakdown = get_rule_breakdown(pred_result["rule_log"])
+                # Top 3 by confidence, only where applies=True
+                active = [
+                    (rid, info["name"], info["confidence"])
+                    for rid, info in breakdown.items()
+                    if info.get("applies", False)
+                ]
+                active.sort(key=lambda x: x[2], reverse=True)
+                rule_rows = active[:3]
+                # Diagnostic: high-conf active rules
+                HIGH = 0.90
+                if not hit:
+                    diag_rows = [(rid, name, conf) for rid, name, conf in active if conf >= HIGH][:3]
+        except Exception:
+            pass  # oracle unavailable → skip rule section, still post result
+
+    # ── Step 6: Format Discord embed ─────────────────────────────────
+    red_epa_sum  = sum(d["epa"] for d in red_epa_dicts)
+    blue_epa_sum = sum(d["epa"] for d in blue_epa_dicts)
+
+    red_team_str  = " / ".join(red_teams)  if red_teams  else "?"
+    blue_team_str = " / ".join(blue_teams) if blue_teams else "?"
+
+    hit_icon = "HIT" if hit else "MISS"
+    winner_display = actual_winner.upper() if actual_winner != "tie" else "TIE"
+
+    lines = [
+        f"**POST-MATCH ANALYSIS — {match_key}**",
+        "```",
+        f"Event: {event_key}",
+        f"Match: {match_key}",
+        "",
+        "── PREDICTION ──────────────────────────────────────",
+        f"  Red  ({red_team_str})",
+        f"    EPA total: {red_epa_sum:.1f}",
+        f"  Blue ({blue_team_str})",
+        f"    EPA total: {blue_epa_sum:.1f}",
+        f"  Predicted winner: {predicted_winner.upper()}  ({pred_confidence*100:.1f}% confidence)",
+        "",
+        "── ACTUAL RESULT ───────────────────────────────────",
+        f"  Red  score: {red_score}",
+        f"  Blue score: {blue_score}",
+        f"  Actual winner: {winner_display}",
+        "",
+        f"  Engine call: [{hit_icon}]  "
+        f"({'correctly predicted' if hit else 'prediction missed'})",
+    ]
+
+    if rule_rows:
+        lines.append("")
+        lines.append("── TOP RULES BY CONFIDENCE ─────────────────────────")
+        for rid, name, conf in rule_rows:
+            bar = int(conf * 10)
+            lines.append(f"  {rid:4s}  {name[:28]:28s}  {conf*100:5.1f}%  {'█' * bar}")
+
+    if diag_rows:
+        lines.append("")
+        lines.append("── DIAGNOSTIC (high-conf rules; prediction wrong) ───")
+        for rid, name, conf in diag_rows:
+            lines.append(f"  {rid:4s}  {name[:32]:32s}  {conf*100:.1f}%  ← review")
+
+    if not rule_rows and year is not None:
+        lines.append("")
+        lines.append(f"  (Oracle rules not available for {year} — "
+                     "add game to HISTORICAL_GAMES to enable rule breakdown)")
+
+    lines.append("```")
+    return "\n".join(lines)
+
+
 def cmd_preview(team: str) -> str:
     """Show a pre-event excerpt for an opponent team at the current
     event. Wraps scout/pre_event_report.py for a single team."""

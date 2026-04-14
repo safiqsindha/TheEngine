@@ -571,3 +571,114 @@ def test_cmd_beta_current_alias():
     out = lsc.cmd_beta("current")
     assert "2025" in out
     assert "Reefscape" in out
+
+
+# ── cmd_analyze ─────────────────────────────────────────────────────
+
+
+def _fake_match(match_key: str, red_score: int, blue_score: int,
+                red_teams=("frc148", "frc254", "frc1678"),
+                blue_teams=("frc2950", "frc118", "frc2056")) -> dict:
+    """Build a minimal TBA match dict for cmd_analyze tests."""
+    event_key = "_".join(match_key.split("_")[:-1]) if "_" in match_key else "2026txbel"
+    return {
+        "key": match_key,
+        "event_key": event_key,
+        "comp_level": "qm",
+        "match_number": 12,
+        "alliances": {
+            "red":  {"score": red_score,  "team_keys": list(red_teams),  "dq_team_keys": [], "surrogate_team_keys": []},
+            "blue": {"score": blue_score, "team_keys": list(blue_teams), "dq_team_keys": [], "surrogate_team_keys": []},
+        },
+        "score_breakdown": {},
+    }
+
+
+def test_cmd_analyze_registers():
+    """cmd_analyze is importable and callable."""
+    assert callable(lsc.cmd_analyze)
+
+
+def test_cmd_analyze_missing_args_returns_usage():
+    out = lsc.cmd_analyze("", "")
+    assert "Usage" in out
+
+
+def test_cmd_analyze_invalid_event_cache_miss(tmp_path, monkeypatch):
+    """When match is not in TBA cache, return a graceful error."""
+    import tba_client as _tba
+    # Point the cache directory at an empty tmp dir → no cached files.
+    monkeypatch.setattr(_tba, "CACHE_DIR", tmp_path)
+    out = lsc.cmd_analyze("2026txbel", "2026txbel_qm99")
+    assert "Error" in out
+    assert "not found in TBA cache" in out
+
+
+def test_cmd_analyze_hit_case(tmp_path, monkeypatch, tmp_state):
+    """Engine correctly predicts winner → embed shows HIT."""
+    import json
+    import tba_client as _tba
+    from win_probability import win_prob_from_team_data  # noqa: F401
+
+    # Write a fake match into the TBA cache (event matches list).
+    cache_dir = tmp_path / "tba"
+    cache_dir.mkdir()
+    monkeypatch.setattr(_tba, "CACHE_DIR", cache_dir)
+
+    match_key = "2026txbel_qm12"
+    # Red scores 280, Blue 140 → red wins convincingly.
+    m = _fake_match(match_key, red_score=280, blue_score=140)
+    cache_file = cache_dir / "event_2026txbel_matches.json"
+    cache_file.write_text(json.dumps([m]))
+
+    # Write a pick_board state so cmd_analyze has EPA data.
+    state = _make_state()
+    # Give the red teams a high EPA and blue teams a low one so the Engine
+    # also predicts red — guaranteeing a HIT.
+    state["teams"]["148"]  = _team_dict(148,  epa=90)
+    state["teams"]["254"]  = _team_dict(254,  epa=88)
+    state["teams"]["1678"] = _team_dict(1678, epa=85)
+    state["teams"]["2950"] = _team_dict(2950, epa=30)
+    state["teams"]["118"]  = _team_dict(118,  epa=28)
+    state["teams"]["2056"] = _team_dict(2056, epa=25)
+    _write(tmp_state, state)
+
+    out = lsc.cmd_analyze("2026txbel", match_key)
+    assert "POST-MATCH ANALYSIS" in out
+    assert "HIT" in out
+    assert "RED" in out or "red" in out.lower()
+    assert "280" in out
+    assert "140" in out
+
+
+def test_cmd_analyze_miss_case_shows_diagnostic(tmp_path, monkeypatch, tmp_state):
+    """Engine picks wrong winner → embed shows MISS and diagnostic rows."""
+    import json
+    import tba_client as _tba
+
+    cache_dir = tmp_path / "tba"
+    cache_dir.mkdir()
+    monkeypatch.setattr(_tba, "CACHE_DIR", cache_dir)
+
+    match_key = "2022txbel_qm5"
+    # Engine will predict red (higher EPA) but blue actually wins.
+    m = _fake_match(match_key, red_score=100, blue_score=200)
+    cache_file = cache_dir / "event_2022txbel_matches.json"
+    # Use the event-key derived from the match_key.
+    cache_file.write_text(json.dumps([m]))
+
+    state = _make_state(event_key="2022txbel")
+    state["teams"]["148"]  = _team_dict(148,  epa=85)
+    state["teams"]["254"]  = _team_dict(254,  epa=83)
+    state["teams"]["1678"] = _team_dict(1678, epa=80)
+    state["teams"]["2950"] = _team_dict(2950, epa=20)
+    state["teams"]["118"]  = _team_dict(118,  epa=18)
+    state["teams"]["2056"] = _team_dict(2056, epa=15)
+    _write(tmp_state, state)
+
+    out = lsc.cmd_analyze("2022txbel", match_key)
+    assert "POST-MATCH ANALYSIS" in out
+    assert "MISS" in out
+    assert "BLUE" in out or "blue" in out.lower()
+    # 2022 is in HISTORICAL_GAMES so rules should appear or a graceful note.
+    assert "RULES" in out or "rules" in out.lower() or "Oracle" in out
