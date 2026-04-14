@@ -128,13 +128,27 @@ During summer 2026, execute the **Gemma+SAM3.1 auto-labeling data engine** from 
 
 ## Recommendation
 
-**Path C for the 2026 season. Path A is the long-term destination via the off-season data engine.**
+> **⚠️ RE-OPENED 2026-04-11 PM.** The original Path C decision below is
+> **SUPERSEDED**. Both premises that supported Path C are now invalid:
+> (1) 2950's 2026 season is over — this work is no longer zero-sum with
+> competition prep; (2) Path A is NOT throwaway — it IS the Worlds demo
+> (5 consecutive matches, fully local, zero API, Wed 4/29 → Sat 5/2).
+>
+> **New decision: Path A.** Compound pipeline ships week of Mon 4/20.
+> `ultralytics` 8.4.33 is already installed locally. `roboflow` SDK is NOT
+> installed but not needed — weights download via ultralytics directly.
+> Full plan: `design-intelligence/MONDAY_KICKOFF_2026-04-13.md` §2.5.
+>
+> Path C (off-season auto-label data engine) still ships in summer 2026
+> as a **quality upgrade** over Path A, not as the first-ever model.
 
-### Why not Path A now?
+~~**Path C for the 2026 season. Path A is the long-term destination via the off-season data engine.**~~
 
-1. **Zero-sum with the rest of the season.** Path A is ~10 hours of work before we tune it against real VODs, and we're already inside the competition window (today is 2026-04-11 — regionals are either imminent or underway). Any hour spent on vision worker tuning is an hour not spent on pick board, Scout live draft, or the pre-event report pipeline.
+### ~~Why not Path A now?~~ (OBSOLETE — see re-open note above)
 
-2. **The quality ceiling is low and the work is throwaway.** Everything we build in Path A — the compound wrapper, the bumper-color classifier, the spatial heuristics — gets **deleted** when Path C's auto-label pipeline ships for 2027. We're not building foundation; we're building a bridge we'll burn.
+1. ~~**Zero-sum with the rest of the season.**~~ Path A is ~10 hours of work before we tune it against real VODs, and we're already inside the competition window (today is 2026-04-11 — regionals are either imminent or underway). Any hour spent on vision worker tuning is an hour not spent on pick board, Scout live draft, or the pre-event report pipeline.
+
+2. ~~**The quality ceiling is low and the work is throwaway.**~~ Everything we build in Path A — the compound wrapper, the bumper-color classifier, the spatial heuristics — gets **deleted** when Path C's auto-label pipeline ships for 2027. We're not building foundation; we're building a bridge we'll burn.
 
 3. **We already have the data we'd have extracted.** Mode A's OCR gives us alliance scores + breakdowns. Mode B's replay gives us match outcomes. The stand scout gives us per-team subjective notes. The pick board's `real_avg_score` aggregate is already computed from OCR'd scores. Vision adds per-team *physical* metrics (cycle cadence, defense time, climb outcome) — which are exactly the things Path A can't reliably attribute to a specific team without bumper-number OCR, which we don't have.
 

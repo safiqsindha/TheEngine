@@ -336,4 +336,70 @@ open source libraries, Google Sheets, Discord webhooks.
 
 ---
 
+## Rev-4 Addendum: Post-Landscape-Scan Revision (2026-04-12)
+
+> **Saturday 2026-04-12 landscape scan:** 120+ repos evaluated, 417 org repos scanned,
+> 40+ Einstein finalist teams checked. Full findings in
+> `LANDSCAPE_SCAN_254_BINNER_2026-04-12.md` and `LANDSCAPE_SCAN_ROBOFLOW_2026-04-12.md`.
+
+### Revised Hour Estimates (Post-Scan)
+
+| # | System | Original | Revised | Delta | Key Adoption |
+|---|--------|----------|---------|-------|-------------|
+| 1 | Blueprint | 120-150h | ~80-100h | **-40-50h** | onshape-robotics-toolkit + onshape-mcp replace onshape_api.py |
+| 2 | Antenna | 32h | 32h | 0h | Already shipped (64 tests, live) |
+| 3 | Cockpit | 39h | ~20h | **-19h** | Elastic Dashboard fork replaces custom dashboard |
+| 4 | Scout | 54h | ~31h | **-23h** | Statbotics + Roboflow + reference scouting architectures |
+| 5 | Coprocessor | 66.5h | ~20h | **-46h** | PhotonVision eliminates CP.1-CP.8 |
+| 6 | Eye | ~30h | ~17h | **-13h** | Roboflow supervision+sports+trackers+inference |
+| 7 | Pit Crew | ~44h | ~25h | **-19h** | PitFUSION + Foxglove |
+| 8 | Vault | 12h | ~5h | **-7h** | Binner replaces custom inventory |
+| 9 | Grid | 18h | ~13h | **-5h** | 254 AOS CAN logger reference |
+| 10 | Clock | 30h | ~15h | **-15h** | GitHub MCP + Google Workspace MCP |
+| | **Dev subtotal** | **~471h** | **~248h** | **-223h** | **47% reduction** |
+
+### New Work Added (Post-Scan)
+
+| Work Item | Hours | Source |
+|-----------|-------|--------|
+| Oracle Phase 1: Data foundation | 11h | Statbotics EPA internals |
+| Scout Phase 2: Intelligence | 11h | predictobics defense + synergy models |
+| Scout Phase 2.5: 1678 algorithm ports | 12h | frc1678 server (SPR, NormalDist, TrueSkill, auto-path, anomaly) |
+| Oracle Phase 3: LLM augmentation | 11h | Claude as reviewer + game manual extraction |
+| Scout Phase 2.5b: Advanced 1678 ports | 7h | Defense points-prevented, alliance decomposition, mode-voting |
+| CodeScout: Pre-competition GitHub intel | 10h | Parse opponent Choreo/PathPlanner files, auto mode selectors |
+| CAD Geometry Tier 1: Einstein metadata extraction | 12h | Import 253 Einstein robot CADs, extract dimensions/mass/CG, cross-ref with TBA |
+| CAD Geometry Tier 2: Mechanism classification | 18h | Train on 112 Onshape (mated) robots, classify 131 STEP robots, correlate with performance |
+| **New work total** | **92h** | |
+
+### Grand Total
+
+| | Hours |
+|---|---|
+| Original roadmap | 471h |
+| Post-scan dev work | 248h |
+| New capability work | +92h |
+| **Revised grand total** | **340h** |
+| **Net savings** | **-131h (28%)** |
+| **Avg weekly pace** | **~9.5 hrs/week** (down from ~13) |
+
+### Revised Monthly Targets
+
+| Month | Original | Revised | Notes |
+|-------|----------|---------|-------|
+| April | 38h | 22h | Antenna done, Blueprint MCP pivot |
+| May | 42h | 28h | Blueprint Rev2 + Cockpit (Elastic fork) |
+| June | 35h | 25h | Blueprint Priority B + Oracle Phase 1 |
+| July | 65.5h | 46h | Blueprint Priority C + Scout Phase 2 + CAD Tier 1 + Order Jetson |
+| August | 63h | 47h | Scout Phase 2.5 (1678 ports) + CAD Tier 2 + Eye E.1 + Coprocessor |
+| September | 75h | 45h | Blueprint B.6 + Vault (Binner) + Grid |
+| October | 57h | 38h | Oracle Phase 3 + Clock (MCP) + Pit Crew |
+| November | 61h | 40h | Eye E.3-E.4 + Cockpit D.4-D.5 + CodeScout |
+| December | 35h | 34h | Pit Crew P.6 + dry run + integration |
+| **TOTAL** | **~471h** | **~310h** | **avg ~8.5 hrs/week** |
+
+*Rev-4 updated 2026-04-12 based on landscape scan results.*
+
+---
+
 *Master Roadmap | THE ENGINE | Team 2950 The Devastators*
