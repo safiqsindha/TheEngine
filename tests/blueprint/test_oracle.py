@@ -24,6 +24,10 @@ from oracle import (  # noqa: E402
     validate_all,
     HISTORICAL_GAMES,
     GROUND_TRUTH,
+    CONFIDENCE_POLICY,
+    epa_win_confidence,
+    compute_alliance_complementarity,
+    _normal_cdf,
 )
 
 
@@ -672,3 +676,168 @@ def test_rule_result_dataclass_construction():
     assert r.recommendation == "test_rec"
     assert r.confidence == 0.5
     assert r.reasoning == "test reason"
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Phase 1 — Oracle Data Foundation (EPA uncertainty + complementarity)
+# ─────────────────────────────────────────────────────────────────────
+
+# ── CONFIDENCE_POLICY ──
+
+def test_confidence_policy_has_required_keys():
+    for key in ("certain", "high", "medium", "low"):
+        assert key in CONFIDENCE_POLICY
+        assert 0.0 < CONFIDENCE_POLICY[key] <= 1.0
+
+
+def test_confidence_policy_ordering():
+    assert CONFIDENCE_POLICY["certain"] >= CONFIDENCE_POLICY["high"]
+    assert CONFIDENCE_POLICY["high"] > CONFIDENCE_POLICY["medium"]
+    assert CONFIDENCE_POLICY["medium"] > CONFIDENCE_POLICY["low"]
+
+
+def test_rule_r2_uses_policy_high():
+    """R2 confidence must equal CONFIDENCE_POLICY['high'] — policy wired in."""
+    pred = apply_rules(_minimal_game(pieces_floor_pickup=True))
+    r2 = next(r for r in pred["rule_log"] if r["rule"] == "R2")
+    assert r2["confidence"] == CONFIDENCE_POLICY["high"]
+
+
+def test_rule_r3_uses_policy_medium():
+    pred = apply_rules(_minimal_game(game_piece_shape="spherical"))
+    r3 = next(r for r in pred["rule_log"] if r["rule"] == "R3")
+    assert r3["confidence"] == CONFIDENCE_POLICY["medium"]
+
+
+def test_rule_r4_ranged_uses_policy_high():
+    pred = apply_rules(_minimal_game(scoring_targets=[
+        {"name": "Hub", "height_in": 80, "distance_ft": 10, "auto_pts": 4,
+         "teleop_pts": 2, "type": "ranged", "distributed": True,
+         "cap_type": "uncapped", "max_alliance_pts": 999},
+    ]))
+    r4 = next(r for r in pred["rule_log"] if r["rule"] == "R4")
+    assert r4["confidence"] == CONFIDENCE_POLICY["high"]
+
+
+# ── _normal_cdf ──
+
+def test_normal_cdf_midpoint():
+    """CDF at z=0 should be exactly 0.5."""
+    assert abs(_normal_cdf(0.0) - 0.5) < 1e-9
+
+
+def test_normal_cdf_large_positive():
+    """CDF at z=4 should be very close to 1."""
+    assert _normal_cdf(4.0) > 0.999
+
+
+def test_normal_cdf_large_negative():
+    """CDF at z=-4 should be very close to 0."""
+    assert _normal_cdf(-4.0) < 0.001
+
+
+def test_normal_cdf_symmetric():
+    """CDF is symmetric: cdf(z) + cdf(-z) = 1."""
+    for z in (0.5, 1.0, 1.96, 2.5):
+        assert abs(_normal_cdf(z) + _normal_cdf(-z) - 1.0) < 1e-9
+
+
+# ── epa_win_confidence ──
+
+def test_epa_win_confidence_no_sd_returns_fallback():
+    """When SD is None, returns the fallback constant unchanged."""
+    result = epa_win_confidence(150.0, 130.0)
+    assert result == CONFIDENCE_POLICY["high"]
+
+
+def test_epa_win_confidence_equal_epa_returns_half():
+    """Equal EPA → 50% win probability."""
+    result = epa_win_confidence(100.0, 100.0, epa_sd_a=10.0, epa_sd_b=10.0)
+    assert abs(result - 0.5) < 1e-6
+
+
+def test_epa_win_confidence_a_stronger_returns_above_half():
+    result = epa_win_confidence(150.0, 120.0, epa_sd_a=15.0, epa_sd_b=12.0)
+    assert result > 0.5
+
+
+def test_epa_win_confidence_b_stronger_returns_below_half():
+    result = epa_win_confidence(100.0, 150.0, epa_sd_a=15.0, epa_sd_b=12.0)
+    assert result < 0.5
+
+
+def test_epa_win_confidence_custom_fallback():
+    result = epa_win_confidence(100.0, 90.0, fallback_confidence=0.60)
+    assert result == 0.60
+
+
+def test_epa_win_confidence_in_unit_range():
+    """Result is always in [0, 1] for reasonable inputs."""
+    for epa_a, epa_b, sd_a, sd_b in [
+        (50.0, 200.0, 5.0, 20.0),
+        (200.0, 50.0, 5.0, 20.0),
+        (0.0, 0.0, 1.0, 1.0),
+    ]:
+        r = epa_win_confidence(epa_a, epa_b, epa_sd_a=sd_a, epa_sd_b=sd_b)
+        assert 0.0 <= r <= 1.0
+
+
+# ── compute_alliance_complementarity ──
+
+def test_complementarity_empty_returns_neutral():
+    assert compute_alliance_complementarity([]) == 0.5
+
+
+def test_complementarity_zero_epa_returns_neutral():
+    teams = [{"auto": 0, "teleop": 0, "endgame": 0}] * 3
+    assert compute_alliance_complementarity(teams) == 0.5
+
+
+def test_complementarity_identical_teams_low_score():
+    """Three identical bots = low complementarity."""
+    teams = [{"auto": 10, "teleop": 10, "endgame": 10}] * 3
+    score = compute_alliance_complementarity(teams)
+    assert score < 0.2  # identical → very low CV
+
+
+def test_complementarity_specialists_high_score():
+    """One auto bot, one teleop bot, one endgame bot = high complementarity."""
+    teams = [
+        {"auto": 30, "teleop": 2, "endgame": 1},
+        {"auto": 2, "teleop": 30, "endgame": 1},
+        {"auto": 2, "teleop": 2, "endgame": 30},
+    ]
+    score = compute_alliance_complementarity(teams)
+    assert score > 0.7
+
+
+def test_complementarity_in_unit_range():
+    """Score is always in [0, 1]."""
+    import random
+    random.seed(42)
+    for _ in range(20):
+        teams = [
+            {"auto": random.uniform(0, 30),
+             "teleop": random.uniform(0, 50),
+             "endgame": random.uniform(0, 20)}
+            for _ in range(3)
+        ]
+        score = compute_alliance_complementarity(teams)
+        assert 0.0 <= score <= 1.0
+
+
+def test_complementarity_missing_keys_handled():
+    """Dicts missing some phase keys should not crash."""
+    teams = [
+        {"auto": 10},
+        {"teleop": 20},
+        {"endgame": 15},
+    ]
+    score = compute_alliance_complementarity(teams)
+    assert 0.0 <= score <= 1.0
+
+
+def test_complementarity_single_team():
+    """Single team — no cross-team variance possible; score is in valid range."""
+    score = compute_alliance_complementarity([{"auto": 10, "teleop": 20, "endgame": 5}])
+    assert 0.0 <= score <= 1.0

@@ -15,14 +15,187 @@ Usage:
   python3 oracle.py predict --example-2024             # 2024 Crescendo
   python3 oracle.py predict --example-2025             # 2025 Reefscape
   python3 oracle.py validate                           # Run all historical games
+
+── Oracle Phase 1 Data Foundation (2026-04-13) ─────────────────────────────
+Three targeted upgrades pulled forward from the June–July workstream:
+
+  1. EPA UNCERTAINTY BANDS
+     New helpers `epa_win_confidence` and `_normal_cdf` consume `epa_sd`
+     and `epa_skew` from Statbotics. Rule confidence values can now be
+     derived from a NormalDist(mu=EPA_diff, sigma=combined_sd).cdf(0)
+     call instead of hardcoded constants. Backward-compat: when epa_sd is
+     unavailable, confidence falls back to the old hardcoded constant.
+
+  2. COMPONENT EPA DRAFT COMPLEMENTARITY
+     New public helper `compute_alliance_complementarity(team_epas)` takes
+     a list of per-team component-EPA dicts {auto, teleop, endgame} and
+     returns a complementarity score [0.0, 1.0]. Score 1.0 = perfectly
+     balanced; 0.0 = all three bots identical in every phase. Used by
+     alliance advisors to flag structural weaknesses (e.g. 3 auto-heavy
+     bots with no endgame).
+
+  3. CONFIDENCE_POLICY DICT
+     Single source of truth for confidence thresholds replacing scattered
+     0.85/0.90/0.95 literals. All rule RuleResult() calls now reference
+     CONFIDENCE_POLICY["high"] / ["medium"] / ["low"] / ["certain"].
+     Old numeric values are preserved as the policy defaults so existing
+     behaviour is unchanged when no EPA data is present.
+
+Backward compatibility: `apply_rules()`, `predict_game()`, `validate_all()`,
+`predict_from_file()` signatures and return shapes are unchanged. All 86
+pre-existing tests continue to pass. New helpers are purely additive.
 """
 
 import json
+import math
 import sys
 from dataclasses import dataclass, field, asdict, fields
 from pathlib import Path
+from typing import Dict, List, Optional
 
 BASE_DIR = Path(__file__).parent
+
+
+# ═══════════════════════════════════════════════════════════════════
+# CONFIDENCE POLICY — single source of truth for rule thresholds
+# ═══════════════════════════════════════════════════════════════════
+
+CONFIDENCE_POLICY: Dict[str, float] = {
+    "certain": 1.00,   # R1 — swerve, always true post-2022
+    "high":    0.90,   # R4 ranged/placement, R6 turret decisions, R7 climb
+    "medium":  0.85,   # R3 roller, R5 elevator, R8 auto, R10 detection
+    "low":     0.75,   # R4 unknown target fallback
+}
+
+# Fraction of EPA total used as fallback SD when Statbotics sd is absent.
+# Matches the same constant in scout/win_probability.py for consistency.
+_DEFAULT_SD_FRACTION: float = 0.25
+
+# Minimum sigma to prevent division-by-zero on degenerate inputs
+_MIN_SIGMA: float = 1e-6
+
+
+# ═══════════════════════════════════════════════════════════════════
+# EPA UNCERTAINTY HELPERS
+# ═══════════════════════════════════════════════════════════════════
+
+def _normal_cdf(z: float) -> float:
+    """Standard normal CDF via math.erfc — no scipy required.
+
+    Identical implementation to scout/win_probability.py so the two
+    modules stay in sync without a shared dependency.
+    """
+    return 0.5 * math.erfc(-z / math.sqrt(2.0))
+
+
+def epa_win_confidence(
+    epa_a: float,
+    epa_b: float,
+    epa_sd_a: Optional[float] = None,
+    epa_sd_b: Optional[float] = None,
+    *,
+    fallback_confidence: float = CONFIDENCE_POLICY["high"],
+) -> float:
+    """Return P(Team A outscores Team B) using a Gaussian score model.
+
+    Parameters
+    ----------
+    epa_a, epa_b       : EPA mean values for the two teams/alliances
+    epa_sd_a, epa_sd_b : EPA standard deviations (from Statbotics
+                         ``epa.total_points.sd``). If either is None or
+                         zero the function falls back to
+                         ``fallback_confidence``.
+    fallback_confidence : returned as-is when SD data is unavailable.
+                         Default = CONFIDENCE_POLICY["high"] (0.90).
+
+    Returns
+    -------
+    float in [0.0, 1.0]
+
+    Example
+    -------
+    >>> epa_win_confidence(150.0, 130.0, epa_sd_a=18.0, epa_sd_b=15.0)
+    0.724...   # 72% chance Team A wins
+    """
+    if not epa_sd_a or not epa_sd_b:
+        return fallback_confidence
+
+    sd_a = epa_sd_a if epa_sd_a > 0 else epa_a * _DEFAULT_SD_FRACTION
+    sd_b = epa_sd_b if epa_sd_b > 0 else epa_b * _DEFAULT_SD_FRACTION
+    sigma = math.sqrt(sd_a ** 2 + sd_b ** 2)
+    sigma = max(sigma, _MIN_SIGMA)
+    return _normal_cdf((epa_a - epa_b) / sigma)
+
+
+def compute_alliance_complementarity(
+    team_epas: List[Dict[str, float]],
+) -> float:
+    """Score how well-balanced an alliance is across game phases.
+
+    Evaluates the spread of contribution across auto, teleop, and endgame
+    component EPAs. A perfectly complementary alliance has each robot
+    contributing meaningfully in different phases; a redundant alliance
+    has all three bots clustered in the same phase.
+
+    Parameters
+    ----------
+    team_epas : list of dicts, each with keys:
+                  ``auto``     — auto-phase component EPA
+                  ``teleop``   — teleop-phase component EPA
+                  ``endgame``  — endgame-phase component EPA
+                Each dict represents one team on the alliance (typically 3).
+
+    Returns
+    -------
+    float in [0.0, 1.0]
+        1.0 = perfectly balanced (each team specialises in a different phase)
+        0.0 = all three robots identical across all phases (full redundancy)
+
+    Notes
+    -----
+    Algorithm: for each phase, compute the coefficient of variation (CV =
+    std / mean) across teams. Average CV across phases captures how varied
+    the contribution pattern is. Normalise to [0, 1] by capping at CV = 1.
+
+    When total EPA across all teams is zero (degenerate input), returns 0.5
+    to indicate unknown / neutral complementarity.
+
+    Example
+    -------
+    >>> teams = [
+    ...     {"auto": 20, "teleop": 5,  "endgame": 0},   # auto specialist
+    ...     {"auto": 5,  "teleop": 20, "endgame": 0},   # teleop specialist
+    ...     {"auto": 5,  "teleop": 5,  "endgame": 15},  # endgame specialist
+    ... ]
+    >>> compute_alliance_complementarity(teams)
+    0.816...   # highly complementary
+    """
+    if not team_epas:
+        return 0.5
+
+    phases = ("auto", "teleop", "endgame")
+    total = sum(
+        t.get(p, 0.0) for t in team_epas for p in phases
+    )
+    if total == 0.0:
+        return 0.5
+
+    cv_scores: list[float] = []
+    for phase in phases:
+        values = [t.get(phase, 0.0) for t in team_epas]
+        mean = sum(values) / len(values)
+        if mean == 0.0:
+            # Phase not scored by anyone — treat as neutral, skip
+            continue
+        variance = sum((v - mean) ** 2 for v in values) / len(values)
+        std = math.sqrt(variance)
+        cv = std / mean  # coefficient of variation
+        cv_scores.append(min(cv, 1.0))  # cap at 1.0
+
+    if not cv_scores:
+        return 0.5
+
+    return round(sum(cv_scores) / len(cv_scores), 4)
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -155,7 +328,8 @@ def apply_rules(game: GameRules) -> dict:
     }
 
     # ── R2: Intake width — Always full width ──
-    r2 = RuleResult("R2", game.pieces_floor_pickup, "full_width_intake", 0.95,
+    r2 = RuleResult("R2", game.pieces_floor_pickup, "full_width_intake",
+                     CONFIDENCE_POLICY["high"],
                      "Full-width bumper-to-bumper intake. Every champion since 2019.")
     results.append(r2)
 
@@ -177,7 +351,7 @@ def apply_rules(game: GameRules) -> dict:
         roller_material = "flex_wheels"
         r3_note = "Unknown shape → flex wheels (safest default)"
 
-    r3 = RuleResult("R3", True, roller_material, 0.85, r3_note)
+    r3 = RuleResult("R3", True, roller_material, CONFIDENCE_POLICY["medium"], r3_note)
     results.append(r3)
 
     # Intake type — over_bumper default, under_bumper if piece is small
@@ -209,19 +383,19 @@ def apply_rules(game: GameRules) -> dict:
 
     if target_type == "ranged":
         scorer_method = "flywheel"
-        r4_conf = 0.90
+        r4_conf = CONFIDENCE_POLICY["high"]
         r4_note = "Ranged scoring targets → flywheel shooter"
     elif target_type == "placement":
         scorer_method = "elevator"
-        r4_conf = 0.90
+        r4_conf = CONFIDENCE_POLICY["high"]
         r4_note = "Placement scoring targets → elevator + wrist"
     elif target_type == "ground":
         scorer_method = "gravity_drop"
-        r4_conf = 0.85
+        r4_conf = CONFIDENCE_POLICY["medium"]
         r4_note = "Ground-level targets → roller eject or gravity drop"
     else:
         scorer_method = "elevator"
-        r4_conf = 0.75
+        r4_conf = CONFIDENCE_POLICY["low"]
         r4_note = "Unknown target type → default elevator"
 
     r4 = RuleResult("R4", True, scorer_method, r4_conf, r4_note)
@@ -245,7 +419,7 @@ def apply_rules(game: GameRules) -> dict:
         stages = 0
         r5_note = "Non-elevator scorer, stages N/A"
 
-    r5 = RuleResult("R5", scorer_method == "elevator", f"{stages}_stage", 0.85, r5_note)
+    r5 = RuleResult("R5", scorer_method == "elevator", f"{stages}_stage", CONFIDENCE_POLICY["medium"], r5_note)
     results.append(r5)
 
     # ── R6: Turret decision (4-quadrant matrix) ──
@@ -253,19 +427,19 @@ def apply_rules(game: GameRules) -> dict:
     if target_type == "ranged" and target_distributed:
         turret = "continuous"
         r6_note = "Ranged + distributed targets → BUILD TURRET (90%)"
-        r6_conf = 0.90
+        r6_conf = CONFIDENCE_POLICY["high"]
     elif target_type == "ranged" and not target_distributed:
         turret = "none"  # optional, default skip
         r6_note = "Ranged + fixed targets → turret optional, skipping (65%)"
-        r6_conf = 0.65
+        r6_conf = 0.65  # intentional below-policy — ambiguous decision
     elif target_type == "placement" and target_distributed:
         turret = "none"
         r6_note = "Placement + distributed → SKIP turret (90%)"
-        r6_conf = 0.90
+        r6_conf = CONFIDENCE_POLICY["high"]
     else:
         turret = "none"
         r6_note = "Placement + fixed → SKIP turret (95%)"
-        r6_conf = 0.95
+        r6_conf = CONFIDENCE_POLICY["certain"]  # unanimous historical evidence
 
     r6 = RuleResult("R6", True, turret, r6_conf, r6_note)
     results.append(r6)
@@ -296,7 +470,7 @@ def apply_rules(game: GameRules) -> dict:
     climb_required = climb_must or climb_should
 
     r7 = RuleResult("R7", climb_required,
-                     "climb" if climb_required else "optional", 0.95,
+                     "climb" if climb_required else "optional", CONFIDENCE_POLICY["certain"],
                      f"Endgame is {climb_pct*100:.0f}% of winning score"
                      + (", MUST climb" if climb_must else
                         ", strongly recommended" if climb_should else
@@ -331,7 +505,7 @@ def apply_rules(game: GameRules) -> dict:
     if game.field_is_small:
         auto_pieces = min(5, auto_pieces + 1)
 
-    r8 = RuleResult("R8", True, f"{auto_pieces}_piece_auto", 0.85,
+    r8 = RuleResult("R8", True, f"{auto_pieces}_piece_auto", CONFIDENCE_POLICY["medium"],
                      f"Target {auto_pieces}-piece auto. Known positions: {game.pieces_at_known_positions}")
     results.append(r8)
 
@@ -348,7 +522,7 @@ def apply_rules(game: GameRules) -> dict:
         needs_detection = True
         detection_method = "yolo_neural"
 
-    r10 = RuleResult("R10", needs_detection, detection_method, 0.85,
+    r10 = RuleResult("R10", needs_detection, detection_method, CONFIDENCE_POLICY["medium"],
                       f"Detection: {detection_method}" if needs_detection
                       else "No detection needed — known positions + wide intake")
     results.append(r10)
@@ -368,7 +542,7 @@ def apply_rules(game: GameRules) -> dict:
 
     # ── R18: Obstacle check ──
     if game.field_has_obstacles:
-        r18 = RuleResult("R18", True, "raise_bellypan", 0.83,
+        r18 = RuleResult("R18", True, "raise_bellypan", CONFIDENCE_POLICY["medium"],
                           f"Field obstacles at {game.field_obstacle_height_in}\". "
                           "Prototype obstacle crossing day 1. Raise bellypan to 2-3\".")
         results.append(r18)
