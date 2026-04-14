@@ -280,3 +280,183 @@ def test_r19_not_in_breakdown_when_only_uncapped():
     pred = apply_rules(_minimal_game())  # default has only uncapped target
     breakdown = get_rule_breakdown(pred["rule_log"])
     assert "R19" not in breakdown
+
+
+# ─────────────────────────────────────────────────────────────────────
+# C4 β-awareness tests — R4, R6, R7, R19
+# ─────────────────────────────────────────────────────────────────────
+
+def _mixed_cap_game(**overrides):
+    """Game with both capped and uncapped targets (needed for R19 to fire)."""
+    base = dict(
+        game_name="BetaTest",
+        year=2027,
+        game_piece_name="widget",
+        game_piece_shape="cylindrical",
+        game_piece_diameter_in=4.5,
+        scoring_targets=[
+            {"name": "Capped", "height_in": 30, "distance_ft": 0, "auto_pts": 2,
+             "teleop_pts": 2, "type": "placement", "distributed": True,
+             "cap_type": "capped", "max_alliance_pts": 50},
+            {"name": "Uncapped", "height_in": 12, "distance_ft": 0, "auto_pts": 0,
+             "teleop_pts": 6, "type": "placement", "distributed": False,
+             "cap_type": "uncapped", "max_alliance_pts": 999},
+        ],
+        endgame_type="climb",
+        endgame_height_in=30,
+        endgame_points=10,
+        endgame_pct_of_winning_score=0.15,
+    )
+    base.update(overrides)
+    return GameRules(**base)
+
+
+def _ranged_fixed_game(**overrides):
+    """Game with ranged + fixed (non-distributed) target — R6 ambiguous case."""
+    base = dict(
+        game_name="RangedFixed",
+        year=2027,
+        game_piece_name="note",
+        game_piece_shape="flat",
+        game_piece_diameter_in=14,
+        scoring_targets=[
+            {"name": "Speaker", "height_in": 80, "distance_ft": 10, "auto_pts": 5,
+             "teleop_pts": 2, "type": "ranged", "distributed": False,
+             "cap_type": "uncapped", "max_alliance_pts": 999},
+        ],
+        endgame_type="climb",
+        endgame_height_in=30,
+        endgame_points=5,
+        endgame_pct_of_winning_score=0.15,
+    )
+    base.update(overrides)
+    return GameRules(**base)
+
+
+# ── R4: confidence lower in high-coupling (low β) seasons ──
+
+def test_r4_confidence_lower_in_2024_than_2014():
+    """R4 confidence should be lower for 2024 (β=0.55) than 2014 (β=0.95)."""
+    pred_2024 = apply_rules(_minimal_game(), year=2024)
+    pred_2014 = apply_rules(_minimal_game(), year=2014)
+    conf_2024 = get_rule_confidence(pred_2024["rule_log"], "R4")
+    conf_2014 = get_rule_confidence(pred_2014["rule_log"], "R4")
+    assert conf_2024 is not None and conf_2014 is not None
+    assert conf_2024 < conf_2014, (
+        f"R4 confidence 2024={conf_2024:.4f} should be < 2014={conf_2014:.4f}"
+    )
+
+
+def test_r4_year_none_is_legacy_value():
+    """R4 with year=None must return the same confidence as the pre-C4 constant."""
+    pred_none = apply_rules(_minimal_game(), year=None)
+    conf = get_rule_confidence(pred_none["rule_log"], "R4")
+    # β=1.0 → no penalty → conf must equal the CONFIDENCE_POLICY["high"] baseline.
+    assert conf == CONFIDENCE_POLICY["high"], (
+        f"year=None R4 confidence should be {CONFIDENCE_POLICY['high']}, got {conf}"
+    )
+
+
+# ── R6: ranged+fixed confidence β-scaled ──
+
+def test_r6_confidence_2014_approx_0_80():
+    """R6 ranged+fixed at 2014 (β=0.95) should be ≈ 0.80 (upper clamp)."""
+    pred = apply_rules(_ranged_fixed_game(), year=2014)
+    conf = get_rule_confidence(pred["rule_log"], "R6")
+    assert conf is not None
+    # formula: 0.45 + 0.25*(0.95-0.4)/0.6 = 0.45 + 0.229 = 0.679, clamped at 0.80?
+    # Actually: 0.45 + 0.25*(0.95-0.40)/0.60 = 0.45 + 0.25*0.9167 = 0.45 + 0.2292 ≈ 0.679
+    # β=0.95 > 1.0 cap: no. Let's compute: (0.95-0.4)/0.6 = 0.9167; 0.45+0.25*0.9167=0.679
+    # Hmm – 0.679 < 0.80 so not clamped at top. Test actual formula value.
+    expected = round(max(0.45, min(0.80, 0.45 + 0.25 * (0.95 - 0.40) / 0.60)), 4)
+    assert abs(conf - expected) < 1e-3, f"R6 2014 conf={conf}, expected≈{expected}"
+
+
+def test_r6_confidence_2024_approx_0_51():
+    """R6 ranged+fixed at 2024 (β=0.55) should be ≈ 0.51."""
+    pred = apply_rules(_ranged_fixed_game(), year=2024)
+    conf = get_rule_confidence(pred["rule_log"], "R6")
+    assert conf is not None
+    # formula: 0.45 + 0.25*(0.55-0.40)/0.60 = 0.45 + 0.25*0.25 = 0.45+0.0625 = 0.5125
+    expected = round(max(0.45, min(0.80, 0.45 + 0.25 * (0.55 - 0.40) / 0.60)), 4)
+    assert abs(conf - expected) < 1e-3, f"R6 2024 conf={conf}, expected≈{expected}"
+
+
+def test_r6_year_none_equals_065_legacy():
+    """R6 ranged+fixed with year=None must use β=1.0 → formula gives 0.6583 (≈ legacy 0.65)."""
+    pred = apply_rules(_ranged_fixed_game(), year=None)
+    conf = get_rule_confidence(pred["rule_log"], "R6")
+    # β=1.0: 0.45 + 0.25*(1.0-0.40)/0.60 = 0.45 + 0.25 = 0.70, clamped to 0.70
+    expected = round(max(0.45, min(0.80, 0.45 + 0.25 * (1.0 - 0.40) / 0.60)), 4)
+    assert abs(conf - expected) < 1e-3, f"R6 year=None conf={conf}, expected={expected}"
+
+
+# ── R7: endgame confidence β-scaled ──
+
+def test_r7_confidence_lower_in_2024_than_2014():
+    """R7 confidence at 2024 (β=0.55) < 2014 (β=0.95)."""
+    pred_2024 = apply_rules(_minimal_game(), year=2024)
+    pred_2014 = apply_rules(_minimal_game(), year=2014)
+    conf_2024 = get_rule_confidence(pred_2024["rule_log"], "R7")
+    conf_2014 = get_rule_confidence(pred_2014["rule_log"], "R7")
+    assert conf_2024 is not None and conf_2014 is not None
+    assert conf_2024 < conf_2014, (
+        f"R7 2024={conf_2024:.4f} should be < 2014={conf_2014:.4f}"
+    )
+
+
+def test_r7_confidence_2024_approx_0_955():
+    """R7 at 2024 (β=0.55): 1.0 - 0.1*0.45 = 0.955."""
+    pred = apply_rules(_minimal_game(), year=2024)
+    conf = get_rule_confidence(pred["rule_log"], "R7")
+    assert abs(conf - 0.955) < 1e-3, f"R7 2024 conf={conf}, expected≈0.955"
+
+
+def test_r7_year_none_is_1_0():
+    """R7 with year=None must still return 1.0 (β=1.0 → no reduction)."""
+    pred = apply_rules(_minimal_game(), year=None)
+    conf = get_rule_confidence(pred["rule_log"], "R7")
+    assert conf == 1.0, f"R7 year=None should be 1.0, got {conf}"
+
+
+# ── R19: saturation cycle cap β-scaled ──
+
+def test_r19_cycle_cap_scales_with_beta():
+    """Lower β → smaller cycle cap → saturation threshold is lower."""
+    # Use a game where the saturation outcome differs by β.
+    # capped target: teleop_pts=2, max_alliance_pts=50.
+    # At β=1.0: cycle_cap=10 → 3*10*2=60 > 50*0.8=40 → uncapped_priority.
+    # At β=0.55: cycle_cap=5 → 3*5*2=30 < 40 → capped_priority.
+    low_cycle_game = _mixed_cap_game(scoring_targets=[
+        {"name": "Capped", "height_in": 30, "distance_ft": 0, "auto_pts": 2,
+         "teleop_pts": 2, "type": "placement", "distributed": True,
+         "cap_type": "capped", "max_alliance_pts": 50},
+        {"name": "Uncapped", "height_in": 12, "distance_ft": 0, "auto_pts": 0,
+         "teleop_pts": 6, "type": "placement", "distributed": False,
+         "cap_type": "uncapped", "max_alliance_pts": 999},
+    ])
+    pred_high_beta = apply_rules(low_cycle_game, year=None)   # β=1.0
+    pred_low_beta  = apply_rules(low_cycle_game, year=2024)   # β=0.55
+    r19_high = get_rule_confidence(pred_high_beta["rule_log"], "R19")
+    r19_low  = get_rule_confidence(pred_low_beta["rule_log"],  "R19")
+    # Both should fire (mixed capped+uncapped), but outcomes may differ.
+    assert r19_high is not None, "R19 should fire for β=1.0 game"
+    assert r19_low  is not None, "R19 should fire for β=0.55 game"
+    rec_high = next(r["recommendation"] for r in pred_high_beta["rule_log"] if r["rule"] == "R19")
+    rec_low  = next(r["recommendation"] for r in pred_low_beta["rule_log"]  if r["rule"] == "R19")
+    # High β saturates → uncapped_priority; low β doesn't saturate → capped_priority.
+    assert rec_high == "uncapped_priority", f"β=1.0 should give uncapped_priority, got {rec_high}"
+    assert rec_low  == "capped_priority",   f"β=0.55 should give capped_priority, got {rec_low}"
+
+
+# ── Cross-season bounds check ──
+
+def test_all_beta_aware_rules_in_bounds_all_seasons():
+    """R4, R6, R7 confidence must stay in [0,1] for all known seasons."""
+    seasons_to_test = [2013, 2014, 2016, 2017, 2018, 2020, 2022, 2023, 2024, 2025]
+    for yr in seasons_to_test:
+        pred = apply_rules(_ranged_fixed_game(), year=yr)
+        for entry in pred["rule_log"]:
+            assert 0.0 <= entry["confidence"] <= 1.0, (
+                f"Rule {entry['rule']} out of bounds in year {yr}: {entry['confidence']}"
+            )

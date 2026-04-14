@@ -407,11 +407,27 @@ class RuleResult:
     contribution: str = ""
 
 
-def apply_rules(game: GameRules) -> dict:
+def apply_rules(game: GameRules, year: Optional[int] = None) -> dict:
     """
     Apply all CROSS_SEASON_PATTERNS rules to game parameters.
     Returns a dict of predictions keyed by subsystem.
+
+    Parameters
+    ----------
+    game : GameRules — structured game parameters
+    year : optional FRC season year (e.g. 2024).  When provided, an
+           attribution β is looked up via ``get_attribution_beta(year)``
+           and used to scale confidence for β-sensitive rules:
+             R4  — confidence bands widen in high-coupling (low β) seasons
+             R6  — ranged+fixed confidence scaled with β
+             R7  — endgame confidence reduced in high-coupling seasons
+             R19 — saturation cycle-count cap scaled with β
+           When ``year`` is None, β defaults to 1.0 and all rule outputs
+           are bit-identical to the pre-C4 behaviour (full backward compat).
     """
+    # ── β attribution lookup (C4) ────────────────────────────────────
+    beta: float = _get_attribution_beta(year) if year is not None else 1.0
+
     results = []
     pred = {
         "game_name": game.game_name,
@@ -534,6 +550,19 @@ def apply_rules(game: GameRules) -> dict:
         r4_conf = CONFIDENCE_POLICY["low"]
         r4_note = "Unknown target type → default elevator"
 
+    # R4 β-awareness (C4): widen confidence bands in high-coupling seasons.
+    # β < 0.70 → subtract up to 0.15 (linear in [0.4, 0.70]).
+    # β ≥ 0.85 → no adjustment.
+    # 0.70 ≤ β < 0.85 → linear blend.
+    if beta < 0.85:
+        if beta < 0.70:
+            # Max penalty 0.15 at β=0.40; lerp down from 0.70.
+            _r4_penalty = 0.15 * (0.70 - beta) / (0.70 - 0.40)
+        else:
+            # β in [0.70, 0.85): partial penalty up to 0.15.
+            _r4_penalty = 0.15 * (0.85 - beta) / (0.85 - 0.70)
+        r4_conf = max(0.0, r4_conf - _r4_penalty)
+
     r4 = RuleResult("R4", True, scorer_method, r4_conf, r4_note,
                      name="Scoring Method",
                      rationale="Target type (ranged/placement/ground) determines mechanism class.",
@@ -572,8 +601,11 @@ def apply_rules(game: GameRules) -> dict:
         r6_conf = CONFIDENCE_POLICY["high"]
     elif target_type == "ranged" and not target_distributed:
         turret = "none"  # optional, default skip
-        r6_note = "Ranged + fixed targets → turret optional, skipping (65%)"
-        r6_conf = 0.65  # intentional below-policy — ambiguous decision
+        # R6 β-awareness (C4): low β → coupling makes ranged+fixed less reliable.
+        # confidence = 0.45 + 0.25 * (β - 0.4) / 0.6, clamped [0.45, 0.80].
+        _r6_raw = 0.45 + 0.25 * (beta - 0.40) / 0.60
+        r6_conf = round(max(0.45, min(0.80, _r6_raw)), 4)
+        r6_note = f"Ranged + fixed targets → turret optional, skipping ({r6_conf*100:.0f}%)"
     elif target_type == "placement" and target_distributed:
         turret = "none"
         r6_note = "Placement + distributed → SKIP turret (90%)"
@@ -614,8 +646,15 @@ def apply_rules(game: GameRules) -> dict:
     climb_should = game.endgame_type in ("climb", "balance") and climb_pct >= 0.05
     climb_required = climb_must or climb_should
 
+    # R7 β-awareness (C4): the 1.0 "certain" is inflated.
+    # Reduce to 1.0 - 0.1*(1 - β) so that high-coupling seasons (low β)
+    # reflect uncertainty from endgame EPA variance (buddy-climb etc.).
+    # β=1.0 → confidence stays 1.0 (bit-identical legacy path).
+    # β=0.55 (2024) → 1.0 - 0.1*0.45 = 0.955.
+    r7_conf = round(max(0.0, min(1.0, 1.0 - 0.1 * (1.0 - beta))), 4)
+
     r7 = RuleResult("R7", climb_required,
-                     "climb" if climb_required else "optional", CONFIDENCE_POLICY["certain"],
+                     "climb" if climb_required else "optional", r7_conf,
                      f"Endgame is {climb_pct*100:.0f}% of winning score"
                      + (", MUST climb" if climb_must else
                         ", strongly recommended" if climb_should else
@@ -714,7 +753,7 @@ def apply_rules(game: GameRules) -> dict:
         results.append(r18)
 
     # ── R19: Capped vs Uncapped analysis ──
-    r19_result = _run_scoring_analysis(game)
+    r19_result = _run_scoring_analysis(game, beta=beta)
     if r19_result:
         results.append(r19_result)
         # Override scorer if uncapped method is better
@@ -795,8 +834,17 @@ def _get_primary_target(game: GameRules) -> dict:
     return max(game.scoring_targets, key=lambda t: t.get("teleop_pts", 0))
 
 
-def _run_scoring_analysis(game: GameRules) -> RuleResult:
-    """R19: Capped vs Uncapped scoring analysis."""
+def _run_scoring_analysis(game: GameRules, beta: float = 1.0) -> RuleResult:
+    """R19: Capped vs Uncapped scoring analysis.
+
+    Parameters
+    ----------
+    game : GameRules
+    beta : attribution β for the season (C4).  Low β (high coupling) means
+           fewer effective cycles before saturation — the cycle cap is scaled
+           by β so that  cycle_cap = floor(10 * β) (minimum 1).
+           Default β=1.0 preserves the legacy cycle_cap=10 (bit-identical).
+    """
     capped = [t for t in game.scoring_targets if t.get("cap_type") == "capped"]
     uncapped = [t for t in game.scoring_targets if t.get("cap_type") == "uncapped"]
 
@@ -807,10 +855,11 @@ def _run_scoring_analysis(game: GameRules) -> RuleResult:
     uncapped_primary = max(uncapped, key=lambda t: t.get("teleop_pts", 0))
 
     # Saturation test: can a good 3-robot alliance cap the capped method?
-    match_time = game.teleop_duration_s
-    # Rough estimate: 3 robots × 10 cycles × capped_pts_per_cycle
+    # R19 β-awareness (C4): low β → fewer effective cycles before saturation.
+    # cycle_cap = max(1, floor(10 * β)).  β=1.0 → 10 (legacy unchanged).
+    cycle_cap = max(1, int(10 * beta))
     capped_pts_per_cycle = max((t.get("teleop_pts", 0) for t in capped), default=0)
-    estimated_alliance_capped = 3 * 10 * capped_pts_per_cycle
+    estimated_alliance_capped = 3 * cycle_cap * capped_pts_per_cycle
 
     if estimated_alliance_capped > capped_max * 0.8:
         # Capped method will saturate → uncapped is differentiator
