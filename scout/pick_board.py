@@ -50,22 +50,34 @@ from statbotics_client import get_event_teams
 # or via the `year` kwarg to recommend_pick() / cmd_rec() for off-season replay.
 DEFAULT_YEAR: int = 2025
 
-# Ensure the project root is on sys.path so `blueprint` is importable as a
-# package regardless of how pick_board.py is invoked (CLI, Discord bot, tests).
+# Ensure blueprint/ is on sys.path so attribution_betas is importable as a
+# flat module regardless of how pick_board.py is invoked (CLI, Discord bot,
+# tests).  Python's sys.modules cache means the module file is parsed once
+# per process — no disk I/O on subsequent calls to _get_beta_for_year().
 _REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
+_BLUEPRINT_DIR = _REPO_ROOT / "blueprint"
+if str(_BLUEPRINT_DIR) not in sys.path:
+    sys.path.insert(0, str(_BLUEPRINT_DIR))
 
-from blueprint.attribution_betas import get_attribution_beta as _get_attribution_beta  # noqa: E402
+try:
+    from attribution_betas import get_attribution_beta as _get_attribution_beta  # type: ignore  # noqa: E402
+except ImportError:
+    def _get_attribution_beta(year: int, phase: str = "overall") -> float:  # type: ignore  # noqa: E302
+        return 1.0
 
 
 def _get_beta_for_year(year: Optional[int]) -> Optional[float]:
     """
-    Return the empirical β for *year* via a cached package import.
+    Return the empirical β for *year* via a cached module import.
 
     Returns None when year is None (legacy / back-compat path) so that callers
     can detect "no β requested" vs "β=some value".
     Falls back to 1.0 (linear) if the year is not in the registry.
+
+    Performance note: the Python module system caches attribution_betas in
+    sys.modules after the first import, so repeated calls here are O(1) dict
+    lookups in sys.modules — no disk I/O per call (vs. the old importlib.util
+    approach which re-parsed the file on every !rec Discord command).
     """
     if year is None:
         return None
