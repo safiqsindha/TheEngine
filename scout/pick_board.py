@@ -34,14 +34,41 @@ Usage:
   python3 pick_board.py sim [--sims 5000]
 """
 
+import importlib.util
 import json
 import math
 import random
 import sys
 from dataclasses import dataclass, asdict
 from pathlib import Path
+from typing import Optional
 
 from statbotics_client import get_event_teams
+
+# ─── β configuration ───────────────────────────────────────────────────────────
+# Default FRC season year used when callers don't specify `year`.
+# Students competing in 2025 (Reefscape) see β=0.65; override at call sites
+# or via the `year` kwarg to recommend_pick() / cmd_rec() for off-season replay.
+DEFAULT_YEAR: int = 2025
+
+
+def _get_beta_for_year(year: Optional[int]) -> Optional[float]:
+    """
+    Return the empirical β for *year* by loading attribution_betas at call time.
+
+    Returns None when year is None (legacy / back-compat path) so that callers
+    can detect "no β requested" vs "β=some value".
+    Falls back to 1.0 (linear) if the year is not in the registry.
+    """
+    if year is None:
+        return None
+    _blueprint_path = (
+        Path(__file__).resolve().parents[1] / "blueprint" / "attribution_betas.py"
+    )
+    spec = importlib.util.spec_from_file_location("attribution_betas", _blueprint_path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.get_attribution_beta(year)
 
 try:
     from tba_client import event_matches, event_alliances as tba_alliances
@@ -449,12 +476,26 @@ def project_board(state: dict) -> list:
     return board
 
 
-def _zone_complementarity(us: dict, them: dict) -> tuple:
+def _zone_complementarity(
+    us: dict,
+    them: dict,
+    beta: Optional[float] = None,
+) -> tuple:
     """
     Score how well a candidate complements our alliance's scoring zones.
 
     Key insight: a partner strong where we're weak > partner strong where
     we're already strong (diminishing returns on same zones).
+
+    Parameters
+    ----------
+    us   : alliance scoring profile (aggregated)
+    them : candidate team's scoring profile
+    beta : optional empirical attribution β for the current season.
+           When β < 0.70 (high coupling year like 2014/2022), the complementarity
+           bonus is scaled up by (1 - beta) to reflect that robots are more
+           interdependent and zone-filling matters more.
+           When β is None, raw scoring is returned unchanged (back-compat).
 
     Returns (score 0-100, reasoning string).
     """
@@ -517,6 +558,19 @@ def _zone_complementarity(us: dict, them: dict) -> tuple:
         score -= 5
         reasons.append(f"WARNING: negative floor ({them_floor:.0f})")
 
+    # ── β modulation ─────────────────────────────────────────────────────────
+    # Low β (high coupling season) → complementarity matters more.
+    # Scale bonus by (1 + coupling_factor) where coupling = max(0, 0.70 - beta).
+    # beta=0.55 (2024 Crescendo) → coupling=0.15 → 15% score amplification.
+    # beta=0.95 (2014 Aerial Assist) → coupling=0 → no amplification (coupling
+    #   so high that raw zone overlap doesn't help; the β effect on decomp
+    #   already captures this at the alliance_decomposition layer).
+    # beta=None → no change (back-compat).
+    if beta is not None:
+        _HIGH_COUPLING_THRESHOLD = 0.70
+        coupling_factor = max(0.0, _HIGH_COUPLING_THRESHOLD - beta)
+        score = score * (1.0 + coupling_factor)
+
     score = max(0, min(100, score))
     reasoning = "; ".join(reasons) if reasons else "Fuel overlap, average complementarity"
     return round(score, 1), reasoning
@@ -548,7 +602,7 @@ def _mc_quick(us_teams: list, them_teams: list, teams_db: dict,
     return wins / n_sims
 
 
-def recommend_pick(state: dict) -> list:
+def recommend_pick(state: dict, year: Optional[int] = DEFAULT_YEAR) -> list:
     """
     Return top recommended picks for our team's current turn.
 
@@ -557,6 +611,15 @@ def recommend_pick(state: dict) -> list:
     Complementarity uses game-piece-level scoring zone analysis.
     Monte Carlo simulates QF matchup with projected opponent.
     EYE adds qualitative scouting: reliability, driver skill, defense resistance.
+
+    Parameters
+    ----------
+    state : dict
+        Current draft state loaded from STATE_FILE.
+    year : int | None
+        FRC season year used to look up empirical β for complementarity weighting
+        and alliance_decomposition calls.  Defaults to DEFAULT_YEAR (2025).
+        Pass ``year=None`` to use legacy β=1.0 behaviour (back-compat).
     """
     available = get_available(state)
     if not available:
@@ -566,6 +629,11 @@ def recommend_pick(state: dict) -> list:
     our_data = state["teams"].get(str(state["our_team"]))
     if not our_data:
         return available[:10]
+
+    # ── Resolve β for this season ──────────────────────────────────────────────
+    # beta=None → legacy path (no β weighting in complementarity display)
+    # beta=float → empirical β from attribution_betas, shown in results
+    season_beta: Optional[float] = _get_beta_for_year(year)
 
     # Get our current alliance (captain + any existing picks)
     alliances = get_alliances(state)
@@ -595,8 +663,10 @@ def recommend_pick(state: dict) -> list:
         epa_norm = td["epa"] / max_epa if max_epa > 0 else 0
         floor_norm = max(0, td["floor"]) / max_epa if max_epa > 0 else 0
 
-        # ── Complementarity (scoring zone analysis) ──
-        comp_score, comp_reason = _zone_complementarity(our_profile, td)
+        # ── Complementarity (scoring zone analysis, β-modulated) ──
+        comp_score, comp_reason = _zone_complementarity(
+            our_profile, td, beta=season_beta
+        )
         comp_norm = comp_score / 100.0
 
         # ── Monte Carlo vs QF opponent (if opponent alliance is known) ──
@@ -630,6 +700,9 @@ def recommend_pick(state: dict) -> list:
             "mc_win": mc_win,
             "eye_score": eye_composite,
             "eye_conf": eye_confidence,
+            # β metadata — students can see which season β drove this ranking
+            "season_beta": season_beta,
+            "season_year": year,
         })
 
     scored.sort(key=lambda x: x["pick_score"], reverse=True)
@@ -1048,7 +1121,11 @@ def cmd_board(args):
 
 
 def cmd_rec(args):
-    """Show pick recommendation."""
+    """Show pick recommendation.
+
+    Optional flag: --year <YYYY>  override the season year for β lookup.
+                   --year none    force legacy β=1.0 (back-compat).
+    """
     state = load_state()
     pos, rd = current_pick_position(state)
     our_seed = state["our_seed"]
@@ -1057,9 +1134,33 @@ def cmd_rec(args):
 
     is_our_turn = (rd == 1 and pos == our_seed) or (rd == 2 and pos == our_seed)
 
-    picks = recommend_pick(state)
+    # ── Parse --year flag ────────────────────────────────────────────────────
+    rec_year: Optional[int] = DEFAULT_YEAR
+    i = 0
+    while i < len(args):
+        if args[i] == "--year" and i + 1 < len(args):
+            raw = args[i + 1].lower()
+            rec_year = None if raw == "none" else int(raw)
+            i += 2
+        else:
+            i += 1
 
-    print(f"\n  THE SCOUT — PICK RECOMMENDATION")
+    picks = recommend_pick(state, year=rec_year)
+
+    # ── β display line ──────────────────────────────────────────────────────
+    if picks:
+        _beta_used = picks[0].get("season_beta")
+        _year_used = picks[0].get("season_year")
+    else:
+        _beta_used = _get_beta_for_year(rec_year)
+        _year_used = rec_year
+
+    if _beta_used is not None and _year_used is not None:
+        _beta_display = f"β={_beta_used:.2f} ({_year_used})"
+    else:
+        _beta_display = "β=1.00 (legacy)"
+
+    print(f"\n  THE SCOUT — PICK RECOMMENDATION  [{_beta_display}]")
     if is_our_turn:
         print(f"  ★ IT'S YOUR TURN (Round {rd})")
     else:
@@ -1111,6 +1212,8 @@ def cmd_rec(args):
         new_epa = our_epa + top["epa"]
         print(f"\n  ★ RECOMMENDATION: Pick {top['team']} {top['name']}")
         print(f"    Alliance EPA: {our_epa:.0f} → {new_epa:.0f} (+{top['epa']:.0f})")
+        if top.get("season_beta") is not None:
+            print(f"    Season β: {top['season_beta']:.2f} (year {top.get('season_year', '?')}) — complementarity weighted accordingly")
         print(f"    Floor: {top['floor']:.1f} | Ceiling: {top['ceiling']:.1f}")
         if top.get('comp_reason'):
             print(f"    Why: {top['comp_reason']}")
