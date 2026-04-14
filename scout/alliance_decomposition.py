@@ -74,9 +74,29 @@ Usage:
 
 from __future__ import annotations
 
+import importlib.util
 import math
+import sys
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Optional
+
+# ---------------------------------------------------------------------------
+# Lazy import of get_attribution_beta from blueprint/attribution_betas.py.
+#
+# blueprint/ has no __init__.py, so we cannot use `from blueprint.attribution_betas
+# import ...` as a package import.  Instead we locate the file relative to this
+# module's own path and import it directly, which works regardless of how
+# sys.path is configured by the caller.
+# ---------------------------------------------------------------------------
+
+def _load_get_attribution_beta():
+    """Load get_attribution_beta from blueprint/attribution_betas.py at call time."""
+    _blueprint_path = Path(__file__).resolve().parents[1] / "blueprint" / "attribution_betas.py"
+    spec = importlib.util.spec_from_file_location("attribution_betas", _blueprint_path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.get_attribution_beta
 
 # EMA smoothing factor: 0.3 matches recent-match weighting used in 1678 event analysis
 DEFAULT_EMA_ALPHA = 0.3
@@ -349,6 +369,8 @@ def compute_alliance_decomposition(
     *,
     match_key: str = "",
     beta: float = 1.0,
+    year: Optional[int] = None,
+    phase: str = "overall",
 ) -> dict[int, dict]:
     """
     Decompose alliance match performance into per-team contributions.
@@ -366,6 +388,22 @@ def compute_alliance_decomposition(
     beta : float — power-curve exponent passed to power_normalize().
         1.0 (default) → linear shares (back-compat).
         <1.0 → concave (dampens high-volume bias).
+        Precedence: explicit beta > year-based lookup > 1.0 fallback.
+    year : int | None — FRC season year used to auto-select β from
+        blueprint.attribution_betas.get_attribution_beta(year, phase).
+        Only used when beta is not explicitly passed (i.e., equals the default 1.0
+        sentinel). If None, no lookup is performed and β=1.0 is used (back-compat).
+    phase : str — game phase for per-phase β lookup (e.g. "cycle", "climb",
+        "overall"). Only meaningful for seasons with per-phase β (e.g. 2019).
+        Ignored when year is None.
+
+    β precedence
+    ------------
+    1. Explicit ``beta`` kwarg (anything other than the default 1.0 sentinel
+       is treated as explicit) — always wins.
+    2. Year-based lookup via ``get_attribution_beta(year, phase)`` — used when
+       ``year`` is provided and ``beta`` is the default 1.0.
+    3. 1.0 fallback — linear attribution, safe default when year is None.
 
     Returns
     -------
@@ -382,6 +420,15 @@ def compute_alliance_decomposition(
     Schema gaps documented at module level. When stand_scout obs include
     "match_contribution", shares are observation-driven. Otherwise uniform.
     """
+    # β resolution: explicit > year-lookup > 1.0 fallback
+    # We detect "explicit" by checking if the caller passed beta != default sentinel.
+    # Because Python keyword defaults are evaluated once, we use a sentinel approach:
+    # if beta is still 1.0 AND year is provided, do the lookup.
+    _beta_explicit = beta != 1.0  # explicit if caller chose a non-default value
+    if not _beta_explicit and year is not None:
+        _get_beta = _load_get_attribution_beta()
+        beta = _get_beta(year, phase)
+    # If year is None and beta==1.0, we keep beta=1.0 (back-compat)
     alliance_teams = list(alliance_epas.keys())
     expected_total = sum(alliance_epas.values())
 

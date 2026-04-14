@@ -31,7 +31,11 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
+_BLUEPRINT_DIR = ROOT / "blueprint"
 sys.path.insert(0, str(ROOT / "scout"))
+# Add blueprint/ dir so attribution_betas can be imported as a flat module
+if str(_BLUEPRINT_DIR) not in sys.path:
+    sys.path.insert(0, str(_BLUEPRINT_DIR))
 
 from alliance_decomposition import (  # noqa: E402
     DEFAULT_EMA_ALPHA,
@@ -358,3 +362,111 @@ def test_format_insufficient_data_tag():
                        consistency=0.5, match_count=MIN_MATCHES_FOR_EMA - 1)
     row = format_carry_delta_row(ema)
     assert "insufficient" in row
+
+
+# ─── year-based β auto-selection (Item 2b) ──────────────────────────────────
+
+
+def test_year_2025_auto_selects_empirical_beta():
+    """year=2025 → empirical β=0.65; should produce non-linear shares."""
+    from attribution_betas import get_attribution_beta
+    expected_beta = get_attribution_beta(2025, "overall")
+    assert expected_beta == pytest.approx(0.65, abs=1e-6)
+
+    epas = {2950: 30.0, 1678: 30.0, 254: 30.0}
+    obs_list = [
+        _obs(team=2950, contribution=90.0),
+        _obs(team=1678, contribution=5.0),
+        _obs(team=254, contribution=5.0),
+    ]
+    # With beta=0.65 (concave), high-contributor share is dampened vs beta=1.0
+    result_auto = compute_alliance_decomposition(
+        epas, _match_breakdown(120.0), obs_list, year=2025
+    )
+    result_linear = compute_alliance_decomposition(
+        epas, _match_breakdown(120.0), obs_list, beta=1.0
+    )
+    # auto β=0.65 compresses spread — top team share should be smaller than linear
+    share_auto = result_auto[2950]["contribution_share"]
+    share_linear = result_linear[2950]["contribution_share"]
+    assert share_auto < share_linear
+
+
+def test_year_2019_phase_climb_returns_climb_beta():
+    """year=2019, phase='climb' → prior β=0.60 (no empirical for 2019)."""
+    from attribution_betas import get_attribution_beta
+    beta = get_attribution_beta(2019, "climb")
+    assert beta == pytest.approx(0.60, abs=1e-6)
+
+    epas = {2950: 30.0, 1678: 30.0, 254: 30.0}
+    obs_list = [
+        _obs(team=2950, contribution=60.0),
+        _obs(team=1678, contribution=20.0),
+        _obs(team=254, contribution=20.0),
+    ]
+    result = compute_alliance_decomposition(
+        epas, _match_breakdown(110.0), obs_list, year=2019, phase="climb"
+    )
+    # Result should be valid (shares sum to 1)
+    total_share = sum(d["contribution_share"] for d in result.values())
+    assert total_share == pytest.approx(1.0, abs=1e-4)
+
+
+def test_year_2019_phase_cycle_returns_cycle_beta():
+    """year=2019, phase='cycle' → prior β=0.85."""
+    from attribution_betas import get_attribution_beta
+    beta = get_attribution_beta(2019, "cycle")
+    assert beta == pytest.approx(0.85, abs=1e-6)
+
+    epas = {2950: 30.0, 1678: 30.0, 254: 30.0}
+    obs_list = [
+        _obs(team=2950, contribution=60.0),
+        _obs(team=1678, contribution=20.0),
+        _obs(team=254, contribution=20.0),
+    ]
+    result = compute_alliance_decomposition(
+        epas, _match_breakdown(110.0), obs_list, year=2019, phase="cycle"
+    )
+    total_share = sum(d["contribution_share"] for d in result.values())
+    assert total_share == pytest.approx(1.0, abs=1e-4)
+
+
+def test_explicit_beta_overrides_year_lookup():
+    """Explicit beta=0.5 wins over year=2025 lookup (which would give 0.65)."""
+    epas = {2950: 30.0, 1678: 30.0, 254: 30.0}
+    obs_list = [
+        _obs(team=2950, contribution=90.0),
+        _obs(team=1678, contribution=5.0),
+        _obs(team=254, contribution=5.0),
+    ]
+    result_explicit = compute_alliance_decomposition(
+        epas, _match_breakdown(120.0), obs_list, beta=0.5, year=2025
+    )
+    result_auto = compute_alliance_decomposition(
+        epas, _match_breakdown(120.0), obs_list, year=2025
+    )
+    # beta=0.5 compresses share more than beta=0.65; top team gets smaller share
+    share_explicit = result_explicit[2950]["contribution_share"]
+    share_auto = result_auto[2950]["contribution_share"]
+    assert share_explicit < share_auto
+
+
+def test_year_none_preserves_legacy_beta_one():
+    """year=None → β=1.0 (back-compat); linear shares."""
+    epas = {2950: 30.0, 1678: 30.0, 254: 30.0}
+    obs_list = [
+        _obs(team=2950, contribution=60.0),
+        _obs(team=1678, contribution=20.0),
+        _obs(team=254, contribution=20.0),
+    ]
+    result_none = compute_alliance_decomposition(
+        epas, _match_breakdown(120.0), obs_list, year=None
+    )
+    result_default = compute_alliance_decomposition(
+        epas, _match_breakdown(120.0), obs_list
+    )
+    # Both should produce identical shares (both use β=1.0)
+    for team in epas:
+        assert result_none[team]["contribution_share"] == pytest.approx(
+            result_default[team]["contribution_share"], abs=1e-6
+        )
