@@ -87,6 +87,16 @@ try:
 except Exception:
     HAS_ALLIANCE_DECOMP = False
 
+try:
+    from synergy import (
+        compute_team_synergy_profile,
+        best_synergy_partners,
+        format_synergy_row,
+    )
+    HAS_SYNERGY = True
+except Exception:
+    HAS_SYNERGY = False
+
 STATE_DIR = Path(__file__).parent / ".cache" / "draft"
 STATE_FILE = STATE_DIR / "live_draft.json"
 
@@ -1006,6 +1016,33 @@ def cmd_board(args):
                             )
                             for s in sorted(suspect_scouts):
                                 print(f"    {s} — review entries for recording inconsistency")
+
+    # ── Synergy section ───────────────────────────────────────────────────────
+    if HAS_SYNERGY:
+        synergy_matches = state.get("_synergy_matches", [])
+        home_team = state.get("our_team") or state.get("home_team")
+        if synergy_matches and home_team:
+            all_team_nums = [int(k) for k in state.get("teams", {}).keys()]
+            profile = compute_team_synergy_profile(
+                int(home_team), all_team_nums, synergy_matches
+            )
+            if profile:
+                top5 = best_synergy_partners(int(home_team), profile, top_n=5)
+                if top5:
+                    print(f"\n  SYNERGY — Top partners for team {home_team}:")
+                    print(f"  {'─' * 75}")
+                    for partner, syn in top5:
+                        # Cross-reference carry_delta from alliance decomposition
+                        carry_val = None
+                        if HAS_ALLIANCE_DECOMP:
+                            decomp_matches = state.get("_decomp_matches", [])
+                            if decomp_matches:
+                                ema = aggregate_team_delta_ema(partner, decomp_matches)
+                                carry_val = ema.carry_delta
+                        td = state["teams"].get(str(partner), {})
+                        name = td.get("name", "")[:18]
+                        row = format_synergy_row(partner, syn, name, carry_delta=carry_val)
+                        print(f"  {row}")
 
     print()
 
