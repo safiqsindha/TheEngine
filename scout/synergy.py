@@ -52,7 +52,16 @@ Usage:
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
 from typing import Optional
+
+# Allow importing defense_adjusted_epa from the same scout/ directory
+_SCOUT_DIR = Path(__file__).resolve().parent
+if str(_SCOUT_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCOUT_DIR))
+
+from defense_adjusted_epa import compute_defense_adjusted_epa  # noqa: E402
 
 # Minimum shared matches before a synergy score is considered reliable.
 # Below this count the pair result is flagged with used_fallback=True.
@@ -100,11 +109,112 @@ def _alliance_component_epa(
 # ─── Core synergy computation ─────────────────────────────────────────────────
 
 
+def defense_adjusted_synergy(
+    team_a: dict,
+    team_b: dict,
+    matches: list[dict],
+) -> float:
+    """
+    Compute defense-adjusted synergy for a pair of teams.
+
+    Uses defense-adjusted EPA for each team (via compute_defense_adjusted_epa),
+    then computes synergy as the residual:
+
+        synergy_ab = mean(actual_alliance_score_with_both - (da_epa_a + da_epa_b))
+
+    averaged over matches where both teams played together.
+
+    Parameters
+    ----------
+    team_a : dict with keys:
+        "team"         : int  — team number
+        "raw_epa"      : float — season/event raw EPA from Statbotics
+        "observations" : list[dict] — stand_scout obs for this team
+    team_b : dict — same schema as team_a
+    matches : list of shared_match dicts (same shape as compute_pair_synergy uses):
+        {
+          "alliance_teams": [int, int, int],
+          "actual_total": float,
+          "team_epas": {team_num: {"epa": float, ...}},
+        }
+        Only matches containing BOTH team_a and team_b in alliance_teams are used.
+
+    Returns
+    -------
+    float — defense-adjusted synergy (positive = elevating each other beyond
+    DA-EPA predictions; negative = stepping on each other's workflow).
+    Returns 0.0 if no valid shared matches.
+
+    Notes
+    -----
+    The third alliance member's raw EPA (from team_epas) is used as-is for the
+    third-robot baseline since we only have defense observation data for team_a/b.
+    The residual therefore captures the A+B interaction term net of the third bot.
+    """
+    if not matches:
+        return 0.0
+
+    num_a = team_a.get("team")
+    num_b = team_b.get("team")
+
+    # Compute defense-adjusted EPA for each team
+    try:
+        da_result_a = compute_defense_adjusted_epa(
+            team=num_a,
+            raw_epa=team_a.get("raw_epa", 0.0),
+            observations=team_a.get("observations", []),
+        )
+        da_epa_a = da_result_a.offensive_epa
+    except Exception:
+        da_epa_a = team_a.get("raw_epa", 0.0)
+
+    try:
+        da_result_b = compute_defense_adjusted_epa(
+            team=num_b,
+            raw_epa=team_b.get("raw_epa", 0.0),
+            observations=team_b.get("observations", []),
+        )
+        da_epa_b = da_result_b.offensive_epa
+    except Exception:
+        da_epa_b = team_b.get("raw_epa", 0.0)
+
+    deltas: list[float] = []
+
+    for match in matches:
+        alliance_teams = match.get("alliance_teams", [])
+        if num_a not in alliance_teams or num_b not in alliance_teams:
+            continue
+
+        actual_total = match.get("actual_total")
+        if actual_total is None:
+            continue
+
+        # Third team baseline from raw team_epas in match record
+        team_epas: dict = match.get("team_epas", {})
+        third_epa = sum(
+            team_epas.get(t, {}).get("epa", 0.0)
+            for t in alliance_teams
+            if t != num_a and t != num_b
+        )
+
+        expected = da_epa_a + da_epa_b + third_epa
+        deltas.append(actual_total - expected)
+
+    if not deltas:
+        return 0.0
+
+    return round(sum(deltas) / len(deltas), 2)
+
+
 def compute_pair_synergy(
     team_a: int,
     team_b: int,
     shared_matches: list[dict],
     component_breakdown: bool = True,
+    *,
+    use_defense_adjustment: bool = False,
+    team_a_data: Optional[dict] = None,
+    team_b_data: Optional[dict] = None,
 ) -> dict:
     """
     Compute synergy score for a pair of teams (A, B) from their shared matches.
@@ -129,6 +239,14 @@ def compute_pair_synergy(
         If True, compute auto/teleop/endgame synergy when phase actuals are
         available. If phase data is absent, those fields return 0.0 and the
         caller should rely on "overall" only.
+    use_defense_adjustment : bool (keyword-only, default False)
+        When True, substitutes defense-adjusted EPA for team_a and team_b in
+        the expected-total baseline. Requires team_a_data and team_b_data to
+        provide observations; falls back to raw EPA if data is missing.
+        Default False preserves backward-compatible behavior.
+    team_a_data : optional dict — {"team": int, "raw_epa": float, "observations": list}
+        Required when use_defense_adjustment=True; ignored otherwise.
+    team_b_data : optional dict — same schema as team_a_data.
 
     Returns
     -------
@@ -140,7 +258,34 @@ def compute_pair_synergy(
         "n_matches" : int — number of shared matches
         "has_component_data": bool — True when phase-level breakdown was used
         "used_fallback": bool — True when n_matches < MIN_SHARED_MATCHES
+        "defense_adjusted": bool — True when use_defense_adjustment=True and
+            at least one team's DA-EPA differed from raw EPA
     """
+    # Pre-compute defense-adjusted EPAs when requested (outside the match loop)
+    _da_epa_a: Optional[float] = None
+    _da_epa_b: Optional[float] = None
+    if use_defense_adjustment:
+        if team_a_data is not None:
+            try:
+                da_r = compute_defense_adjusted_epa(
+                    team=team_a_data.get("team", team_a),
+                    raw_epa=team_a_data.get("raw_epa", 0.0),
+                    observations=team_a_data.get("observations", []),
+                )
+                _da_epa_a = da_r.offensive_epa
+            except Exception:
+                pass
+        if team_b_data is not None:
+            try:
+                da_r = compute_defense_adjusted_epa(
+                    team=team_b_data.get("team", team_b),
+                    raw_epa=team_b_data.get("raw_epa", 0.0),
+                    observations=team_b_data.get("observations", []),
+                )
+                _da_epa_b = da_r.offensive_epa
+            except Exception:
+                pass
+
     if not shared_matches:
         return {
             "overall": 0.0,
@@ -150,6 +295,7 @@ def compute_pair_synergy(
             "n_matches": 0,
             "has_component_data": False,
             "used_fallback": True,
+            "defense_adjusted": False,
         }
 
     overall_deltas: list[float] = []
@@ -168,10 +314,15 @@ def compute_pair_synergy(
         if actual_total is None:
             continue  # Can't compute synergy without actual score
 
-        # Expected = sum of individual EPAs
-        expected_total = sum(
-            team_epas.get(t, {}).get("epa", 0.0) for t in alliance_teams
-        )
+        # Expected = sum of individual EPAs (optionally defense-adjusted for A and B)
+        def _epa_for(t: int) -> float:
+            if use_defense_adjustment and t == team_a and _da_epa_a is not None:
+                return _da_epa_a
+            if use_defense_adjustment and t == team_b and _da_epa_b is not None:
+                return _da_epa_b
+            return team_epas.get(t, {}).get("epa", 0.0)
+
+        expected_total = sum(_epa_for(t) for t in alliance_teams)
         overall_deltas.append(actual_total - expected_total)
 
         # Component-level synergy (auto / teleop / endgame)
@@ -205,12 +356,16 @@ def compute_pair_synergy(
             "n_matches": 0,
             "has_component_data": False,
             "used_fallback": True,
+            "defense_adjusted": False,
         }
 
     def _mean(lst: list[float]) -> float:
         return round(sum(lst) / len(lst), 2) if lst else 0.0
 
     has_component = bool(auto_deltas or teleop_deltas or endgame_deltas)
+    _defense_adjusted = use_defense_adjustment and (
+        _da_epa_a is not None or _da_epa_b is not None
+    )
 
     return {
         "overall": _mean(overall_deltas),
@@ -220,6 +375,7 @@ def compute_pair_synergy(
         "n_matches": n,
         "has_component_data": has_component,
         "used_fallback": n < MIN_SHARED_MATCHES,
+        "defense_adjusted": _defense_adjusted,
     }
 
 
@@ -364,6 +520,8 @@ def format_synergy_row(
     syn: dict,
     partner_name: str = "",
     carry_delta: Optional[float] = None,
+    *,
+    defense_adjusted_synergy_val: Optional[float] = None,
 ) -> str:
     """
     Format a synergy dict as a single pick-board display row.
@@ -375,11 +533,15 @@ def format_synergy_row(
     partner_name : str — optional display name (truncated to 18 chars)
     carry_delta : optional float from alliance_decomposition.aggregate_team_delta_ema.
         When both carry_delta > 3 AND overall synergy > 5, an [ELITE] marker is shown.
+    defense_adjusted_synergy_val : optional float from defense_adjusted_synergy().
+        When carry_delta > 3 AND defense_adjusted_synergy_val > 5, emits [ELITE+D]
+        instead of [ELITE] to signal defense-confirmed elite status.
 
     Example output:
         Team  2468 [GoodName         ]  overall: +8.3 | auto: +2.1 | teleop: +4.5 | endgame: +1.7  (5 matches)
         Team  1296 [OtherTeam        ]  overall: +7.1 [no component data]  (2 matches) [low-n]
         Team   836 [EliteMatch       ]  overall: +9.0 | auto: +3.0 | teleop: +4.5 | endgame: +1.5  (6 matches) [ELITE]
+        Team   836 [EliteMatch       ]  overall: +9.0 | auto: +3.0 | teleop: +4.5 | endgame: +1.5  (6 matches) [ELITE+D]
     """
     overall = syn.get("overall", 0.0)
     n = syn.get("n_matches", 0)
@@ -405,9 +567,16 @@ def format_synergy_row(
     low_n_tag = " [low-n]" if fallback else ""
 
     # Elite pairing: both carry_delta > 3 AND overall synergy > 5
+    # [ELITE+D] when additionally defense_adjusted_synergy > 5 (defense-confirmed)
     elite_tag = ""
     if carry_delta is not None and carry_delta > 3.0 and overall > 5.0:
-        elite_tag = " [ELITE]"
+        if (
+            defense_adjusted_synergy_val is not None
+            and defense_adjusted_synergy_val > 5.0
+        ):
+            elite_tag = " [ELITE+D]"
+        else:
+            elite_tag = " [ELITE]"
 
     name_str = f" [{partner_name[:18]:<18}]" if partner_name else ""
     return (

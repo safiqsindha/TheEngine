@@ -40,6 +40,7 @@ from synergy import (  # noqa: E402
     build_shared_match,
     compute_pair_synergy,
     compute_team_synergy_profile,
+    defense_adjusted_synergy,
     format_synergy_row,
 )
 
@@ -274,3 +275,85 @@ def test_format_shows_low_n_tag_for_fallback():
     row = format_synergy_row(1234, syn)
     assert "[low-n]" in row
     assert "no component data" in row
+
+
+# ─── defense_adjusted_synergy ─────────────────────────────────────────────────
+
+
+def _da_team(num: int, raw_epa: float, observations: list | None = None) -> dict:
+    """Build a team_a/team_b dict for defense_adjusted_synergy."""
+    return {"team": num, "raw_epa": raw_epa, "observations": observations or []}
+
+
+def test_defense_adjusted_synergy_returns_float():
+    """defense_adjusted_synergy always returns a float."""
+    matches = [_match(actual_total=170.0), _match(actual_total=165.0)]
+    result = defense_adjusted_synergy(
+        _da_team(2950, 40.0), _da_team(1678, 50.0), matches
+    )
+    assert isinstance(result, float)
+
+
+def test_existing_synergy_unchanged_when_adjustment_false():
+    """use_defense_adjustment=False produces same result as the original function."""
+    matches = [_match(actual_total=170.0), _match(actual_total=168.0)]
+    raw = compute_pair_synergy(2950, 1678, matches, use_defense_adjustment=False)
+    adj = compute_pair_synergy(2950, 1678, matches)  # default False
+    assert raw["overall"] == adj["overall"]
+    assert raw.get("defense_adjusted") is False
+
+
+def test_defense_adjustment_true_synergy_differs_for_defended_team():
+    """When a team has defended-match obs, DA-EPA > raw, shifting synergy lower."""
+    # Team 2950 observed under defense: raw_epa=40, undefended contrib=60
+    obs_defended = [
+        {"defense": {"received_defense": True}, "match_contribution": 25.0},
+        {"defense": {"received_defense": False}, "match_contribution": 60.0},
+        {"defense": {"received_defense": False}, "match_contribution": 62.0},
+    ]
+    team_a_data = {"team": 2950, "raw_epa": 40.0, "observations": obs_defended}
+    team_b_data = {"team": 1678, "raw_epa": 50.0, "observations": []}
+
+    matches = [_match(actual_total=170.0), _match(actual_total=172.0)]
+
+    raw_result = compute_pair_synergy(2950, 1678, matches)
+    adj_result = compute_pair_synergy(
+        2950, 1678, matches,
+        use_defense_adjustment=True,
+        team_a_data=team_a_data,
+        team_b_data=team_b_data,
+    )
+    # DA-EPA for 2950 > raw 40.0, so expected goes up, synergy delta goes down vs raw
+    assert adj_result["overall"] < raw_result["overall"]
+    assert adj_result.get("defense_adjusted") is True
+
+
+def test_elite_plus_d_flag_when_both_thresholds_exceeded():
+    """[ELITE+D] shown when carry_delta > 3 AND defense_adjusted_synergy_val > 5."""
+    syn = {"overall": 9.0, "auto": 3.0, "teleop": 4.5, "endgame": 1.5,
+           "n_matches": 6, "has_component_data": True, "used_fallback": False}
+    row = format_synergy_row(2468, syn, carry_delta=4.0,
+                             defense_adjusted_synergy_val=6.5)
+    assert "[ELITE+D]" in row
+    assert "[ELITE]" not in row.replace("[ELITE+D]", "")
+
+
+def test_defense_adjusted_synergy_empty_matches_returns_zero():
+    """Empty matches list → 0.0."""
+    result = defense_adjusted_synergy(
+        _da_team(2950, 40.0), _da_team(1678, 50.0), []
+    )
+    assert result == 0.0
+
+
+def test_defense_adjusted_synergy_missing_defense_data_falls_back_to_raw():
+    """No observations → uses raw_epa; result is same as raw synergy residual."""
+    matches = [_match(actual_total=170.0), _match(actual_total=170.0)]
+    # No observations → DA-EPA == raw_epa (fallback path)
+    result = defense_adjusted_synergy(
+        _da_team(2950, 40.0, observations=[]),
+        _da_team(1678, 50.0, observations=[]),
+        matches,
+    )
+    # expected = 40 + 50 + 60 (third team) = 150; actual = 170 → delta = 20
+    assert result == pytest.approx(20.0, abs=0.1)
