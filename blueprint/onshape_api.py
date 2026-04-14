@@ -1,15 +1,25 @@
 """
 The Blueprint — OnShape API Wrapper (B.1)
-Parametric CAD Pipeline for THE ENGINE
 Team 2950 — The Devastators
 
-Wraps the OnShape REST API for:
-- Document/assembly creation
-- COTS part insertion from FRCDesignLib
-- Mate creation between parts
-- BOM extraction
-- STEP/PDF export
+DEPRECATED (2026-04-13): CAD generation cut per BLUEPRINT_REV2_POSTMORTEM.md.
+onshape_api.py is retained because frame_generator.py, part_resolver.py, and
+test_blueprint.py still import it. Do not add new callers. If those legacy
+modules are removed in a future pass, delete this file along with them.
 """
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 import os
 import json

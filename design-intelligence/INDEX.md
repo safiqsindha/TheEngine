@@ -3,8 +3,8 @@
 Entry point for all design, prediction, and operational docs.
 **Start here** when onboarding a new agent or planning a session.
 
-*Last updated: 2026-04-12. 54 docs across 4 buckets + 2 subfolders.*
-*Test suite: **944 tests** in tests/ (503 scout + 64 antenna + 377 blueprint + 2 skip + 3 xfail). Oracle + assembly_composer suites added 2026-04-11. GameRules I/O fix added 2026-04-11.*
+*Last updated: 2026-04-13. 54 docs across 4 buckets + 2 subfolders.*
+*Test suite: ~**938 tests** in tests/ (503 scout + 64 antenna + ~371 blueprint remaining + 2 skip + 3 xfail). Blueprint CAD generators cut 2026-04-13 per BLUEPRINT_REV2_POSTMORTEM.md — Blueprint is now design analysis + BOM estimator only (oracle, motor_model, bom_rollup, physics layer survive; generators, cots_parts, onshape-mcp deleted).*
 
 ---
 
@@ -72,7 +72,7 @@ One file per potential subsystem. Some built, some planned, some archived.
 |---|---|---|
 | `ARCH_AI_MATCH_ANALYSIS.md` | Spec | AI-powered post-match analysis pipeline |
 | `ARCH_BUILD_MANAGEMENT.md` | Spec | Build management and milestone tracking system |
-| `ARCH_CAD_PIPELINE.md` | **Built** | CAD pipeline spec — implemented as `blueprint/` |
+| `ARCH_CAD_PIPELINE.md` | **Reframed** | Design analysis + BOM estimator spec — generators cut 2026-04-13, oracle/physics/bom survive |
 | `ARCH_CD_WATCHER.md` | **Built** | Chief Delphi watcher — implemented as `antenna/` |
 | `ARCH_COACH_AI.md` | Spec | In-match AI coaching assistant (Whisper) |
 | `ARCH_DRIVER_STATION.md` | Spec | Driver station cockpit hardware and software spec |
