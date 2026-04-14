@@ -383,12 +383,28 @@ class GameRules:
 
 @dataclass
 class RuleResult:
-    """Output of a single rule application."""
+    """Output of a single rule application.
+
+    Fields
+    ------
+    rule_id        : canonical rule identifier, e.g. "R7"
+    applies        : True when the rule fired and produced a recommendation
+    recommendation : short string describing the output choice
+    confidence     : float ∈ [0, 1] — certainty of this rule's recommendation
+    reasoning      : human-readable explanation of why the rule fired
+    name           : human-readable rule name (e.g. "Endgame Climb") — C2 addition
+    rationale      : one-sentence summary of the rule's decision logic — C2 addition
+    contribution   : what this rule added to the overall prediction — C2 addition
+    """
     rule_id: str
     applies: bool
     recommendation: str
     confidence: float
     reasoning: str
+    # C2 per-rule explainability fields (optional; default to "" for backward compat)
+    name: str = ""
+    rationale: str = ""
+    contribution: str = ""
 
 
 def apply_rules(game: GameRules) -> dict:
@@ -412,7 +428,10 @@ def apply_rules(game: GameRules) -> dict:
 
     # ── R1: Drivetrain — Always swerve ──
     r1 = RuleResult("R1", True, "swerve", 1.0,
-                     "Swerve mandatory post-2022. Every Einstein competitor uses swerve.")
+                     "Swerve mandatory post-2022. Every Einstein competitor uses swerve.",
+                     name="Drivetrain Selection",
+                     rationale="Post-2022 Einstein consensus is unanimous on swerve drive.",
+                     contribution="Sets drivetrain type, module, speed, and frame geometry.")
     results.append(r1)
 
     # Speed: small field → acceleration, large field → speed
@@ -441,7 +460,10 @@ def apply_rules(game: GameRules) -> dict:
     # ── R2: Intake width — Always full width ──
     r2 = RuleResult("R2", game.pieces_floor_pickup, "full_width_intake",
                      CONFIDENCE_POLICY["high"],
-                     "Full-width bumper-to-bumper intake. Every champion since 2019.")
+                     "Full-width bumper-to-bumper intake. Every champion since 2019.",
+                     name="Intake Width",
+                     rationale="Full-width intake maximises piece acquisition rate.",
+                     contribution="Sets intake.width, intake.motors, and intake.deploy.")
     results.append(r2)
 
     # ── R3: Roller material ──
@@ -462,7 +484,10 @@ def apply_rules(game: GameRules) -> dict:
         roller_material = "flex_wheels"
         r3_note = "Unknown shape → flex wheels (safest default)"
 
-    r3 = RuleResult("R3", True, roller_material, CONFIDENCE_POLICY["medium"], r3_note)
+    r3 = RuleResult("R3", True, roller_material, CONFIDENCE_POLICY["medium"], r3_note,
+                     name="Roller Material",
+                     rationale="Game piece geometry determines which roller type grips reliably.",
+                     contribution="Sets intake.roller_material and intake.type (over/under bumper).")
     results.append(r3)
 
     # Intake type — over_bumper default, under_bumper if piece is small
@@ -509,7 +534,10 @@ def apply_rules(game: GameRules) -> dict:
         r4_conf = CONFIDENCE_POLICY["low"]
         r4_note = "Unknown target type → default elevator"
 
-    r4 = RuleResult("R4", True, scorer_method, r4_conf, r4_note)
+    r4 = RuleResult("R4", True, scorer_method, r4_conf, r4_note,
+                     name="Scoring Method",
+                     rationale="Target type (ranged/placement/ground) determines mechanism class.",
+                     contribution="Sets scorer.method — the highest-leverage single output key.")
     results.append(r4)
 
     # ── R5: Elevator stage count ──
@@ -530,7 +558,10 @@ def apply_rules(game: GameRules) -> dict:
         stages = 0
         r5_note = "Non-elevator scorer, stages N/A"
 
-    r5 = RuleResult("R5", scorer_method == "elevator", f"{stages}_stage", CONFIDENCE_POLICY["medium"], r5_note)
+    r5 = RuleResult("R5", scorer_method == "elevator", f"{stages}_stage", CONFIDENCE_POLICY["medium"], r5_note,
+                     name="Elevator Stage Count",
+                     rationale="Target height in inches determines how many elevator stages are needed.",
+                     contribution="Sets scorer.stages based on height bins (24/40/55 inch thresholds).")
     results.append(r5)
 
     # ── R6: Turret decision (4-quadrant matrix) ──
@@ -552,7 +583,10 @@ def apply_rules(game: GameRules) -> dict:
         r6_note = "Placement + fixed → SKIP turret (95%)"
         r6_conf = CONFIDENCE_POLICY["certain"]  # unanimous historical evidence
 
-    r6 = RuleResult("R6", True, turret, r6_conf, r6_note)
+    r6 = RuleResult("R6", True, turret, r6_conf, r6_note,
+                     name="Turret Decision",
+                     rationale="Four-quadrant matrix: ranged×distributed is the only case that warrants a turret.",
+                     contribution="Sets scorer.turret to 'continuous' or 'none'.")
     results.append(r6)
 
     # Build scorer prediction
@@ -585,7 +619,10 @@ def apply_rules(game: GameRules) -> dict:
                      f"Endgame is {climb_pct*100:.0f}% of winning score"
                      + (", MUST climb" if climb_must else
                         ", strongly recommended" if climb_should else
-                        ", optional"))
+                        ", optional"),
+                     name="Endgame Climb",
+                     rationale="Endgame fraction ≥15% = must climb; ≥5% with climb type = strongly recommended.",
+                     contribution="Sets endgame.type, endgame.height_in, and endgame.motors.")
     results.append(r7)
 
     if climb_required and game.endgame_type in ("climb", "balance"):
@@ -617,7 +654,10 @@ def apply_rules(game: GameRules) -> dict:
         auto_pieces = min(5, auto_pieces + 1)
 
     r8 = RuleResult("R8", True, f"{auto_pieces}_piece_auto", CONFIDENCE_POLICY["medium"],
-                     f"Target {auto_pieces}-piece auto. Known positions: {game.pieces_at_known_positions}")
+                     f"Target {auto_pieces}-piece auto. Known positions: {game.pieces_at_known_positions}",
+                     name="Autonomous Piece Count",
+                     rationale="Baseline 3-piece auto; +1 for small field (shorter cycles), capped at 5.",
+                     contribution="Sets autonomous.estimated_pieces and autonomous.priority_actions.")
     results.append(r8)
 
     # ── R10: Game piece detection ──
@@ -635,13 +675,25 @@ def apply_rules(game: GameRules) -> dict:
 
     r10 = RuleResult("R10", needs_detection, detection_method, CONFIDENCE_POLICY["medium"],
                       f"Detection: {detection_method}" if needs_detection
-                      else "No detection needed — known positions + wide intake")
+                      else "No detection needed — known positions + wide intake",
+                      name="Game Piece Detection",
+                      rationale="Choose vision strategy from piece predictability and contrast level.",
+                      contribution="Appends detection method recommendation to rule_log.")
     results.append(r10)
 
-    # Cycle time target (R11)
+    # ── R11: Cycle time target ──
     cycle_target = 5.0
     if game.field_is_small:
         cycle_target = 4.0
+
+    r11 = RuleResult(
+        "R11", True, f"{cycle_target}s_cycle", CONFIDENCE_POLICY["medium"],
+        f"Cycle time target: {cycle_target}s ({'small' if game.field_is_small else 'large'} field)",
+        name="Cycle Time Target",
+        rationale="Small field shortens travel distances; 4s target; large field uses 5s.",
+        contribution="Sets autonomous.cycle_time_s used in auto planning and reasoning.",
+    )
+    results.append(r11)
 
     pred["autonomous"] = {
         "priority_actions": ["score_preload"] + ["intake_nearby", "score_second"] * min(auto_pieces - 1, 2),
@@ -655,7 +707,10 @@ def apply_rules(game: GameRules) -> dict:
     if game.field_has_obstacles:
         r18 = RuleResult("R18", True, "raise_bellypan", CONFIDENCE_POLICY["medium"],
                           f"Field obstacles at {game.field_obstacle_height_in}\". "
-                          "Prototype obstacle crossing day 1. Raise bellypan to 2-3\".")
+                          "Prototype obstacle crossing day 1. Raise bellypan to 2-3\".",
+                          name="Field Obstacle Mitigation",
+                          rationale="Obstacles above ground clearance require bellypan raise.",
+                          contribution="Flags bellypan raise requirement in rule_log.")
         results.append(r18)
 
     # ── R19: Capped vs Uncapped analysis ──
@@ -667,22 +722,48 @@ def apply_rules(game: GameRules) -> dict:
             pred["scorer"]["reasoning"] += f" R19: {r19_result.reasoning}"
 
     # ── Weight budget (R12) ──
+    scorer_lb = 22 if scorer_method == "elevator" else 15
+    endgame_lb = 8 if climb_required else 2
     pred["weight_budget"] = {
         "drivetrain_lb": 42,
         "intake_lb": 10,
-        "scorer_lb": 22 if scorer_method == "elevator" else 15,
-        "endgame_lb": 8 if climb_required else 2,
+        "scorer_lb": scorer_lb,
+        "endgame_lb": endgame_lb,
         "electronics_lb": 15,
         "bumpers_lb": 10,
         "margin_lb": 18,
         "total_limit_lb": 125,
     }
 
+    r12 = RuleResult(
+        "R12", True, "weight_allocated", CONFIDENCE_POLICY["medium"],
+        f"Scorer {scorer_lb} lb ({'elevator' if scorer_method == 'elevator' else 'flywheel'}), "
+        f"endgame {endgame_lb} lb ({'climb' if climb_required else 'none/park'}). "
+        "Total within 125 lb FRC limit.",
+        name="Weight Budget",
+        rationale="Static weight allocation based on scorer type and climb requirement.",
+        contribution="Populates weight_budget with per-subsystem lb allocations.",
+    )
+    results.append(r12)
+
     # ── Build order (R13) ──
-    pred["build_order"] = ["drivetrain", "intake", "scorer", "autonomous", "endgame"]
-    if scorer_method == "elevator" and target_height > 40:
+    scorer_first = scorer_method == "elevator" and target_height > 40
+    if scorer_first:
         # Elevator-heavy games: scorer before intake
         pred["build_order"] = ["drivetrain", "scorer", "intake", "autonomous", "endgame"]
+    else:
+        pred["build_order"] = ["drivetrain", "intake", "scorer", "autonomous", "endgame"]
+
+    _r13_order_desc = "scorer before intake (elevator + height>40\")" if scorer_first else "standard (intake before scorer)"
+    r13 = RuleResult(
+        "R13", True, "scorer_first" if scorer_first else "intake_first",
+        CONFIDENCE_POLICY["medium"],
+        f"Build order: {_r13_order_desc}",
+        name="Build Order",
+        rationale='Elevator-heavy games (scorer method=elevator, height>40") prioritise scorer build.',
+        contribution="Sets build_order sequence to guide team work-breakdown.",
+    )
+    results.append(r13)
 
     # ── Confidence ──
     confidences = [r.confidence for r in results if r.applies]
@@ -690,8 +771,17 @@ def apply_rules(game: GameRules) -> dict:
 
     # ── Rule log ──
     pred["rule_log"] = [
-        {"rule": r.rule_id, "applies": r.applies, "recommendation": r.recommendation,
-         "confidence": r.confidence, "reasoning": r.reasoning}
+        {
+            "rule": r.rule_id,
+            "applies": r.applies,
+            "recommendation": r.recommendation,
+            "confidence": r.confidence,
+            "reasoning": r.reasoning,
+            # C2 per-rule explainability fields
+            "name": r.name,
+            "rationale": r.rationale,
+            "contribution": r.contribution,
+        }
         for r in results
     ]
 
@@ -727,13 +817,84 @@ def _run_scoring_analysis(game: GameRules) -> RuleResult:
         return RuleResult(
             "R19", True, "uncapped_priority", 0.88,
             f"Capped methods ({capped_max} max pts) will saturate. "
-            f"Uncapped method ({uncapped_primary.get('name', '?')}) is the differentiator."
+            f"Uncapped method ({uncapped_primary.get('name', '?')}) is the differentiator.",
+            name="Capped vs Uncapped Scoring",
+            rationale="3 robots × 10 cycles saturation test: if capped saturates, uncapped is differentiator.",
+            contribution="May override scorer.reasoning to recommend uncapped method.",
         )
     else:
         return RuleResult(
             "R19", True, "capped_priority", 0.88,
-            f"Capped methods ({capped_max} max pts) won't saturate — remain priority."
+            f"Capped methods ({capped_max} max pts) won't saturate — remain priority.",
+            name="Capped vs Uncapped Scoring",
+            rationale="3 robots × 10 cycles saturation test: capped methods remain viable at scale.",
+            contribution="Confirms capped method remains priority; scorer.reasoning unchanged.",
         )
+
+
+# ═══════════════════════════════════════════════════════════════════
+# C2 EXPLAINABILITY HELPERS — Per-rule confidence queries
+# ═══════════════════════════════════════════════════════════════════
+
+def get_rule_confidence(rule_log: list, rule_id: str) -> Optional[float]:
+    """Return the confidence for a specific rule from a rule_log produced by apply_rules().
+
+    Parameters
+    ----------
+    rule_log : the ``pred["rule_log"]`` list returned by ``apply_rules()``
+    rule_id  : the rule identifier string, e.g. ``"R7"`` or ``"R11"``
+
+    Returns
+    -------
+    float in [0.0, 1.0] if the rule was found, otherwise None.
+
+    Example
+    -------
+    >>> pred = apply_rules(game)
+    >>> get_rule_confidence(pred["rule_log"], "R7")
+    1.0
+    >>> get_rule_confidence(pred["rule_log"], "R99")
+    None
+    """
+    for entry in rule_log:
+        if entry.get("rule") == rule_id:
+            return entry["confidence"]
+    return None
+
+
+def get_rule_breakdown(rule_log: list) -> dict:
+    """Return a dict mapping each rule_id to its full explainability record.
+
+    Parameters
+    ----------
+    rule_log : the ``pred["rule_log"]`` list returned by ``apply_rules()``
+
+    Returns
+    -------
+    dict mapping rule_id (str) → {name, confidence, rationale, contribution,
+    applies, recommendation, reasoning}
+
+    Example
+    -------
+    >>> pred = apply_rules(game)
+    >>> breakdown = get_rule_breakdown(pred["rule_log"])
+    >>> breakdown["R7"]["confidence"]
+    1.0
+    >>> breakdown["R11"]["name"]
+    'Cycle Time Target'
+    """
+    return {
+        entry["rule"]: {
+            "name":           entry.get("name", ""),
+            "confidence":     entry["confidence"],
+            "rationale":      entry.get("rationale", ""),
+            "contribution":   entry.get("contribution", ""),
+            "applies":        entry["applies"],
+            "recommendation": entry["recommendation"],
+            "reasoning":      entry["reasoning"],
+        }
+        for entry in rule_log
+    }
 
 
 # ═══════════════════════════════════════════════════════════════════

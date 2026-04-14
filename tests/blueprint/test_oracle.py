@@ -28,6 +28,8 @@ from oracle import (  # noqa: E402
     epa_win_confidence,
     compute_alliance_complementarity,
     rank_alliances_r18,
+    get_rule_confidence,
+    get_rule_breakdown,
     _normal_cdf,
 )
 
