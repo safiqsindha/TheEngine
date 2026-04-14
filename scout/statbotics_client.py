@@ -11,9 +11,12 @@ No API key required — public data, reasonable rate limits.
 """
 
 import json
+import logging
 import time
 from pathlib import Path
 from dataclasses import dataclass
+
+logger = logging.getLogger(__name__)
 
 try:
     import requests
@@ -208,7 +211,7 @@ def clear_cache():
     if CACHE_DIR.exists():
         for f in CACHE_DIR.glob("*.json"):
             f.unlink()
-        print(f"Cleared Statbotics cache ({CACHE_DIR})")
+        logger.info("Cleared Statbotics cache (%s)", CACHE_DIR)
 
 
 if __name__ == "__main__":

@@ -10,10 +10,13 @@ Env: TBA_API_KEY (get from thebluealliance.com/account)
 """
 
 import json
+import logging
 import os
 import time
 from pathlib import Path
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 try:
     import requests
@@ -230,7 +233,7 @@ def clear_cache():
     if CACHE_DIR.exists():
         for f in CACHE_DIR.glob("*.json"):
             f.unlink()
-        print(f"Cleared TBA cache ({CACHE_DIR})")
+        logger.info("Cleared TBA cache (%s)", CACHE_DIR)
 
 
 if __name__ == "__main__":

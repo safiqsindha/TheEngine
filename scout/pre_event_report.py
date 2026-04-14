@@ -14,11 +14,14 @@ Usage:
 """
 
 import json
+import logging
 import math
 import sys
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 from statbotics_client import (
     get_event_teams, parse_event_team, get_team_events_in_year,
@@ -192,10 +195,10 @@ def assign_priority(profile: TeamProfile, event_avg_epa: float,
 def build_profiles(event_key: str, year: int = 2025,
                    our_team: Optional[int] = None) -> list[TeamProfile]:
     """Build team profiles for all teams at an event."""
-    print(f"  Fetching Statbotics EPA data for {event_key}...")
+    logger.info("Fetching Statbotics EPA data for %s", event_key)
     raw_teams = get_event_teams(event_key)
     if not raw_teams:
-        print(f"  No Statbotics data for {event_key} — event may not have started")
+        logger.warning("No Statbotics data for %s — event may not have started", event_key)
         return []
 
     epas = [parse_event_team(t) for t in raw_teams]
@@ -207,11 +210,11 @@ def build_profiles(event_key: str, year: int = 2025,
     tba_teams = {}
     if HAS_TBA:
         try:
-            print(f"  Fetching TBA team data for {event_key}...")
+            logger.info("Fetching TBA team data for %s", event_key)
             for t in event_teams(event_key):
                 tba_teams[t["team_number"]] = t
         except Exception as e:
-            print(f"  TBA data unavailable: {e}")
+            logger.warning("TBA data unavailable: %s", e)
 
     profiles = []
     for i, team_epa in enumerate(epas):

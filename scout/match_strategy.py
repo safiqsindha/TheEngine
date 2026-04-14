@@ -29,11 +29,14 @@ Usage:
 """
 
 import json
+import logging
 import math
 import random
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 SCOUT_DIR = Path(__file__).parent
 STATE_DIR = SCOUT_DIR / ".state"
@@ -65,7 +68,7 @@ def load_teams_db(event_key: str) -> dict:
             return state["teams"]
 
     if not HAS_STATBOTICS:
-        print("  ERROR: No draft state and statbotics_client not available")
+        logger.error("No draft state and statbotics_client not available")
         return {}
 
     raw = get_event_teams(event_key)
