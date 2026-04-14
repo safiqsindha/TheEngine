@@ -34,7 +34,7 @@ try:
         team_key, team_number, team_record_at_event,
     )
     HAS_TBA = True
-except Exception:
+except ImportError:
     HAS_TBA = False
 
 BASE_DIR = Path(__file__).parent
@@ -213,7 +213,7 @@ def build_profiles(event_key: str, year: int = 2025,
             logger.info("Fetching TBA team data for %s", event_key)
             for t in event_teams(event_key):
                 tba_teams[t["team_number"]] = t
-        except Exception as e:
+        except (OSError, KeyError, ValueError) as e:
             logger.warning("TBA data unavailable: %s", e)
 
     profiles = []
@@ -241,7 +241,7 @@ def build_profiles(event_key: str, year: int = 2025,
             p.events_this_season = len(events)
             p.trend = epa_trend(events)
             p.epa_change_pct = epa_drop_pct(events)
-        except Exception:
+        except (KeyError, ValueError, OSError):
             p.events_this_season = 1
             p.trend = "insufficient_data"
 
@@ -380,7 +380,7 @@ def build_report_for_team(event_key: str, team_num: int,
 
     try:
         profiles = build_profiles(event_key, year=year)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 — top-level report boundary; all errors surfaced to caller
         return f"[pre_event_report error: {e}]"
 
     if not profiles:

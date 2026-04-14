@@ -167,7 +167,7 @@ def cmd_scan(max_pages: int = 10):
         logger.info(f"  Relevant in DB:  {stats['relevant_posts']}")
         logger.info("=" * 60)
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 — top-level scan; logged + state updated
         logger.error(f"Scan failed: {e}", exc_info=True)
         update_scrape_run(conn, run_id,
             end_time=datetime.utcnow().isoformat(),

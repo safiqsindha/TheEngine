@@ -41,7 +41,7 @@ Usage:
 from __future__ import annotations
 
 import math
-from typing import Optional
+from typing import Any, Optional
 
 from math_utils import normal_cdf as _normal_cdf
 
@@ -74,7 +74,7 @@ def alliance_win_prob(
     sigma_combined = math.sqrt(sigma_red ** 2 + sigma_blue ** 2)
     sigma_combined = max(sigma_combined, MIN_SIGMA)
 
-    return _normal_cdf(mu_diff / sigma_combined)
+    return float(_normal_cdf(mu_diff / sigma_combined))
 
 
 def win_prob_from_team_data(
@@ -145,10 +145,10 @@ def label_from_prob(prob: float) -> str:
 def win_prob_for_match(
     red_team_keys: list[int],
     blue_team_keys: list[int],
-    teams_db: dict,
+    teams_db: dict[str, Any],
     *,
     sd_fraction: float = DEFAULT_SD_FRACTION,
-) -> dict:
+) -> dict[str, Any]:
     """
     Compute win probability for a match given team keys and pick_board teams_db.
 
@@ -174,8 +174,9 @@ def win_prob_for_match(
       'blue_sigma'    : float — combined blue score SD
       'used_fallback_sd': bool — True if any team lacked Statbotics sd
     """
-    def _team_dict(num: int) -> dict:
-        return teams_db.get(str(num), {"epa": 0.0, "sd": 0.0})
+    def _team_dict(num: int) -> dict[str, Any]:
+        result: dict[str, Any] = teams_db.get(str(num), {"epa": 0.0, "sd": 0.0})
+        return result
 
     red_tdicts = [_team_dict(n) for n in red_team_keys]
     blue_tdicts = [_team_dict(n) for n in blue_team_keys]
@@ -186,8 +187,10 @@ def win_prob_for_match(
 
     p_red = win_prob_from_team_data(red_tdicts, blue_tdicts, sd_fraction=sd_fraction)
 
-    def _mu(teams): return sum(t.get("epa", 0.0) for t in teams)
-    def _sigma(teams):
+    def _mu(teams: list[dict[str, Any]]) -> float:
+        return float(sum(float(t.get("epa", 0.0)) for t in teams))
+
+    def _sigma(teams: list[dict[str, Any]]) -> float:
         var = sum(
             (t.get("sd", 0.0) or t.get("epa", 0.0) * sd_fraction) ** 2
             for t in teams

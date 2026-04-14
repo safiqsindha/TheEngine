@@ -26,7 +26,7 @@ def cmd_analyze(args: argparse.Namespace) -> int:
     except FileNotFoundError as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return 1
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 — CLI error boundary; unknown parse errors surfaced to user
         print(f"ERROR parsing {path}: {e}", file=sys.stderr)
         return 1
 

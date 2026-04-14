@@ -195,7 +195,7 @@ except ImportError:
                     capture_output=True, text=True, timeout=30
                 )
                 content = result.stdout or f"[PDF file: {path.name}]"
-            except Exception:
+            except (OSError, subprocess.SubprocessError):
                 content = f"[PDF file: {path.name}]"
         else:
             content = path.read_text(errors="replace")
@@ -224,7 +224,7 @@ except ImportError:
 
         except ImportError:
             content = f"[URL: {source_value} — install 'requests' to fetch]"
-        except Exception as e:
+        except (OSError, ValueError) as e:
             content = f"[URL: {source_value} — fetch failed: {e}]"
 
         return {
@@ -589,7 +589,7 @@ def generate_diffs_api(source: dict, analysis: dict) -> list[dict]:
                 "diff": diff_text,
                 "diff_blocks": diff_blocks,
             })
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 — Anthropic SDK raises many error subtypes; capture all
             diffs.append({
                 "file": wiki_file,
                 "status": "API_ERROR",
@@ -906,7 +906,7 @@ def watch_loop(interval_minutes: int = 30, use_api: bool = False,
                       f"updated {result['applied_total']} wiki files")
             else:
                 print(f"  No new posts to process.")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 — watcher loop; keep running through any error
             print(f"  ERROR in cycle {cycle}: {e}")
 
         print(f"  Next check in {interval_minutes} minutes...")

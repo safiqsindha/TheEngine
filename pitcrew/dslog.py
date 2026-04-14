@@ -13,7 +13,7 @@ import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterator, List, Optional, Tuple
+from typing import Any, Iterator, List, Optional, Tuple
 
 from dslogparser.dslogparser import DSEventParser, DSLogParser
 
@@ -66,7 +66,7 @@ class ErrorSummary:
     # List of (timestamp, message) for each event-log entry during enabled periods
     enabled_messages: List[Tuple[datetime.datetime, str]] = field(default_factory=list)
     # {message_text: count} after deduplication
-    message_counts: dict = field(default_factory=dict)
+    message_counts: dict[str, int] = field(default_factory=dict)
     # All messages (not filtered to enabled)
     all_messages: List[Tuple[datetime.datetime, str]] = field(default_factory=list)
 
@@ -91,9 +91,9 @@ class DSLogAnalysis:
     """Complete analysis result for a single DS log file."""
 
     source_path: str = ""
-    match_info: Optional[dict] = None  # from find_match_info on paired .dsevents
+    match_info: Optional[dict[str, Any]] = None  # from find_match_info on paired .dsevents
 
-    records: List[dict] = field(default_factory=list)  # raw records from dslogparser
+    records: List[dict[str, Any]] = field(default_factory=list)  # raw records from dslogparser
     voltage: VoltageStats = field(default_factory=VoltageStats)
     can: CANStats = field(default_factory=CANStats)
     timeline: EnabledTimeline = field(default_factory=EnabledTimeline)
@@ -126,7 +126,7 @@ def _load_event_messages(events_path: Path) -> List[Tuple[datetime.datetime, str
     return msgs
 
 
-def _analyze_voltage(records: List[dict]) -> VoltageStats:
+def _analyze_voltage(records: List[dict[str, Any]]) -> VoltageStats:
     stats = VoltageStats()
     if not records:
         return stats
@@ -147,7 +147,7 @@ def _analyze_voltage(records: List[dict]) -> VoltageStats:
     return stats
 
 
-def _analyze_can(records: List[dict]) -> CANStats:
+def _analyze_can(records: List[dict[str, Any]]) -> CANStats:
     stats = CANStats()
     if not records:
         return stats
@@ -164,7 +164,7 @@ def _analyze_can(records: List[dict]) -> CANStats:
     return stats
 
 
-def _analyze_timeline(records: List[dict]) -> EnabledTimeline:
+def _analyze_timeline(records: List[dict[str, Any]]) -> EnabledTimeline:
     tl = EnabledTimeline()
     if not records:
         return tl
@@ -221,7 +221,7 @@ def _analyze_timeline(records: List[dict]) -> EnabledTimeline:
 
 
 def _analyze_errors(
-    records: List[dict],
+    records: List[dict[str, Any]],
     all_messages: List[Tuple[datetime.datetime, str]],
     timeline: EnabledTimeline,
 ) -> ErrorSummary:
@@ -232,7 +232,7 @@ def _analyze_errors(
         return summary
 
     # Build set of timestamps covering enabled periods
-    enabled_times: set = set()
+    enabled_times: set[datetime.datetime] = set()
     for seg_start, seg_end, _ in timeline.segments:
         for idx in range(seg_start, seg_end + 1):
             t = records[idx].get("time")
@@ -252,7 +252,7 @@ def _analyze_errors(
         summary.enabled_messages = list(all_messages)
 
     # Deduplicate and count
-    counts: dict = {}
+    counts: dict[str, int] = {}
     for _, msg in summary.enabled_messages:
         # Normalize: strip timestamps and memory addresses
         normalized = re.sub(r"0x[0-9a-fA-F]+", "0xADDR", msg).strip()
@@ -264,7 +264,7 @@ def _analyze_errors(
     return summary
 
 
-def _analyze_trip(records: List[dict]) -> TripComputer:
+def _analyze_trip(records: List[dict[str, Any]]) -> TripComputer:
     trip = TripComputer()
     if not records:
         return trip
@@ -352,7 +352,7 @@ def batch_analyze(directory: str | Path) -> List[DSLogAnalysis]:
     for lf in log_files:
         try:
             results.append(analyze(lf))
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 — binary DSLog format; any struct/IO error is valid
             # Don't let one bad file kill the batch — surface as partial result
             a = DSLogAnalysis(source_path=str(lf))
             a.errors.all_messages = [(datetime.datetime.now(), f"PARSE ERROR: {exc}")]

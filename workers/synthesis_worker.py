@@ -276,7 +276,7 @@ def run_synthesis_worker(
             from workers.state_backend import get_pick_board_backend
             pb = get_pick_board_backend()
             state = pb.read() or {}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 — backend may be Azure/local; all errors captured
             result.errors.append(f"state_load:{e}")
             return result
 
@@ -287,7 +287,7 @@ def run_synthesis_worker(
             top_n=top_n, recent_n=recent_n,
         )
         system, user = build_synthesis_prompt(inputs)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 — prompt building errors captured into result
         result.errors.append(f"prompt_build:{e}")
         return result
 
@@ -304,7 +304,7 @@ def run_synthesis_worker(
             client = _default_anthropic_client()
         try:
             raw = call_anthropic(system, user, client=client, model=model)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 — Anthropic SDK raises many subtypes
             result.errors.append(f"anthropic:{e}")
             return result
         top_picks, rationale = parse_brief_response(raw)
@@ -327,12 +327,12 @@ def run_synthesis_worker(
         try:
             from workers.state_backend import get_brief_backend
             brief_backend = get_brief_backend(event_key)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 — backend config errors captured into result
             result.errors.append(f"brief_backend:{e}")
             return result
     try:
         brief_backend.write(brief.to_dict())
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 — Azure/local write errors captured into result
         result.errors.append(f"brief_write:{e}")
         return result
 

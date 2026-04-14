@@ -50,7 +50,7 @@ try:
     _INPUT_NAME = _SESSION.get_inputs()[0].name
     _MODEL_LOADED = True
     print("[FuelDetector] YOLOv11n ONNX model loaded from", _MODEL_PATH)
-except Exception as _e:
+except Exception as _e:  # noqa: BLE001 — ONNX runtime + ort.InferenceSession raises many error types
     _SESSION = None
     _MODEL_LOADED = False
     print("[FuelDetector] WARNING: ONNX model not loaded:", _e)

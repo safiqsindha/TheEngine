@@ -244,8 +244,7 @@ def post(
     # ─── Fire ───
     try:
         resp = _post_fn(webhook_url, payload)
-    except Exception:
-        # Network error — don't poison dedupe state.
+    except Exception:  # noqa: BLE001 — network errors are varied; don't poison dedupe state
         return False
 
     _LAST_POST_AT[webhook_url] = now

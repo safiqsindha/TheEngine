@@ -96,7 +96,7 @@ def record_stream(url: str, output_dir: Path, segment_duration: int = SEGMENT_DU
                     capture_output=True, text=True, timeout=30
                 )
             stream_url = result.stdout.strip().split("\n")[0]
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 — yt-dlp subprocess raises many types; retry logic
             print(f"  ERROR getting stream URL: {e}")
             print(f"  Retrying in 30s...")
             time.sleep(30)
@@ -123,7 +123,7 @@ def record_stream(url: str, output_dir: Path, segment_duration: int = SEGMENT_DU
             proc = subprocess.run(cmd, timeout=segment_duration + 60)
         except subprocess.TimeoutExpired:
             print(f"  Segment {segment_idx} timed out, continuing...")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 — ffmpeg subprocess raises many types; retry logic
             print(f"  Recording error: {e}")
             time.sleep(10)
             continue
@@ -323,7 +323,7 @@ def post_to_discord(webhook_url: str, match_data: dict):
 
     try:
         requests.post(webhook_url, json={"content": content}, timeout=10)
-    except Exception as e:
+    except requests.exceptions.RequestException as e:
         print(f"    Discord post failed: {e}")
 
 

@@ -165,7 +165,7 @@ def defense_adjusted_synergy(
             observations=team_a.get("observations", []),
         )
         da_epa_a = da_result_a.offensive_epa
-    except Exception:
+    except (ValueError, KeyError, ZeroDivisionError):
         da_epa_a = team_a.get("raw_epa", 0.0)
 
     try:
@@ -175,7 +175,7 @@ def defense_adjusted_synergy(
             observations=team_b.get("observations", []),
         )
         da_epa_b = da_result_b.offensive_epa
-    except Exception:
+    except (ValueError, KeyError, ZeroDivisionError):
         da_epa_b = team_b.get("raw_epa", 0.0)
 
     deltas: list[float] = []
@@ -273,7 +273,7 @@ def compute_pair_synergy(
                     observations=team_a_data.get("observations", []),
                 )
                 _da_epa_a = da_r.offensive_epa
-            except Exception:
+            except (ValueError, KeyError, ZeroDivisionError):
                 pass
         if team_b_data is not None:
             try:
@@ -283,7 +283,7 @@ def compute_pair_synergy(
                     observations=team_b_data.get("observations", []),
                 )
                 _da_epa_b = da_r.offensive_epa
-            except Exception:
+            except (ValueError, KeyError, ZeroDivisionError):
                 pass
 
     if not shared_matches:

@@ -235,7 +235,7 @@ async def _proxy_streaming(
                 # SSE arrives as text — accumulate and parse line-by-line
                 try:
                     buffer += chunk.decode("utf-8", errors="ignore")
-                except Exception:
+                except UnicodeDecodeError:
                     continue
                 while "\n" in buffer:
                     line, buffer = buffer.split("\n", 1)

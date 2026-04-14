@@ -309,7 +309,7 @@ def build_dispatcher_state(
 
     try:
         events = tba_fetcher(our_team, today.year)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 — TBA/network errors are varied; degrade gracefully
         print(f"  WARN: TBA fetch failed: {e}", file=sys.stderr)
         events = []
 
@@ -318,7 +318,7 @@ def build_dispatcher_state(
 
     try:
         streams = stream_lister()
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 — stream lister errors are varied; degrade gracefully
         print(f"  WARN: stream list failed: {e}", file=sys.stderr)
         streams = []
 

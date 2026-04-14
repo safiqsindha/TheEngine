@@ -75,7 +75,7 @@ def pull_data():
                     )
                 else:
                     print(f"  {team_num} ({year}): No data")
-            except Exception as e:
+            except (OSError, KeyError, ValueError) as e:
                 print(f"  {team_num} ({year}): Error - {e}")
 
     return rows

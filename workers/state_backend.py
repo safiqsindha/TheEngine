@@ -148,8 +148,7 @@ class AzureTableBackend:
         # create_table_if_not_exists is idempotent and cheap
         try:
             service.create_table_if_not_exists(self._table)
-        except Exception:
-            # Race conditions on first deploy are fine — table exists.
+        except Exception:  # noqa: BLE001 — Azure SDK raises HttpResponseError on race; table exists.
             pass
         self._client = service.get_table_client(self._table)
         return self._client
@@ -220,8 +219,7 @@ class AzureBlobBackend:
         container = service.get_container_client(self._container)
         try:
             container.create_container()
-        except Exception:
-            # Already exists or race — fine.
+        except Exception:  # noqa: BLE001 — Azure SDK raises ResourceExistsError on race; container exists.
             pass
         self._client = container.get_blob_client(self._blob)
         return self._client

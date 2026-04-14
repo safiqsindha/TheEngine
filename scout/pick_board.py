@@ -77,19 +77,19 @@ def _get_beta_for_year(year: Optional[int]) -> Optional[float]:
 try:
     from tba_client import event_matches, event_alliances as tba_alliances
     HAS_TBA = True
-except Exception:
+except ImportError:
     HAS_TBA = False
 
 try:
     from win_probability import win_prob_for_match, label_from_prob
     HAS_WIN_PROB = True
-except Exception:
+except ImportError:
     HAS_WIN_PROB = False
 
 try:
     from spr import apply_spr_weights, get_scout_weight
     HAS_SPR = True
-except Exception:
+except ImportError:
     HAS_SPR = False
 
 try:
@@ -98,13 +98,13 @@ try:
         format_defense_adj_row,
     )
     HAS_DEFENSE_ADJ = True
-except Exception:
+except ImportError:
     HAS_DEFENSE_ADJ = False
 
 try:
     from anomaly import detect_anomalies_all_teams, anomaly_summary_line
     HAS_ANOMALY = True
-except Exception:
+except ImportError:
     HAS_ANOMALY = False
 
 try:
@@ -115,7 +115,7 @@ try:
         format_carry_delta_row,
     )
     HAS_ALLIANCE_DECOMP = True
-except Exception:
+except ImportError:
     HAS_ALLIANCE_DECOMP = False
 
 try:
@@ -125,7 +125,7 @@ try:
         format_synergy_row,
     )
     HAS_SYNERGY = True
-except Exception:
+except ImportError:
     HAS_SYNERGY = False
 
 STATE_DIR = Path(__file__).parent / ".cache" / "draft"
@@ -1481,7 +1481,7 @@ def cmd_enrich(args):
 
     try:
         matches = event_matches(event_key)
-    except Exception as e:
+    except (OSError, KeyError, ValueError) as e:
         print(f"  ERROR: {e}")
         print(f"  Make sure TBA API key is set in scout/.tba_key")
         return
@@ -1582,7 +1582,7 @@ def cmd_enrich(args):
             for i, a in enumerate(tba_als, 1):
                 picks = [p.replace("frc", "") for p in a.get("picks", [])]
                 print(f"    A{i}: {picks}")
-    except Exception:
+    except (OSError, KeyError, ValueError):
         pass
 
     print()

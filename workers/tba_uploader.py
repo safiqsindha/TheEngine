@@ -215,7 +215,7 @@ def run_tba_uploader(
         match_key = record.get("match_key", "<unknown>")
         try:
             status, resp = upload_one_match(record, writer=writer)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 — orchestrator loop; errors captured per-match
             result.errors.append((match_key, f"orchestrator:{e}"))
             continue
 

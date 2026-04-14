@@ -312,7 +312,7 @@ def process_match(
     """
     try:
         resolved = frame_resolver(tba_match)
-    except Exception as e:  # resolver bugs shouldn't kill the whole run
+    except Exception as e:  # noqa: BLE001 — resolver bugs shouldn't kill the whole run
         return None, f"error:resolver:{e}"
 
     if resolved is None:
@@ -338,7 +338,7 @@ def process_match(
             append_live_match(state, live_match)
 
         return live_match, "processed"
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 — OCR pipeline raises many types; captured as error status
         return None, f"error:ocr:{e}"
     finally:
         if cleanup is not None:
@@ -393,7 +393,7 @@ def run_mode_b(
 
     try:
         tba_matches = matches_fetcher(event_key)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 — TBA fetch can fail many ways; abort with error
         result = ModeBResult()
         result.errors.append(("__fetch__", f"matches_fetcher failed: {e}"))
         return result
@@ -423,7 +423,7 @@ def run_mode_b(
                 ocr=ocr,
                 state=state,
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 — orchestrator loop; errors captured per-match
             result.errors.append((match_key, f"orchestrator:{e}"))
             continue
 

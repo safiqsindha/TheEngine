@@ -186,7 +186,7 @@ async def main():
                 try:
                     while True:
                         await asyncio.wait_for(ws.recv(), timeout=0.001)
-                except:
+                except Exception:  # noqa: BLE001 — drain loop; swallow TimeoutError + WebSocket errors
                     pass
 
                 # Status

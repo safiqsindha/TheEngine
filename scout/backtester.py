@@ -185,7 +185,7 @@ def backtest_event(event_key: str, verbose: bool = False) -> EventResult:
             cap_total += 1
             if pred_pick == actual_pick:
                 cap_correct += 1
-    except Exception:
+    except (KeyError, IndexError, TypeError):
         cap_correct, cap_total = 0, 0
 
     return EventResult(
@@ -226,7 +226,7 @@ def backtest_district(district_key: str, verbose: bool = False):
 
         try:
             result = backtest_event(key, verbose=verbose)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 — resilience loop; any event can fail
             print(f"    ERROR: {e}")
             continue
 

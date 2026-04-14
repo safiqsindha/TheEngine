@@ -163,7 +163,7 @@ def simulate_playoff(our_alliance: list[TeamEventEPA],
 
         # Best of 3
         match_wins = 0
-        match_margin = 0
+        match_margin: float = 0.0
         for _ in range(3):
             a_score = sum(max(0, random.gauss(e, s)) for e, s in zip(a_epas, a_sds))
             o_score = sum(max(0, random.gauss(e, s)) for e, s in zip(o_epas, o_sds))
@@ -275,7 +275,7 @@ def rank_picks(event_key: str, our_team: int,
 
 
 def display_picks(candidates: list[PickCandidate], our_team: int,
-                  event_key: str, top_n: int = 15):
+                  event_key: str, top_n: int = 15) -> None:
     """Display the ranked pick list."""
     if not candidates:
         print("No candidates to display.")
@@ -317,7 +317,7 @@ def display_picks(candidates: list[PickCandidate], our_team: int,
     print(f"\n{'═' * 70}\n")
 
 
-def save_picks(candidates: list[PickCandidate], event_key: str, our_team: int):
+def save_picks(candidates: list[PickCandidate], event_key: str, our_team: int) -> Path:
     """Save pick list as JSON."""
     out = BASE_DIR / f"picks_{event_key}_{our_team}.json"
     with open(out, "w") as f:

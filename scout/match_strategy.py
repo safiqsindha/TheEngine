@@ -35,6 +35,7 @@ import random
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -59,13 +60,13 @@ except ImportError:
 # ─── Data Loading ───
 
 
-def load_teams_db(event_key: str) -> dict:
+def load_teams_db(event_key: str) -> dict[str, Any]:
     """Load team EPA data for an event. Tries draft state first, then API."""
     state_file = STATE_DIR / "draft_state.json"
     if state_file.exists():
         state = json.loads(state_file.read_text())
         if state.get("event_key") == event_key and state.get("teams"):
-            return state["teams"]
+            return dict(state["teams"])
 
     if not HAS_STATBOTICS:
         logger.error("No draft state and statbotics_client not available")
@@ -122,7 +123,7 @@ def load_eye_data(team_num: int) -> dict:
         return {}
 
     # Extract key qualitative data
-    result = {"matches_scouted": len(observations)}
+    result: dict[str, Any] = {"matches_scouted": len(observations)}
 
     # Aggregate mechanism issues
     issues = []
@@ -216,7 +217,7 @@ def find_next_match(event_key: str, our_team: int) -> dict:
         if m.get("winning_alliance"):
             continue  # Already played
         alliances = m.get("alliances", {})
-        all_teams = []
+        all_teams: list[int] = []
         for color in ("red", "blue"):
             all_teams.extend(
                 int(t.replace("frc", ""))
@@ -234,9 +235,9 @@ def find_next_match(event_key: str, our_team: int) -> dict:
 # ─── Strategy Analysis ───
 
 
-def analyze_alliance(teams_db: dict, team_nums: list) -> dict:
+def analyze_alliance(teams_db: dict[str, Any], team_nums: list[Any]) -> dict[str, Any]:
     """Analyze an alliance's combined strengths and weaknesses."""
-    profile = {
+    profile: dict[str, Any] = {
         "teams": team_nums,
         "total_epa": 0,
         "total_floor": 0,
@@ -359,15 +360,15 @@ def simulate_match(us_teams: list, them_teams: list, teams_db: dict,
     }
 
 
-def generate_strategy(our_team: int, our_alliance: list,
-                      opp_alliance: list, teams_db: dict,
-                      match_info: dict = None) -> dict:
+def generate_strategy(our_team: int, our_alliance: list[Any],
+                      opp_alliance: list[Any], teams_db: dict[str, Any],
+                      match_info: Optional[dict[str, Any]] = None) -> dict[str, Any]:
     """Generate a complete match strategy brief."""
     us = analyze_alliance(teams_db, our_alliance)
     them = analyze_alliance(teams_db, opp_alliance)
     sim = simulate_match(our_alliance, opp_alliance, teams_db)
 
-    strategy = {
+    strategy: dict[str, Any] = {
         "match": match_info or {},
         "our_team": our_team,
         "prediction": sim,
@@ -379,7 +380,7 @@ def generate_strategy(our_team: int, our_alliance: list,
     }
 
     # ── Determine scoring priority ──
-    game_plan = {}
+    game_plan: dict[str, Any] = {}
 
     # Auto plan
     auto_robots = sorted(us["team_details"],
@@ -478,10 +479,10 @@ def generate_strategy(our_team: int, our_alliance: list,
     return strategy
 
 
-def _defense_decision(us: dict, them: dict, teams_db: dict,
-                      sim: dict) -> dict:
+def _defense_decision(us: dict[str, Any], them: dict[str, Any], teams_db: dict[str, Any],
+                      sim: dict[str, Any]) -> dict[str, Any]:
     """Decide whether to play defense and on whom."""
-    result = {"play_defense": False, "target": None, "defender": None, "notes": []}
+    result: dict[str, Any] = {"play_defense": False, "target": None, "defender": None, "notes": []}
 
     # Find opponent's best scorer
     opp_sorted = sorted(them["team_details"],

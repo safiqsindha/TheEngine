@@ -322,7 +322,7 @@ def interactive(executor_model="haiku", advisor_model="opus"):
                 print(f"\n  API Error: {e}\n")
                 messages.pop()  # Remove failed user message
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 — top-level CLI REPL; all errors shown to user
             print(f"\n  Error: {e}\n")
             messages.pop()
 

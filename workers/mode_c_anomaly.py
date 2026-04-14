@@ -264,7 +264,7 @@ def run_mode_c_anomaly(
     for ev_key in target_events:
         try:
             matches = matches_fetcher(ev_key)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 — TBA fetch can fail many ways; skip event
             result.errors.append((ev_key, f"fetch: {e}"))
             continue
 
@@ -343,7 +343,7 @@ def run_mode_c_anomaly(
                     payload,
                     dedupe_key=f"anomaly:{match_key}",
                 )
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 — Discord push non-fatal; captured into result
                 result.errors.append((match_key, f"discord: {e}"))
                 continue
             result.anomalies_fired.append(match_key)

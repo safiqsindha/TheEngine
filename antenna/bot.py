@@ -1305,7 +1305,7 @@ async def scheduled_scan():
                     try:
                         lead = await bot.fetch_user(int(LEAD_USER_ID))
                         await lead.send(f"**ANTENNA CRITICAL ALERT**\n\n{alert_text}")
-                    except Exception:
+                    except discord.HTTPException:
                         pass
 
     logger.info(f"Scheduled scan complete: {result['new']} new, {len(result['critical'])} critical")

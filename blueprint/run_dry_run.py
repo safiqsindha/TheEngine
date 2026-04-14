@@ -66,7 +66,7 @@ def run_full_pipeline(oracle_path: str):
         )
         specs["frame"] = asdict(frame)
         log.append(f"[OK] Frame: {dt['frame_length_in']}\"x{dt['frame_width_in']}\" {dt.get('module', 'sds_mk4i')}, {frame.total_weight_lb} lb")
-    except Exception as e:
+    except (ValueError, KeyError, TypeError) as e:
         log.append(f"[FAIL] Frame: {e}")
         specs["frame"] = {"frame_length_in": 27.0, "frame_width_in": 27.0, "frame_height_in": 1.0, "total_weight_lb": 40.0}
 
@@ -110,7 +110,7 @@ def run_full_pipeline(oracle_path: str):
             )
             specs["intake"] = asdict(intake_spec)
             log.append(f"[OK] Intake: {intake_type}, {piece_dia}\" piece, {intake_spec.total_weight_lb} lb")
-        except Exception as e:
+        except (ValueError, KeyError, TypeError) as e:
             log.append(f"[FAIL] Intake: {e}")
 
     # ── Scorer ──
@@ -136,7 +136,7 @@ def run_full_pipeline(oracle_path: str):
                 )
                 specs["flywheel"] = asdict(flywheel_spec)
                 log.append(f"[OK] Flywheel: {flywheel_spec.target_rpm} RPM, {flywheel_spec.total_weight_lb} lb")
-            except Exception as e:
+            except (ValueError, KeyError, TypeError) as e:
                 log.append(f"[FAIL] Flywheel: {e}")
 
             # Add conveyor/indexer between intake and shooter
@@ -152,7 +152,7 @@ def run_full_pipeline(oracle_path: str):
                 )
                 specs["conveyor"] = asdict(conveyor_spec)
                 log.append(f"[OK] Conveyor: {conveyor_spec.path_length_in}\" path, {conveyor_spec.total_weight_lb} lb")
-            except Exception as e:
+            except (ValueError, KeyError, TypeError) as e:
                 log.append(f"[FAIL] Conveyor: {e}")
 
         elif method == "elevator":
@@ -172,7 +172,7 @@ def run_full_pipeline(oracle_path: str):
                 )
                 specs["elevator"] = asdict(elev_spec)
                 log.append(f"[OK] Elevator: {height}\" travel, {elev_spec.stage_count} stages, {elev_spec.total_weight_lb} lb")
-            except Exception as e:
+            except (ValueError, KeyError, TypeError) as e:
                 log.append(f"[FAIL] Elevator: {e}")
 
             # Wrist if specified
@@ -192,7 +192,7 @@ def run_full_pipeline(oracle_path: str):
                     )
                     specs["arm"] = asdict(arm_spec)
                     log.append(f"[OK] Wrist: {arm_spec.total_weight_lb} lb")
-                except Exception as e:
+                except (ValueError, KeyError, TypeError) as e:
                     log.append(f"[FAIL] Wrist: {e}")
 
     # ── Turret ──
@@ -203,7 +203,7 @@ def run_full_pipeline(oracle_path: str):
             )
             specs["turret"] = asdict(turret_spec)
             log.append(f"[OK] Turret: {turret_spec.total_weight_lb} lb")
-        except Exception as e:
+        except (ValueError, KeyError, TypeError) as e:
             log.append(f"[FAIL] Turret: {e}")
 
     # ── Endgame ──
@@ -228,7 +228,7 @@ def run_full_pipeline(oracle_path: str):
             )
             specs["climber"] = asdict(climber_spec)
             log.append(f"[OK] Climber: {climb_style}, {climb_height}\", {climber_spec.total_weight_lb} lb")
-        except Exception as e:
+        except (ValueError, KeyError, TypeError) as e:
             log.append(f"[FAIL] Climber: {e}")
 
     # ── BOM Rollup ──

@@ -230,7 +230,7 @@ class TbaWriter:
                     headers=headers,
                     timeout=self._timeout_s,
                 )
-            except Exception as e:
+            except (OSError, ConnectionError) as e:
                 last_status = 0
                 last_body = f"transport_exception:{e}"
                 if attempt < self._max_retries:

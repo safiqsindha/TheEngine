@@ -222,14 +222,14 @@ def run_mode_c_event_end(
     # ─── Ensure live_matches covers every match at this event ───
     try:
         run_mode_b(event_key=event_key, state=state)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 — orchestrator boundary; errors captured into result
         result.error = f"mode_b: {e}"
         return result
 
     # ─── Build digest ───
     try:
         digest = build_digest(state, event_key)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 — orchestrator boundary; errors captured into result
         result.error = f"digest: {e}"
         return result
     result.match_count = digest["match_count"]
@@ -241,7 +241,7 @@ def run_mode_c_event_end(
         digest_backend = get_digest_backend(event_key)
     try:
         digest_backend.write(digest)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 — Azure/local write errors captured into result
         result.error = f"digest_write: {e}"
         return result
     # LocalFileBackend exposes `.path`; AzureBlobBackend does not.
@@ -264,14 +264,14 @@ def run_mode_c_event_end(
                 payload,
                 dedupe_key=f"event_end:{event_key}",
             ))
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 — Discord push errors non-fatal
             result.error = f"discord: {e}"
 
     # ─── Persist pick-board ───
     if persist and pick_board_backend is not None:
         try:
             pick_board_backend.write(state)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 — Azure/local write errors non-fatal
             result.error = (result.error or "") + f" pick_board_write: {e}"
 
     return result

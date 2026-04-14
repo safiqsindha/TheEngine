@@ -175,7 +175,7 @@ def process_match_vision(
 
     try:
         resolved = frame_resolver(shaped)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 — frame resolver (yt-dlp/filesystem) raises many types
         return None, f"error:resolver:{e}"
 
     if resolved is None:
@@ -185,7 +185,7 @@ def process_match_vision(
 
     try:
         events = vision.infer_frames(frames)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 — vision inference (YOLO/Anthropic) raises many types
         return None, f"error:vision:{e}"
     finally:
         if cleanup is not None:
@@ -268,7 +268,7 @@ def run_vision_worker(
                 frame_resolver=frame_resolver,
                 vision=vision,
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 — orchestrator loop; errors captured per-match
             result.errors.append((match_key, f"orchestrator:{e}"))
             continue
 

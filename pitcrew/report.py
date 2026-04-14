@@ -16,7 +16,7 @@ from pitcrew.dslog import DSLogAnalysis, LOW_VOLTAGE_WARN, BROWNOUT_VOLTAGE
 def _match_label(analysis: DSLogAnalysis) -> str:
     """Return a best-effort match label (e.g. 'QM01 — 2950')."""
     if analysis.match_info and analysis.match_info.get("match_name"):
-        return analysis.match_info["match_name"]
+        return str(analysis.match_info["match_name"])
     return Path(analysis.source_path).stem
 
 
