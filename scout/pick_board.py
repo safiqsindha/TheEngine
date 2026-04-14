@@ -34,7 +34,6 @@ Usage:
   python3 pick_board.py sim [--sims 5000]
 """
 
-import importlib.util
 import json
 import math
 import random
@@ -51,10 +50,18 @@ from statbotics_client import get_event_teams
 # or via the `year` kwarg to recommend_pick() / cmd_rec() for off-season replay.
 DEFAULT_YEAR: int = 2025
 
+# Ensure the project root is on sys.path so `blueprint` is importable as a
+# package regardless of how pick_board.py is invoked (CLI, Discord bot, tests).
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from blueprint.attribution_betas import get_attribution_beta as _get_attribution_beta  # noqa: E402
+
 
 def _get_beta_for_year(year: Optional[int]) -> Optional[float]:
     """
-    Return the empirical β for *year* by loading attribution_betas at call time.
+    Return the empirical β for *year* via a cached package import.
 
     Returns None when year is None (legacy / back-compat path) so that callers
     can detect "no β requested" vs "β=some value".
@@ -62,13 +69,7 @@ def _get_beta_for_year(year: Optional[int]) -> Optional[float]:
     """
     if year is None:
         return None
-    _blueprint_path = (
-        Path(__file__).resolve().parents[1] / "blueprint" / "attribution_betas.py"
-    )
-    spec = importlib.util.spec_from_file_location("attribution_betas", _blueprint_path)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod.get_attribution_beta(year)
+    return _get_attribution_beta(year)
 
 try:
     from tba_client import event_matches, event_alliances as tba_alliances
