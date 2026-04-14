@@ -30,10 +30,12 @@ sys.path.insert(0, str(ROOT / "scout"))
 from anomaly import (  # noqa: E402
     Z_THRESHOLD,
     MIN_OBS_FOR_ZSCORE,
+    ANOMALY_METHOD,
     AnomalyFlag,
     anomaly_summary_line,
     detect_anomalies,
     detect_anomalies_all_teams,
+    detect_anomalies_robust,
     filter_anomaly_scouts,
 )
 
@@ -274,3 +276,84 @@ def test_filter_anomaly_scouts_below_threshold_excluded():
 
 def test_filter_anomaly_scouts_empty_returns_empty():
     assert filter_anomaly_scouts([]) == []
+
+
+# ─── ANOMALY_METHOD constant ─────────────────────────────────────────────────
+
+
+def test_anomaly_method_constant_is_robust():
+    assert ANOMALY_METHOD == "robust"
+
+
+# ─── detect_anomalies_robust — basic ─────────────────────────────────────────
+
+
+def test_robust_clean_data_no_flags():
+    """Robust method on clean, tight data should produce no flags."""
+    obs_list = [_obs(contribution=40.0 + (i % 3) - 1, match=f"qm{i}")
+                for i in range(9)]
+    flags = detect_anomalies_robust(obs_list, metrics=["match_contribution"])
+    assert flags == []
+
+
+def test_robust_single_outlier_flagged():
+    """Robust method flags a single extreme outlier in otherwise uniform data."""
+    obs_list = [_obs(contribution=10.0, match=f"qm{i}") for i in range(9)]
+    obs_list.append(_obs(contribution=50.0, match="qm9"))
+    flags = detect_anomalies_robust(obs_list, metrics=["match_contribution"])
+    assert len(flags) >= 1
+    assert flags[0].observed_value == pytest.approx(50.0, abs=0.01)
+    assert flags[0].metric == "match_contribution"
+
+
+def test_robust_flags_while_zscore_misses():
+    """
+    Comparison test: fixture [10,10,11,10,10,11,10,10,11,50].
+
+    The outlier (50) inflates sigma so z-score at threshold=3.0 misses it.
+    Robust MAD at threshold=3.5 correctly flags it because the median and MAD
+    are unaffected by a single extreme value.
+    """
+    normal = [10, 10, 11, 10, 10, 11, 10, 10, 11]
+    obs_list = [_obs(contribution=float(v), match=f"qm{i}") for i, v in enumerate(normal)]
+    obs_list.append(_obs(contribution=50.0, match="qm9"))
+
+    robust_flags = detect_anomalies_robust(
+        obs_list, metrics=["match_contribution"], mad_threshold=3.5
+    )
+    zscore_flags = detect_anomalies(
+        obs_list, metrics=["match_contribution"], z_threshold=3.0
+    )
+
+    # Robust must flag the outlier
+    robust_outlier = [f for f in robust_flags if f.observed_value == pytest.approx(50.0, abs=0.01)]
+    assert len(robust_outlier) >= 1, "Robust method should flag the outlier at 50"
+
+    # Z-score should miss it (contaminated sigma)
+    zscore_outlier = [f for f in zscore_flags if f.observed_value == pytest.approx(50.0, abs=0.01)]
+    assert len(zscore_outlier) == 0, (
+        "Z-score at threshold=3.0 should miss the outlier because it inflates sigma"
+    )
+
+
+def test_robust_all_identical_values_no_flags():
+    """MAD=0 edge case: all values identical → no flags, no divide-by-zero."""
+    obs_list = [_obs(contribution=42.0, match=f"qm{i}") for i in range(8)]
+    flags = detect_anomalies_robust(obs_list, metrics=["match_contribution"])
+    assert flags == []
+
+
+def test_robust_empty_matches_empty_result():
+    """Empty matches list should return empty list without error."""
+    flags = detect_anomalies_robust([], metrics=["match_contribution"])
+    assert flags == []
+
+
+def test_robust_missing_metric_field_no_crash():
+    """Observations that lack the requested metric should be skipped silently."""
+    # These obs have no 'match_contribution' key and no 'score' key
+    obs_list = [{"team": 2950, "_meta": {"match_key": f"qm{i}", "scout": "Alice"}}
+                for i in range(6)]
+    # Should not raise; not enough valid obs → no flags
+    flags = detect_anomalies_robust(obs_list, metrics=["match_contribution"])
+    assert flags == []
