@@ -120,6 +120,64 @@ _AUTO_WEIGHT = 1.2
 UNIFORM_SHARE = 1.0 / 3.0
 
 
+# ─── Power-curve normalization ────────────────────────────────────────────────
+
+
+def power_normalize(contributions: list[float], beta: float = 1.0) -> list[float]:
+    """
+    Normalize a list of contribution weights using a power curve.
+
+    share_i = c_i^beta / sum_j(c_j^beta)
+
+    Parameters
+    ----------
+    contributions : list of non-negative floats representing each agent's
+        observed output (coral counts, cycle speed proxy, etc.).
+    beta : float
+        Concavity exponent.
+          beta=1.0  → linear (identical to simple proportional share)
+          beta<1.0  → concave (dampens high-volume bias, compresses spread)
+          beta→0    → uniform (every agent gets 1/n regardless of output)
+
+    Returns
+    -------
+    list[float] of shares summing to 1.0, same length as contributions.
+    Returns [] for empty input.
+    Raises ValueError for any negative contribution.
+
+    Edge cases
+    ----------
+    - Empty list → []
+    - Any negative value → ValueError
+    - All zeros → uniform [1/n, ..., 1/n]
+    - Single element → [1.0]
+    """
+    if not contributions:
+        return []
+
+    for c in contributions:
+        if c < 0:
+            raise ValueError(
+                f"power_normalize: all contributions must be >= 0, got {c}"
+            )
+
+    n = len(contributions)
+
+    # All zeros → uniform (no signal to distinguish agents)
+    if all(c == 0.0 for c in contributions):
+        return [1.0 / n] * n
+
+    powered = [c ** beta for c in contributions]
+    total = sum(powered)
+
+    if total == 0.0:
+        # Defensive guard: shouldn't happen given non-zero contributions and beta>0,
+        # but protect against float underflow for very small c with large negative beta
+        return [1.0 / n] * n
+
+    return [p / total for p in powered]
+
+
 @dataclass
 class TeamDecomposition:
     """
@@ -290,6 +348,7 @@ def compute_alliance_decomposition(
     stand_scout_obs: Optional[list[dict]] = None,
     *,
     match_key: str = "",
+    beta: float = 1.0,
 ) -> dict[int, dict]:
     """
     Decompose alliance match performance into per-team contributions.
@@ -304,6 +363,9 @@ def compute_alliance_decomposition(
         teams in this match. Observations are matched to teams via obs["team"].
         If None or empty, uniform attribution (1/3) is used.
     match_key : str — TBA match key, for record-keeping.
+    beta : float — power-curve exponent passed to power_normalize().
+        1.0 (default) → linear shares (back-compat).
+        <1.0 → concave (dampens high-volume bias).
 
     Returns
     -------
@@ -347,6 +409,12 @@ def compute_alliance_decomposition(
 
     # Compute contribution shares
     shares, used_uniform = _compute_contribution_shares(alliance_teams, obs_by_team)
+
+    # Apply power-curve normalization when beta != 1.0 (or always, for consistency)
+    if not used_uniform:
+        raw_weights = [shares[t] for t in alliance_teams]
+        normalized = power_normalize(raw_weights, beta=beta)
+        shares = dict(zip(alliance_teams, normalized))
 
     # Attribute delta
     result: dict[int, dict] = {}
