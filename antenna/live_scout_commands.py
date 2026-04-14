@@ -797,6 +797,121 @@ def cmd_status() -> str:
     return "\n".join(lines)
 
 
+def cmd_beta(year_raw: str) -> str:
+    """Return attribution β info for a given FRC season year.
+
+    Usage: !beta <year>   (2013-2025)
+           !beta current  (alias for 2025)
+
+    Returns a code-block embed with:
+      - Game name
+      - Empirical β* and CI bounds (if available)
+      - n_matches tuned on
+      - Prior expected β and rationale
+      - One-line interpretation of the β value
+    """
+    import sys as _sys
+    _bp_dir = str(_REPO_ROOT / "blueprint")
+    if _bp_dir not in _sys.path:
+        _sys.path.insert(0, _bp_dir)
+
+    try:
+        from attribution_betas import ATTRIBUTION_BETAS, get_attribution_beta
+    except ImportError as e:
+        return _fmt_error(f"attribution_betas not importable: {e}")
+
+    # Resolve "current" alias
+    raw = str(year_raw).strip().lower()
+    if raw == "current":
+        raw = "2025"
+
+    try:
+        year = int(raw)
+    except (TypeError, ValueError):
+        return _fmt_error(
+            f"year must be an integer (2013-2025) or 'current', got {year_raw!r}"
+        )
+
+    if year not in ATTRIBUTION_BETAS:
+        known = ", ".join(str(y) for y in sorted(ATTRIBUTION_BETAS))
+        return (
+            f"```\n"
+            f"Unknown year {year} — no attribution β data available.\n"
+            f"Known seasons: {known}\n"
+            f"```"
+        )
+
+    entry = ATTRIBUTION_BETAS[year]
+    game_name = entry.get("game_name", "?")
+    emp_beta = entry.get("empirical_beta")
+    emp_ci = entry.get("empirical_ci")
+    n_matches = entry.get("tuned_on_match_count", 0)
+    prior_beta = entry.get("prior_expected_beta")
+    prior_reason = entry.get("prior_reason", "—")
+
+    # Determine display β (empirical takes priority)
+    if emp_beta is not None:
+        display_beta = float(emp_beta)
+        beta_label = "Empirical β*"
+        source_note = f"(tuned on {n_matches:,} matches)"
+    elif isinstance(prior_beta, dict):
+        # Per-phase (e.g. 2019)
+        display_beta = float(list(prior_beta.values())[0])
+        beta_label = "Prior β (per-phase)"
+        source_note = "(empirical not available; see per-phase note below)"
+    else:
+        display_beta = float(prior_beta) if prior_beta is not None else 1.0
+        beta_label = "Prior β"
+        source_note = "(empirical not yet tuned)"
+
+    # One-line interpretation
+    if display_beta < 0.7:
+        interp = "β<0.7 — high coupling, specialist alliances favored"
+    elif display_beta >= 0.85:
+        interp = "β≥0.85 — low coupling, raw EPA favored"
+    else:
+        interp = "0.7≤β<0.85 — moderate coupling"
+
+    lines = [
+        f"**ATTRIBUTION β — {year} {game_name}**",
+        "```",
+        f"{beta_label}: {display_beta:.2f}  {source_note}",
+    ]
+
+    if emp_ci is not None:
+        lines.append(f"CI bounds:        ({emp_ci[0]:.2f}, {emp_ci[1]:.2f})")
+    else:
+        lines.append("CI bounds:        not available")
+
+    if n_matches:
+        lines.append(f"n_matches:        {n_matches:,}")
+
+    # Prior line
+    if isinstance(prior_beta, dict):
+        phase_str = "  |  ".join(f"{k}: {v:.2f}" for k, v in prior_beta.items())
+        lines.append(f"Prior expected β: {phase_str}")
+    else:
+        prior_val = f"{prior_beta:.2f}" if prior_beta is not None else "—"
+        lines.append(f"Prior expected β: {prior_val}")
+
+    lines.append(f"Prior rationale:  {prior_reason}")
+    lines.append("")
+    lines.append(f"→ {interp}")
+
+    # 2019 per-phase special note
+    if year == 2019:
+        lines.append("")
+        lines.append(
+            "⚠ 2019 note: bulk Statbotics data does not separate cycle vs climb "
+            "phases. Overall tune returned β=1.0 (n=29,232, CI=(0.75,1.0)) but "
+            "per-phase priors (cycle:0.85 / climb:0.60) are retained as the best "
+            "available estimate."
+        )
+
+    lines.append("```")
+    return "\n".join(lines)
+
+
 def cmd_preview(team: str) -> str:
     """Show a pre-event excerpt for an opponent team at the current
     event. Wraps scout/pre_event_report.py for a single team."""

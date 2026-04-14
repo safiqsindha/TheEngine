@@ -529,3 +529,45 @@ def test_cmd_preview_real_report(tmp_state, monkeypatch):
     assert "PREVIEW — 1538" in out
     assert "RoboJackets" in out
     assert "EPA" in out
+
+
+# ── cmd_beta ────────────────────────────────────────────────────────
+
+
+def test_cmd_beta_registers():
+    """cmd_beta is importable and callable."""
+    assert callable(lsc.cmd_beta)
+
+
+def test_cmd_beta_2024_content():
+    out = lsc.cmd_beta("2024")
+    assert "2024" in out
+    assert "Crescendo" in out
+    # Empirical beta for 2024 is 0.55 → high coupling interpretation
+    assert "0.55" in out
+    assert "high coupling" in out
+    # CI and n_matches present
+    assert "CI bounds" in out
+    assert "27,874" in out or "27874" in out
+
+
+def test_cmd_beta_unknown_year_returns_error():
+    out = lsc.cmd_beta("9999")
+    assert "Unknown year 9999" in out
+    # Should list known seasons
+    assert "2024" in out or "Known seasons" in out
+
+
+def test_cmd_beta_2019_mentions_per_phase():
+    out = lsc.cmd_beta("2019")
+    assert "2019" in out
+    assert "cycle" in out.lower() or "climb" in out.lower()
+    # The per-phase note must appear
+    assert "per-phase" in out.lower() or "per_phase" in out.lower()
+
+
+def test_cmd_beta_current_alias():
+    """!beta current should return 2025 Reefscape data."""
+    out = lsc.cmd_beta("current")
+    assert "2025" in out
+    assert "Reefscape" in out
