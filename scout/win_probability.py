@@ -142,6 +142,60 @@ def label_from_prob(prob: float) -> str:
     return "Strong Blue"
 
 
+def predict_win_probability_mc(
+    red: list[dict],
+    blue: list[dict],
+    n_sims: int = 1000,
+    **kwargs,
+) -> dict:
+    """
+    Monte Carlo win probability — delegates to blueprint.monte_carlo.
+
+    Each dict in ``red``/``blue`` must contain:
+      'epa' : float — mean EPA total points
+      'sd'  : float — EPA standard deviation (optional)
+
+    Parameters
+    ----------
+    red, blue : list of per-team dicts
+    n_sims    : number of Monte Carlo iterations
+
+    Returns
+    -------
+    dict — same schema as ``simulate_match``:
+        red_win_prob, blue_win_prob, tie_prob,
+        score_diff_mean, score_diff_ci_90,
+        red_scores (ndarray), blue_scores (ndarray)
+    """
+    import sys as _sys
+    from pathlib import Path as _Path
+
+    _blueprint_dir = str(_Path(__file__).resolve().parents[1] / "blueprint")
+    if _blueprint_dir not in _sys.path:
+        _sys.path.insert(0, _blueprint_dir)
+
+    from monte_carlo import (  # noqa: E402
+        RobotDistribution,
+        simulate_match as _simulate_match,
+        DEFAULT_SIGMA_FRACTION,
+    )
+
+    def _build_robots(teams: list[dict]) -> list[RobotDistribution]:
+        robots = []
+        for t in teams:
+            mu = float(t.get("epa", 0.0))
+            sd = t.get("sd", 0.0) or DEFAULT_SIGMA_FRACTION * abs(mu)
+            robots.append(RobotDistribution(mu=mu, sigma=float(sd)))
+        return robots
+
+    return _simulate_match(
+        _build_robots(red),
+        _build_robots(blue),
+        n_sims=n_sims,
+        **kwargs,
+    )
+
+
 def win_prob_for_match(
     red_team_keys: list[int],
     blue_team_keys: list[int],
