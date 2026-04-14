@@ -54,6 +54,11 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 BASE_DIR = Path(__file__).parent
+_REPO_ROOT = BASE_DIR.parent
+
+# Ensure scout/ is importable for shared math utilities.
+if str(_REPO_ROOT / "scout") not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT / "scout"))
 
 # Import attribution β lookup — tolerant import so oracle works without
 # the attribution_betas module (e.g. in isolated test environments).
@@ -62,6 +67,8 @@ try:
 except ImportError:
     def _get_attribution_beta(year: int, phase: str = "overall") -> float:  # type: ignore
         return 1.0
+
+from math_utils import normal_cdf as _normal_cdf  # noqa: E402
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -86,15 +93,6 @@ _MIN_SIGMA: float = 1e-6
 # ═══════════════════════════════════════════════════════════════════
 # EPA UNCERTAINTY HELPERS
 # ═══════════════════════════════════════════════════════════════════
-
-def _normal_cdf(z: float) -> float:
-    """Standard normal CDF via math.erfc — no scipy required.
-
-    Identical implementation to scout/win_probability.py so the two
-    modules stay in sync without a shared dependency.
-    """
-    return 0.5 * math.erfc(-z / math.sqrt(2.0))
-
 
 def epa_win_confidence(
     epa_a: float,

@@ -43,17 +43,13 @@ from __future__ import annotations
 import math
 from typing import Optional
 
+from math_utils import normal_cdf as _normal_cdf
+
 # Fraction of EPA used as fallback SD when Statbotics sd is absent
 DEFAULT_SD_FRACTION = 0.25
 
 # Minimum sigma to avoid division-by-zero on degenerate inputs
 MIN_SIGMA = 1e-6
-
-
-def _normal_cdf(z: float) -> float:
-    """Standard normal CDF via math.erfc — no scipy required."""
-    # P(Z ≤ z) = 0.5 * erfc(-z / sqrt(2))
-    return 0.5 * math.erfc(-z / math.sqrt(2.0))
 
 
 def alliance_win_prob(

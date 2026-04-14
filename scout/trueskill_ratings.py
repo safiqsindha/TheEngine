@@ -25,6 +25,8 @@ from typing import List
 
 import trueskill
 
+from math_utils import normal_cdf as _normal_cdf
+
 # ---------------------------------------------------------------------------
 # TrueSkill environment — standard FRC parameters
 # beta = half the sigma; controls how much a single game outcome matters
@@ -165,8 +167,7 @@ def predict_match_win_prob(
         + (len(red) + len(blue)) * beta ** 2
     )
     denom = math.sqrt(variance)
-    # Standard normal CDF via math.erfc
-    return 0.5 * math.erfc(-mu_diff / (denom * math.sqrt(2)))
+    return _normal_cdf(mu_diff / denom)
 
 
 # ---------------------------------------------------------------------------
