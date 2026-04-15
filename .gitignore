@@ -2,6 +2,9 @@
 .DS_Store
 Thumbs.db
 
+# Game manuals (large PDFs — fetched on demand, never committed)
+manuals/
+
 # Logs
 *.log
 
