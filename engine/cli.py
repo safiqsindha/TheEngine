@@ -196,6 +196,57 @@ def tune_beta_cmd(year: int, bootstrap: int) -> None:
 
 
 # ---------------------------------------------------------------------------
+# engine kickoff-parse <manual.pdf>
+# ---------------------------------------------------------------------------
+@cli.command("kickoff-parse", help="Parse an FRC game manual via LLM ensemble consensus.")
+@click.argument("manual_path", type=click.Path(exists=True, dir_okay=False))
+@click.option("--n-parses", type=int, default=3, show_default=True, help="Number of independent parses.")
+@click.option("--output", "output_dir", default="reports", show_default=True, help="Output directory.")
+@click.option("--finalize", "finalize_path", default=None,
+              help="JSON/MD resolutions file — when provided, emits KICKOFF_TEMPLATE_<year>.md.")
+@click.option("--year", type=int, default=None, help="Season year label for output filename.")
+def kickoff_parse_cmd(
+    manual_path: str,
+    n_parses: int,
+    output_dir: str,
+    finalize_path: Optional[str],
+    year: Optional[int],
+) -> None:
+    from blueprint import manual_parser
+
+    manual = Path(manual_path)
+    year_label = year or _infer_year_from_name(manual.name)
+
+    parses = manual_parser.parse_manual(str(manual), n_parses=n_parses)
+    merged, conflict = manual_parser.consensus(parses)
+
+    out_dir = Path(output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    diff_path = out_dir / f"kickoff_parse_{year_label}.md"
+    diff_path.write_text(manual_parser.render_diff_markdown(parses, conflict))
+    click.echo(f"[kickoff-parse] diff written to {diff_path}")
+    click.echo(
+        f"[kickoff-parse] locked={len(conflict.locked_fields)} "
+        f"tentative={len(conflict.tentative_fields)} "
+        f"ambiguous={len(conflict.ambiguous_fields)}"
+    )
+
+    if finalize_path:
+        resolutions: dict = {}
+        fpath = Path(finalize_path)
+        if fpath.exists() and fpath.suffix.lower() == ".json":
+            resolutions = json.loads(fpath.read_text())
+        template_path = Path("blueprint") / f"KICKOFF_TEMPLATE_{year_label}.md"
+        template_path.write_text(manual_parser.finalize(merged, resolutions=resolutions))
+        click.echo(f"[kickoff-parse] finalized template written to {template_path}")
+
+
+def _infer_year_from_name(name: str) -> str:
+    m = re.search(r"(20\d{2})", name)
+    return m.group(1) if m else "unknown"
+
+
+# ---------------------------------------------------------------------------
 # engine status
 # ---------------------------------------------------------------------------
 @cli.command("status", help="Print repo version + test count + oracle rule count.")

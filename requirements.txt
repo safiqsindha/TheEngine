@@ -11,3 +11,5 @@ onshape-client>=1.6.0
 roboflow>=1.1.0
 mypy>=1.19.0
 types-requests
+anthropic>=0.40.0
+pypdf>=4.0.0
