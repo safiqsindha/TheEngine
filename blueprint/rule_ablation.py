@@ -467,6 +467,7 @@ def run_full_ablation(year: int) -> dict[str, "AblationResult"]:
     all_disabled.baseline_accuracy = baseline.win_accuracy
     all_disabled.confidence_delta = round(all_disabled.mean_confidence - base_conf, 6)
     all_disabled.arch_accuracy_delta = round(all_disabled.arch_accuracy - base_arch, 6)
+    all_disabled.is_significant = abs(all_disabled.confidence_delta) >= SIGNIFICANCE_THRESHOLD
     results["disable_all"] = all_disabled
 
     return results
