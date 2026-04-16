@@ -1,0 +1,147 @@
+{
+  "year": 2025,
+  "label": "Reefscape",
+  "model": "claude-sonnet-4-5",
+  "n_parses": 3,
+  "source": "html",
+  "input_location": "https://firstfrc.blob.core.windows.net/frc2025/Manual/HTML/2025GameManual.htm",
+  "locked": 26,
+  "tentative": 4,
+  "ambiguous": 8,
+  "accuracy": {
+    "checks": [
+      {
+        "name": "auto.coral_l1=3",
+        "ok": true,
+        "detail": "got points=3 from {'name': 'Coral in trough (L1)', 'points': 3, 'location': 'reef_l1'}"
+      },
+      {
+        "name": "teleop.coral_l1=2",
+        "ok": true,
+        "detail": "got points=2 from {'name': 'Coral in trough (L1)', 'points': 2, 'location': 'reef_l1'}"
+      },
+      {
+        "name": "auto.coral_l2=4",
+        "ok": true,
+        "detail": "got points=4 from {'name': 'Coral on L2 BRANCH', 'points': 4, 'location': 'reef_l2'}"
+      },
+      {
+        "name": "teleop.coral_l2=3",
+        "ok": true,
+        "detail": "got points=3 from {'name': 'Coral on L2 BRANCH', 'points': 3, 'location': 'reef_l2'}"
+      },
+      {
+        "name": "auto.coral_l3=6",
+        "ok": true,
+        "detail": "got points=6 from {'name': 'Coral on L3 BRANCH', 'points': 6, 'location': 'reef_l3'}"
+      },
+      {
+        "name": "teleop.coral_l3=4",
+        "ok": true,
+        "detail": "got points=4 from {'name': 'Coral on L3 BRANCH', 'points': 4, 'location': 'reef_l3'}"
+      },
+      {
+        "name": "auto.coral_l4=7",
+        "ok": true,
+        "detail": "got points=7 from {'name': 'Coral on L4 BRANCH', 'points': 7, 'location': 'reef_l4'}"
+      },
+      {
+        "name": "teleop.coral_l4=5",
+        "ok": true,
+        "detail": "got points=5 from {'name': 'Coral on L4 BRANCH', 'points': 5, 'location': 'reef_l4'}"
+      },
+      {
+        "name": "auto.algae_processor=6",
+        "ok": true,
+        "detail": "got points=6 from {'name': 'Algae in PROCESSOR', 'points': 6, 'location': 'processor'}"
+      },
+      {
+        "name": "teleop.algae_processor=6",
+        "ok": true,
+        "detail": "got points=6 from {'name': 'Algae in PROCESSOR', 'points': 6, 'location': 'processor'}"
+      },
+      {
+        "name": "auto.algae_net=4",
+        "ok": true,
+        "detail": "got points=4 from {'name': 'Algae in NET', 'points': 4, 'location': 'barge_net'}"
+      },
+      {
+        "name": "teleop.algae_net=4",
+        "ok": true,
+        "detail": "got points=4 from {'name': 'Algae in NET', 'points': 4, 'location': 'barge_net'}"
+      },
+      {
+        "name": "auto.leave=3",
+        "ok": true,
+        "detail": "got points=3 from {'name': 'LEAVE', 'points': 3, 'location': 'robot_starting_line'}"
+      },
+      {
+        "name": "endgame.barge_park=2",
+        "ok": true,
+        "detail": "got points=2 from {'name': 'PARK in BARGE ZONE', 'points': 2, 'location': 'barge_zone'}"
+      },
+      {
+        "name": "endgame.shallow_cage=6",
+        "ok": true,
+        "detail": "got points=6 from {'name': 'Shallow CAGE climb', 'points': 6, 'location': 'shallow_cage'}"
+      },
+      {
+        "name": "endgame.deep_cage=12",
+        "ok": true,
+        "detail": "got points=12 from {'name': 'Deep CAGE climb', 'points': 12, 'location': 'deep_cage'}"
+      },
+      {
+        "name": "game_piece.coral",
+        "ok": true,
+        "detail": "got {'coral', 'algae'}"
+      },
+      {
+        "name": "game_piece.algae",
+        "ok": true,
+        "detail": "got {'coral', 'algae'}"
+      },
+      {
+        "name": "rp.auto",
+        "ok": true,
+        "detail": "got auto rp coral rp barge rp"
+      },
+      {
+        "name": "rp.coral",
+        "ok": true,
+        "detail": "got auto rp coral rp barge rp"
+      },
+      {
+        "name": "rp.barge",
+        "ok": true,
+        "detail": "got auto rp coral rp barge rp"
+      },
+      {
+        "name": "weight=125lb",
+        "ok": false,
+        "detail": "got 115.0"
+      }
+    ],
+    "passed": 21,
+    "total": 22
+  },
+  "usage": [
+    {
+      "input_tokens": 35808,
+      "output_tokens": 1809,
+      "elapsed_s": 35.56275796890259
+    },
+    {
+      "input_tokens": 35808,
+      "output_tokens": 1647,
+      "elapsed_s": 32.805603981018066
+    },
+    {
+      "input_tokens": 35808,
+      "output_tokens": 3589,
+      "elapsed_s": 64.63102006912231
+    }
+  ],
+  "total_input_tokens": 107424,
+  "total_output_tokens": 7045,
+  "cost_usd": 0.427947
+}

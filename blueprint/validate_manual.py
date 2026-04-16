@@ -35,13 +35,18 @@ from blueprint.manual_parser import (  # noqa: E402
     PROMPT_TEMPLATE,
     ManualParse,
     consensus,
+    extract_html_text,
     extract_pdf_text,
+    first_html_url,
     parse_manual,
     _coerce_json,
 )
 
 MODEL = "claude-sonnet-4-5"
 N_PARSES = 3
+# Sonnet starter tier caps at 30k input tokens/min. With ~30k-token parses, we
+# pace calls 30s apart so three parses take ~90s and stay inside the cap.
+INTER_PARSE_DELAY_S = 30.0
 
 # Model pricing (USD per 1M tokens) — update if pricing changes.
 # Sonnet 4.5: $3 in / $15 out.  Haiku 4.5: $1 in / $5 out.
@@ -61,6 +66,7 @@ def find_pts(
     entries: list,
     keywords: list,
     require_all: bool = True,
+    exclude: Optional[list] = None,
 ) -> Optional[dict]:
     """Strict substring lookup over scoring entries.
 
@@ -68,11 +74,18 @@ def find_pts(
     contains ALL ``keywords`` (when ``require_all=True``) or ANY keyword
     (when ``require_all=False``). Returns ``None`` if no entry matches — no
     silent fallback to the first entry.
+
+    ``exclude`` rejects entries whose blob contains ANY of the listed
+    phrases. Useful for disambiguating "SPEAKER (AMPLIFIED)" vs
+    "SPEAKER (not AMPLIFIED)" where a single keyword substring would hit both.
     """
+    exclude_l = [s.lower() for s in (exclude or [])]
     for e in entries or []:
         name = str(e.get("name", "")).lower()
         loc = str(e.get("location", "")).lower()
         blob = f"{name} {loc}"
+        if any(x in blob for x in exclude_l):
+            continue
         if require_all:
             if all(k.lower() in blob for k in keywords):
                 return e
@@ -271,28 +284,37 @@ def _checks_2024(merged: ManualParse) -> list:
     ok, d = _eq_pts(e, 5)
     add("auto.speaker=5", ok, d)
 
-    # Teleop AMP=1, SPEAKER=2, amplified SPEAKER=5
-    e = find_pts(teleop, ["amp"])
-    # Filter out amplified-speaker entries that mention "amp" only because of "amplified"
-    if e is not None and "speaker" in str(e.get("name", "")).lower():
-        e = find_pts(teleop, ["amp", "note"]) or find_pts(teleop, ["amp"], require_all=True)
+    # Teleop AMP=1, non-amplified SPEAKER=2, amplified SPEAKER=5
+    # Exclude "speaker" from the AMP search so "AMPLIFIED" doesn't steal the match.
+    e = find_pts(teleop, ["amp"], exclude=["speaker"])
     ok, d = _eq_pts(e, 1)
     add("teleop.amp=1", ok, d)
 
-    e = find_pts(teleop, ["speaker"])
-    # Filter: must not be amplified
-    if e is not None and "amplif" in str(e.get("name", "")).lower():
-        # find a non-amplified speaker entry
+    # Non-amplified speaker: look for "not amplified" specifically.
+    e = (
+        find_pts(teleop, ["speaker", "not amplified"])
+        or find_pts(teleop, ["speaker"], exclude=["(amplified", "amplif"])
+    )
+    # If both paths fail because the parse names the entry just "speaker",
+    # fall back to any entry with "speaker" in name that isn't the amplified one.
+    if e is None:
         e = next(
-            (x for x in teleop
-             if "speaker" in str(x.get("name", "")).lower()
-             and "amplif" not in str(x.get("name", "")).lower()),
+            (
+                x for x in teleop
+                if "speaker" in str(x.get("name", "")).lower()
+                and "(amplified" not in str(x.get("name", "")).lower()
+            ),
             None,
         )
     ok, d = _eq_pts(e, 2)
     add("teleop.speaker=2", ok, d)
 
-    e = find_pts(teleop, ["amplified", "speaker"]) or find_pts(teleop, ["amplified"])
+    # Amplified speaker: explicitly exclude "not amplified" entries.
+    e = find_pts(
+        teleop,
+        ["amplified", "speaker"],
+        exclude=["not amplified", "not  amplified"],
+    )
     ok, d = _eq_pts(e, 5)
     add("teleop.amplified_speaker=5", ok, d)
 
@@ -301,16 +323,21 @@ def _checks_2024(merged: ManualParse) -> list:
     ok, d = _eq_pts(e, 2)
     add("auto.leave=2", ok, d)
 
-    # Endgame PARK=1, ONSTAGE=3, SPOTLIT=+1
+    # Endgame PARK=1, ONSTAGE(not SPOTLIT)=3, ONSTAGE(SPOTLIT)=4
     e = find_pts(end, ["park"])
     ok, d = _eq_pts(e, 1)
     add("endgame.park=1", ok, d)
-    e = find_pts(end, ["onstage"])
+    # Plain ONSTAGE: exclude spotlit-bearing entries so we don't grab the 4 entry.
+    e = find_pts(end, ["onstage"], exclude=["(spotlit", "spotlight"])
     ok, d = _eq_pts(e, 3)
     add("endgame.onstage=3", ok, d)
-    e = find_pts(end, ["spotlit"]) or find_pts(end, ["spotlight"])
-    ok, d = _eq_pts(e, 1)
-    add("endgame.spotlit=1", ok, d)
+    # SPOTLIT reports 4 in the official scoring table (total onstage+spotlit).
+    # Exclude "not spotlit" since that's the 3-pt entry.
+    e = find_pts(end, ["spotlit"], exclude=["not spotlit", "not  spotlit"]) or find_pts(
+        end, ["spotlight"], exclude=["not spotlight"]
+    )
+    ok, d = _eq_pts(e, 4)
+    add("endgame.spotlit=4", ok, d)
 
     # Game piece: NOTE
     names = {str(gp.get("name", "")).lower() for gp in merged.game_pieces or []}
@@ -325,15 +352,94 @@ def _checks_2024(merged: ManualParse) -> list:
     add("rp.melody", "melody" in rp_names, f"got {rp_names}")
     add("rp.ensemble", "ensemble" in rp_names, f"got {rp_names}")
 
-    # Weight 125lb
+    # Weight 125.5 lb per R103 ("ROBOT weight must not exceed 125.5 lbs")
     cc = merged.critical_constraints or {}
     w = cc.get("weight_lbs")
-    add("weight=125lb", w is not None and abs(float(w) - 125.0) < 0.5, f"got {w}")
+    add("weight=125.5lb", w is not None and abs(float(w) - 125.5) < 0.6, f"got {w}")
 
     return checks
 
 
-# Registry. Add 2025/2026 here once ground truth is written.
+def _checks_2025(merged: ManualParse) -> list:
+    """Ground truth for 2025 Reefscape, pulled from FIRST 2025 HTML Table 6-2.
+
+    Scoring summary (auto / teleop):
+      CORAL:  L1=3/2, L2=4/3, L3=6/4, L4=7/5
+      ALGAE:  Processor=6/6, Net=4/4
+      LEAVE (auto):  3
+      BARGE endgame:  Park=2, Shallow cage=6, Deep cage=12
+      RPs: Auto RP, Coral RP, Barge RP, Coopertition
+      Game pieces: CORAL + ALGAE
+      Robot weight: 125 lb
+    """
+    auto = _phase(merged, "auto")
+    teleop = _phase(merged, "teleop")
+    end = _phase(merged, "endgame")
+
+    checks: list = []
+
+    def add(name: str, ok: bool, detail: str) -> None:
+        checks.append({"name": name, "ok": ok, "detail": detail})
+
+    # CORAL scoring across 4 branches/trough
+    for level, (ap, tp) in [("l1", (3, 2)), ("l2", (4, 3)), ("l3", (6, 4)), ("l4", (7, 5))]:
+        e = find_pts(auto, ["coral", level]) or find_pts(auto, ["coral"] + ([level.upper()] if False else [level]))
+        ok, d = _eq_pts(e, ap)
+        add(f"auto.coral_{level}={ap}", ok, d)
+        e = find_pts(teleop, ["coral", level])
+        ok, d = _eq_pts(e, tp)
+        add(f"teleop.coral_{level}={tp}", ok, d)
+
+    # ALGAE in processor / net
+    e = find_pts(auto, ["algae", "processor"])
+    ok, d = _eq_pts(e, 6)
+    add("auto.algae_processor=6", ok, d)
+    e = find_pts(teleop, ["algae", "processor"])
+    ok, d = _eq_pts(e, 6)
+    add("teleop.algae_processor=6", ok, d)
+    e = find_pts(auto, ["algae", "net"])
+    ok, d = _eq_pts(e, 4)
+    add("auto.algae_net=4", ok, d)
+    e = find_pts(teleop, ["algae", "net"])
+    ok, d = _eq_pts(e, 4)
+    add("teleop.algae_net=4", ok, d)
+
+    # LEAVE (auto only)
+    e = find_pts(auto, ["leave"]) or find_pts(auto + end, ["leave"])
+    ok, d = _eq_pts(e, 3)
+    add("auto.leave=3", ok, d)
+
+    # BARGE endgame: park=2, shallow=6, deep=12
+    e = find_pts(end, ["park", "barge"]) or find_pts(end, ["park"])
+    ok, d = _eq_pts(e, 2)
+    add("endgame.barge_park=2", ok, d)
+    e = find_pts(end, ["shallow"]) or find_pts(end, ["shallow", "cage"])
+    ok, d = _eq_pts(e, 6)
+    add("endgame.shallow_cage=6", ok, d)
+    e = find_pts(end, ["deep"]) or find_pts(end, ["deep", "cage"])
+    ok, d = _eq_pts(e, 12)
+    add("endgame.deep_cage=12", ok, d)
+
+    # Game pieces: CORAL + ALGAE
+    names = {str(gp.get("name", "")).lower() for gp in merged.game_pieces or []}
+    add("game_piece.coral", any("coral" in n for n in names), f"got {names}")
+    add("game_piece.algae", any("algae" in n for n in names), f"got {names}")
+
+    # RPs
+    rp_names = " ".join(str(r.get("name", "")).lower() for r in merged.ranking_points or [])
+    add("rp.auto", "auto" in rp_names, f"got {rp_names}")
+    add("rp.coral", "coral" in rp_names, f"got {rp_names}")
+    add("rp.barge", "barge" in rp_names, f"got {rp_names}")
+
+    # Weight 115lb — Reefscape dropped from 125 to 115 (R103)
+    cc = merged.critical_constraints or {}
+    w = cc.get("weight_lbs")
+    add("weight=115lb", w is not None and abs(float(w) - 115.0) < 0.5, f"got {w}")
+
+    return checks
+
+
+# Registry. Add 2026 here once ground truth is written.
 GROUND_TRUTH: dict = {
     2019: {
         "default_manual": "manuals/2019_deep_space.pdf",
@@ -349,6 +455,11 @@ GROUND_TRUTH: dict = {
         "default_manual": "manuals/2024_crescendo.pdf",
         "checks": _checks_2024,
         "label": "Crescendo",
+    },
+    2025: {
+        "default_manual": "manuals/2025_reefscape.pdf",  # optional; HTML is primary
+        "checks": _checks_2025,
+        "label": "Reefscape",
     },
 }
 
@@ -375,9 +486,10 @@ def _instrumented_parse_fn(usage_log: list) -> Callable[[str, str], dict]:
     client = Anthropic()
 
     def fn(manual_text: str, model: str) -> dict:
+        from blueprint.manual_parser import build_parse_window  # noqa: I001
         prompt = PROMPT_TEMPLATE.format(
             schema=JSON_SCHEMA_DESCRIPTION,
-            text=manual_text[:120_000],
+            text=build_parse_window(manual_text),  # matches _default_parse_fn
         )
         t0 = time.time()
         resp = client.messages.create(
@@ -405,7 +517,11 @@ def _score(merged: ManualParse, year: int) -> dict:
     return {"checks": checks, "passed": passed, "total": len(checks)}
 
 
-def run(year: int, manual_path: Optional[str] = None) -> int:
+def run(
+    year: int,
+    manual_path: Optional[str] = None,
+    source: str = "pdf",
+) -> int:
     _require_api_key()
     spec = GROUND_TRUTH.get(year)
     if spec is None:
@@ -416,22 +532,35 @@ def run(year: int, manual_path: Optional[str] = None) -> int:
         )
         return 2
 
-    pdf_path = Path(manual_path) if manual_path else REPO / spec["default_manual"]
-    if not pdf_path.exists():
-        print(f"ERROR: PDF not found at {pdf_path}", file=sys.stderr)
-        return 2
-
-    print(f"[+] Year: {year} ({spec['label']})")
-    print(f"[+] PDF: {pdf_path} ({pdf_path.stat().st_size / 1e6:.1f} MB)")
-    text = extract_pdf_text(str(pdf_path))
-    print(f"[+] Extracted {len(text):,} chars from PDF")
+    # Resolve input location + extract text by source mode.
+    if source == "html":
+        # Prefer local file if explicitly passed; otherwise fetch FIRST's blob.
+        input_location: str = manual_path or first_html_url(year)
+        print(f"[+] Year: {year} ({spec['label']})")
+        print(f"[+] HTML: {input_location}")
+        text = extract_html_text(input_location)
+        print(f"[+] Extracted {len(text):,} chars from HTML (tables preserved)")
+    else:
+        pdf_path = Path(manual_path) if manual_path else REPO / spec["default_manual"]
+        if not pdf_path.exists():
+            print(f"ERROR: PDF not found at {pdf_path}", file=sys.stderr)
+            return 2
+        input_location = str(pdf_path)
+        print(f"[+] Year: {year} ({spec['label']})")
+        print(f"[+] PDF: {pdf_path} ({pdf_path.stat().st_size / 1e6:.1f} MB)")
+        text = extract_pdf_text(input_location)
+        print(f"[+] Extracted {len(text):,} chars from PDF")
 
     usage_log: list = []
     parse_fn = _instrumented_parse_fn(usage_log)
 
     print(f"[+] Running {N_PARSES} parses with {MODEL}...")
     parses = parse_manual(
-        str(pdf_path), n_parses=N_PARSES, model=MODEL, parse_fn=parse_fn
+        input_location,
+        n_parses=N_PARSES,
+        model=MODEL,
+        parse_fn=parse_fn,
+        inter_parse_delay_s=INTER_PARSE_DELAY_S,
     )
 
     merged, report = consensus(parses)
@@ -457,6 +586,8 @@ def run(year: int, manual_path: Optional[str] = None) -> int:
         "label": spec["label"],
         "model": MODEL,
         "n_parses": N_PARSES,
+        "source": source,
+        "input_location": input_location,
         "locked": len(report.locked_fields),
         "tentative": len(report.tentative_fields),
         "ambiguous": len(report.ambiguous_fields),
@@ -466,7 +597,10 @@ def run(year: int, manual_path: Optional[str] = None) -> int:
         "total_output_tokens": total_out,
         "cost_usd": cost,
     }
-    out_path = REPO / "design-intelligence" / f"_{year}_validation_summary.json"
+    suffix = f"_{source}" if source != "pdf" else ""
+    out_path = (
+        REPO / "design-intelligence" / f"_{year}{suffix}_validation_summary.json"
+    )
     out_path.write_text(json.dumps(summary, indent=2))
     print(f"\n[+] Wrote summary -> {out_path}")
     return 0
@@ -485,10 +619,18 @@ def main(argv: Optional[list] = None) -> int:
         "--manual",
         type=str,
         default=None,
-        help="Path to manual PDF (defaults to manuals/{year}_{label}.pdf).",
+        help="Path to manual file. For --source pdf defaults to manuals/{year}_{label}.pdf; "
+             "for --source html defaults to FIRST's blob URL for the year.",
+    )
+    parser.add_argument(
+        "--source",
+        type=str,
+        choices=["pdf", "html"],
+        default="pdf",
+        help="Input format: pdf (current pypdf path) or html (FIRST blob URL, 2024+ only).",
     )
     args = parser.parse_args(argv)
-    return run(args.year, args.manual)
+    return run(args.year, args.manual, source=args.source)
 
 
 if __name__ == "__main__":

@@ -157,12 +157,252 @@ def extract_pdf_text(pdf_path: str) -> str:
     return "\n".join(chunks)
 
 
+FIRST_HTML_URL_TEMPLATE = (
+    "https://firstfrc.blob.core.windows.net/frc{year}/Manual/HTML/{year}GameManual.htm"
+)
+
+
+def first_html_url(year: int) -> str:
+    """Return FIRST's official HTML manual URL for a given kickoff year.
+
+    Only 2024+ manuals are published in HTML. Earlier seasons are PDF-only.
+    """
+    return FIRST_HTML_URL_TEMPLATE.format(year=year)
+
+
+def extract_html_text(source: str) -> str:
+    """Extract text from an HTML manual, preserving table structure.
+
+    ``source`` may be either a local file path or an ``http(s)://`` URL. The
+    returned text embeds every ``<table>`` as a markdown pipe-table so the
+    LLM sees per-cell scoring values instead of the collapsed linear text
+    that ``pypdf`` produces on PDF inputs.
+
+    Non-table paragraphs are preserved in reading order. Headings become
+    ``#`` lines so the model can still anchor section context.
+
+    Requires ``beautifulsoup4``. Handles FIRST's cp1252-encoded HTML files.
+    """
+    try:
+        from bs4 import BeautifulSoup  # type: ignore
+    except ImportError as exc:  # pragma: no cover
+        raise RuntimeError(
+            "beautifulsoup4 required for HTML manuals — `pip install beautifulsoup4`"
+        ) from exc
+
+    if source.startswith(("http://", "https://")):
+        try:
+            from urllib.request import Request, urlopen
+        except ImportError as exc:  # pragma: no cover
+            raise RuntimeError("urllib unavailable") from exc
+        req = Request(source, headers={"User-Agent": "Mozilla/5.0 (TheEngine manual_parser)"})
+        with urlopen(req, timeout=60) as resp:
+            raw = resp.read()
+    else:
+        path = Path(source)
+        if not path.exists():
+            raise FileNotFoundError(source)
+        raw = path.read_bytes()
+
+    # FIRST publishes HTML as Windows-1252. Fall back to utf-8 for safety.
+    try:
+        soup = BeautifulSoup(raw, "html.parser", from_encoding="cp1252")
+    except Exception:  # pragma: no cover
+        soup = BeautifulSoup(raw, "html.parser")
+
+    # Remove noisy/invisible containers that waste tokens.
+    for tag in soup(["script", "style", "nav", "footer"]):
+        tag.decompose()
+
+    parts: list[str] = []
+    body = soup.body if soup.body else soup
+    for el in body.descendants:  # type: ignore[union-attr]
+        name = getattr(el, "name", None)
+        if name is None:
+            continue
+        if name == "table":
+            parts.append(_table_to_markdown(el))
+        elif name in {"h1", "h2", "h3", "h4", "h5", "h6"}:
+            level = int(name[1])
+            text = el.get_text(" ", strip=True)
+            if text:
+                parts.append(f"\n{'#' * level} {text}\n")
+    # Pull in paragraph text in document order. (We didn't grab paragraphs in
+    # the loop above because tables contain <p>s that would double-count.)
+    # Simpler: rebuild by walking top-level blocks.
+    parts = []
+    for block in _iter_blocks(body):
+        if getattr(block, "name", None) == "table":
+            parts.append(_table_to_markdown(block))
+        elif getattr(block, "name", None) in {"h1", "h2", "h3", "h4", "h5", "h6"}:
+            level = int(block.name[1])
+            text = block.get_text(" ", strip=True)
+            if text:
+                parts.append(f"\n{'#' * level} {text}\n")
+        else:
+            text = block.get_text(" ", strip=True) if hasattr(block, "get_text") else str(block)
+            if text:
+                parts.append(text)
+    return "\n".join(parts)
+
+
+def _iter_blocks(root) -> "list":  # type: ignore[no-untyped-def]
+    """Yield top-level block-like elements in document order, skipping tables' innards.
+
+    When we encounter a <table>, we yield the table and skip its descendants so
+    we don't double-count the prose inside cells.
+    """
+    from bs4 import Tag  # type: ignore
+
+    out: list = []
+    if not hasattr(root, "children"):
+        return out
+    stack: list = list(root.children)
+    while stack:
+        node = stack.pop(0)
+        if not isinstance(node, Tag):
+            continue
+        if node.name == "table":
+            out.append(node)
+            continue
+        if node.name in {"h1", "h2", "h3", "h4", "h5", "h6", "p", "li"}:
+            out.append(node)
+            continue
+        # Recurse into children for divs/sections/etc.
+        stack = list(node.children) + stack
+    return out
+
+
+def _table_to_markdown(table) -> str:  # type: ignore[no-untyped-def]
+    """Render a BeautifulSoup <table> as a markdown pipe-table block.
+
+    Expands ``rowspan`` and ``colspan`` so every logical cell is materialized
+    at its true (row, col) position. Spanned cells are duplicated into each
+    covered grid position, which is the shape Sonnet/Haiku needs to read a
+    2-level header + spanned category column correctly.
+
+    Without this, FRC manuals (which use rowspan for category labels like
+    NOTES / STAGE and colspan for header groupings) collapse into orphaned
+    rows the LLM can't align to columns.
+    """
+    rows = table.find_all("tr")
+    if not rows:
+        return ""
+
+    # Pass 1: build a sparse grid[row][col] -> text, expanding spans.
+    grid: list[list[str]] = []
+    for _ in rows:
+        grid.append([])
+
+    # Track occupied cells so we can skip over them when spans collide.
+    occupied: dict[tuple[int, int], bool] = {}
+
+    for r_idx, tr in enumerate(rows):
+        col = 0
+        for cell in tr.find_all(["td", "th"]):
+            # Advance past any already-occupied columns (from rowspan above).
+            while occupied.get((r_idx, col), False):
+                col += 1
+            rowspan = int(cell.get("rowspan", "1") or "1")
+            colspan = int(cell.get("colspan", "1") or "1")
+            text = cell.get_text(" ", strip=True).replace("|", "/").replace("\n", " ")
+            for dr in range(rowspan):
+                for dc in range(colspan):
+                    occupied[(r_idx + dr, col + dc)] = True
+                    # Grow the target row as needed.
+                    while len(grid[r_idx + dr]) <= col + dc:
+                        grid[r_idx + dr].append("")
+                    # Duplicate the cell text across every spanned position so
+                    # the LLM sees the category label on every row it covers.
+                    grid[r_idx + dr][col + dc] = text
+            col += colspan
+
+    # Normalize width.
+    width = max((len(r) for r in grid), default=0)
+    if width == 0:
+        return ""
+    for r in grid:
+        while len(r) < width:
+            r.append("")
+
+    lines: list[str] = []
+    lines.append("| " + " | ".join(grid[0]) + " |")
+    lines.append("|" + "|".join(["---"] * width) + "|")
+    for r in grid[1:]:
+        lines.append("| " + " | ".join(r) + " |")
+    return "\n" + "\n".join(lines) + "\n"
+
+
 # ---------------------------------------------------------------------------
 # LLM parse call
 # ---------------------------------------------------------------------------
 
 
 ParseFn = Callable[[str, str], dict]
+
+
+# Ordered by specificity — robot-weight rule first, then looser fallbacks.
+# The bumper rule (R407) also contains "weigh no more than" so we must find
+# the robot weight rule preferentially.
+_WEIGHT_PATTERNS = [
+    r"ROBOT\s+weight\s+(?:limit|must\s+not\s+exceed)",
+    r"R10[0-9].{0,20}ROBOT\s+weight",
+    r"125(?:\.[05])?\s*(?:lbs?|pounds?)",
+    r"maximum\s+(?:ROBOT\s+)?weight",
+    r"weigh\s+no\s+more\s+than",
+]
+
+
+def build_parse_window(manual_text: str, head_chars: int = 115_000, tail_chars: int = 10_000) -> str:
+    """Build an LLM-facing window that stays under the 30k tokens/min cap.
+
+    Keeps the head of the manual (scoring summary + most of the scoring rules)
+    and splices in a targeted excerpt around weight-constraint language if it
+    lives past the head cut. Returns concatenated text with a visible divider.
+    """
+    if len(manual_text) <= head_chars:
+        return manual_text
+    head = manual_text[:head_chars]
+    rest = manual_text[head_chars:]
+    splice = ""
+    for pat in _WEIGHT_PATTERNS:
+        m = re.search(pat, rest, re.IGNORECASE)
+        if m:
+            center = m.start()
+            half = tail_chars // 2
+            lo = max(0, center - half)
+            hi = min(len(rest), center + half)
+            splice = rest[lo:hi]
+            break
+    if not splice:
+        return head
+    return head + "\n\n<<< ROBOT RULES EXCERPT >>>\n\n" + splice
+
+
+def _call_with_rate_limit_retry(client, model, prompt, max_retries=4):
+    """Invoke the Anthropic client with exponential backoff on 429s.
+
+    Sonnet 4.5 caps at 30k input tokens/min on the starter tier; 3 parses of
+    ~30k tokens each reliably trip the limit without pacing.
+    """
+    import time as _time
+
+    from anthropic import RateLimitError
+
+    delay = 25.0
+    for attempt in range(max_retries):
+        try:
+            return client.messages.create(
+                model=model,
+                max_tokens=8192,
+                messages=[{"role": "user", "content": prompt}],
+            )
+        except RateLimitError:
+            if attempt == max_retries - 1:
+                raise
+            _time.sleep(delay)
+            delay = min(delay * 1.6, 90.0)
+    raise RuntimeError("unreachable")
 
 
 def _default_parse_fn(manual_text: str, model: str) -> dict:
@@ -180,16 +420,14 @@ def _default_parse_fn(manual_text: str, model: str) -> dict:
         raise RuntimeError("ANTHROPIC_API_KEY not set")
 
     client = Anthropic()
+    # Window sized for Sonnet 4.5 at 30k input-tokens/min: ~115k head + 10k
+    # targeted robot-rules excerpt keeps us under ~32k tokens per call without
+    # dropping R103 weight (which sits ~130k chars into the 2024 HTML).
     prompt = PROMPT_TEMPLATE.format(
         schema=JSON_SCHEMA_DESCRIPTION,
-        text=manual_text[:120_000],
+        text=build_parse_window(manual_text),
     )
-    resp = client.messages.create(
-        model=model,
-        max_tokens=8192,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    # Concatenate text blocks
+    resp = _call_with_rate_limit_retry(client, model, prompt)
     raw = "".join(getattr(b, "text", "") for b in resp.content)
     return _coerce_json(raw)
 
@@ -224,6 +462,7 @@ def parse_manual(
     n_parses: int = 3,
     model: str = "claude-sonnet-4-5",
     parse_fn: Optional[ParseFn] = None,
+    inter_parse_delay_s: float = 0.0,
 ) -> list[ManualParse]:
     """Parse ``pdf_path`` through ``n_parses`` independent LLM calls.
 
@@ -235,19 +474,28 @@ def parse_manual(
     parse_fn : callable(text, model) -> dict — dependency injection point
                for tests. When None, the default Anthropic-backed parser runs.
     """
-    path = Path(pdf_path)
-    if not path.exists():
-        raise FileNotFoundError(pdf_path)
-
-    if path.suffix.lower() == ".pdf":
-        text = extract_pdf_text(str(path))
+    # Dispatch by extension / scheme. URLs route to HTML extractor.
+    if pdf_path.startswith(("http://", "https://")):
+        text = extract_html_text(pdf_path)
     else:
-        text = path.read_text()
+        path = Path(pdf_path)
+        if not path.exists():
+            raise FileNotFoundError(pdf_path)
+        suffix = path.suffix.lower()
+        if suffix == ".pdf":
+            text = extract_pdf_text(str(path))
+        elif suffix in {".htm", ".html"}:
+            text = extract_html_text(str(path))
+        else:
+            text = path.read_text()
 
     fn: ParseFn = parse_fn if parse_fn is not None else _default_parse_fn
 
+    import time as _time
     results: list = []
-    for _ in range(n_parses):
+    for i in range(n_parses):
+        if i > 0 and inter_parse_delay_s > 0:
+            _time.sleep(inter_parse_delay_s)
         data = fn(text, model)
         validate_parse_dict(data)
         results.append(

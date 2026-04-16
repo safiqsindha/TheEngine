@@ -1,0 +1,107 @@
+{
+  "year": 2024,
+  "label": "Crescendo",
+  "model": "claude-sonnet-4-5",
+  "n_parses": 3,
+  "source": "html",
+  "input_location": "https://firstfrc.blob.core.windows.net/frc2024/Manual/HTML/2024GameManual.htm",
+  "locked": 8,
+  "tentative": 8,
+  "ambiguous": 17,
+  "accuracy": {
+    "checks": [
+      {
+        "name": "auto.amp=2",
+        "ok": true,
+        "detail": "got points=2 from {'name': 'AMP NOTE (auto)', 'points': 2, 'location': 'amp'}"
+      },
+      {
+        "name": "auto.speaker=5",
+        "ok": true,
+        "detail": "got points=5 from {'name': 'SPEAKER NOTE not AMPLIFIED (auto)', 'points': 5, 'location': 'speaker'}"
+      },
+      {
+        "name": "teleop.amp=1",
+        "ok": true,
+        "detail": "got points=1 from {'name': 'AMP NOTE (teleop)', 'points': 1, 'location': 'amp'}"
+      },
+      {
+        "name": "teleop.speaker=2",
+        "ok": true,
+        "detail": "got points=2 from {'name': 'SPEAKER NOTE not AMPLIFIED (teleop)', 'points': 2, 'location': 'speaker'}"
+      },
+      {
+        "name": "teleop.amplified_speaker=5",
+        "ok": true,
+        "detail": "got points=5 from {'name': 'SPEAKER NOTE AMPLIFIED (teleop)', 'points': 5, 'location': 'speaker'}"
+      },
+      {
+        "name": "auto.leave=2",
+        "ok": true,
+        "detail": "got points=2 from {'name': 'LEAVE', 'points': 2, 'location': 'robot_starting_zone'}"
+      },
+      {
+        "name": "endgame.park=1",
+        "ok": true,
+        "detail": "got points=1 from {'name': 'PARK', 'points': 1, 'location': 'stage_zone'}"
+      },
+      {
+        "name": "endgame.onstage=3",
+        "ok": true,
+        "detail": "got points=3 from {'name': 'ONSTAGE not SPOTLIT', 'points': 3, 'location': 'stage'}"
+      },
+      {
+        "name": "endgame.spotlit=4",
+        "ok": true,
+        "detail": "got points=4 from {'name': 'ONSTAGE SPOTLIT', 'points': 4, 'location': 'stage'}"
+      },
+      {
+        "name": "game_piece.note",
+        "ok": true,
+        "detail": "got {'high note', 'note'}"
+      },
+      {
+        "name": "possession.max=1",
+        "ok": true,
+        "detail": "got {'max_simultaneous': 1, 'notes': 'In AUTO, ROBOT may not CONTROL more than 1 NOTE at a time (G403). In TELEOP, ROBOT may not leave SOURCE ZONE with CONTROL of more than 1 NOTE, nor have greater-than-MOMENTARY CONTROL of more than 1 NOTE while outside SOURCE ZONE (G409)'}"
+      },
+      {
+        "name": "rp.melody",
+        "ok": true,
+        "detail": "got melody ensemble tie win coopertition bonus"
+      },
+      {
+        "name": "rp.ensemble",
+        "ok": true,
+        "detail": "got melody ensemble tie win coopertition bonus"
+      },
+      {
+        "name": "weight=125.5lb",
+        "ok": true,
+        "detail": "got 125.5"
+      }
+    ],
+    "passed": 14,
+    "total": 14
+  },
+  "usage": [
+    {
+      "input_tokens": 35098,
+      "output_tokens": 3508,
+      "elapsed_s": 70.32946467399597
+    },
+    {
+      "input_tokens": 35098,
+      "output_tokens": 3458,
+      "elapsed_s": 73.60385394096375
+    },
+    {
+      "input_tokens": 35098,
+      "output_tokens": 3486,
+      "elapsed_s": 68.18192195892334
+    }
+  ],
+  "total_input_tokens": 105294,
+  "total_output_tokens": 10452,
+  "cost_usd": 0.472662
+}

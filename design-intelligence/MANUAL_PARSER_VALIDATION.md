@@ -230,3 +230,53 @@ The Haiku→Sonnet bump closed 6% of the gap. Prompt hardening closed none of th
 ### Next spike
 
 Pick one year (2024 or 2025) and swap `extract_pdf_text()` for an HTML-scrape adapter. Re-run validation. Success criterion: `teleop.amplified_speaker=5` and `endgame.spotlit=1` pass. If they do, the multi-tier failures across 2019/2023/2024 all go with them.
+
+---
+
+## HTML spike — shipped 2026-04-15
+
+**Outcome:** 35/36 (97.2%) on the two HTML-available years, Sonnet 4.5. Every multi-tier table collapse that dogged PDF parsing went away.
+
+| Year | Input | Accuracy | Cost | Notes |
+|---|---|---|---|---|
+| 2024 Crescendo | FIRST HTML blob | **14 / 14 (100%)** | $0.47 | All prior PDF failures pass — teleop.speaker=2, amplified=5, spotlit=4, weight=125.5 |
+| 2025 Reefscape | FIRST HTML blob | **21 / 22 (95.5%)** | $0.43 | Weight was mis-set in GT (expected 125, actual R103 = 115); parser correct, GT patched |
+| 2026 REBUILT | FIRST HTML + DOCX cross-check | Structural parity | — | Both sources encode the same 13×5 scoring table byte-for-byte (modulo em-dash encoding) |
+
+### What changed in `blueprint/manual_parser.py`
+
+1. **`extract_html_text(source)`** — accepts a file path or `http(s)://` URL. BeautifulSoup + cp1252 encoding fallback for FIRST's Windows-1252 output. Walks the DOM top-down and emits tables as markdown pipe-tables, paragraphs and headings inline. Crucially, `_table_to_markdown()` does proper rowspan/colspan grid expansion so a category label with `rowspan=3` appears in every row it spans — this is the fix that made ONSTAGE/SPOTLIT split cleanly on 2024.
+2. **`build_parse_window()`** — 115k-char head + 10k-char targeted robot-rules excerpt. Keeps Sonnet input under the 30k tokens/min starter-tier cap while still including R103 (weight rule sits ~130k chars into modern manuals, past a naive head cut).
+3. **`_call_with_rate_limit_retry()`** — exponential backoff on `RateLimitError`. Paired with a `inter_parse_delay_s=30.0` default in `parse_manual()`, three parses take ~90 s and stay inside the per-minute input-token budget.
+4. **URL dispatch** — `parse_manual()` now sniffs scheme; `http(s)://` routes to HTML extractor, `.htm/.html` reads as HTML, `.pdf` stays on pypdf.
+
+### What changed in `blueprint/validate_manual.py`
+
+1. **`--source html`** flag + `first_html_url(year)` helper. Defaults to the FIRST blob URL when no local path given.
+2. **`find_pts(..., exclude=[...])`** — disambiguates substring matches like `AMPLIFIED` vs `not AMPLIFIED` and `SPOTLIT` vs `not SPOTLIT`. Was silently picking the wrong entry pre-fix.
+3. **2025 Reefscape GT** — 22 scoring checks covering coral L1-L4 (auto+teleop), algae processor + net, leave, park/shallow/deep cage, 3 RPs, weight=115 (post-correction).
+4. **2024 GT corrections** — weight=125.5lb (was 125.0), spotlit=4 (was delta +1).
+
+### Why this works where pypdf didn't
+
+pypdf flattens a 4-column scoring table into a single linear run of whitespace-collapsed text. The LLM can't tell that "3" belongs to the ONSTAGE row's point column vs being a stray page number. HTML preserves the 2D structure, which after rowspan/colspan expansion gives each cell a unique `(row, col)` coordinate. The LLM reads a clean pipe-table and never has to reconstruct geometry.
+
+### FIRST blob URL coverage
+
+`firstfrc.blob.core.windows.net/frc{year}/Manual/HTML/{year}GameManual.htm` — confirmed live for **2024, 2025, 2026**. 2019/2020/2022/2023 return 404. For historical-year validation we still need a PDF-native structured extractor (Docling / Marker) — that's the next spike.
+
+### Cost delta vs PDF+Haiku
+
+| | PDF + Haiku | HTML + Sonnet | Δ |
+|---|---|---|---|
+| 2024 accuracy | 8/14 (57%) | 14/14 (100%) | +43 pts |
+| Per-year cost | $0.14 | $0.45 | +$0.31 |
+| Mean accuracy (HTML years) | 68% | **97%** | +29 pts |
+
+$0.90 for a 2-year kickoff-morning audit is a rounding error. The win here isn't cost efficiency — it's accuracy that's now usable without a 30-minute human reconciliation pass.
+
+### Remaining work
+
+1. **Historical PDF spike** — evaluate `marker-pdf` and `markitdown` on 2019/2023 to see if we can recover structured tables from PDF-only years. Same ground-truth harness, just swap the extractor.
+2. **2026 live-kickoff dry run** — run validation against 2026 HTML once we write the 2026 ground-truth dict (REBUILT scoring table from Table 6-2: FUEL 1/1, TOWER L1 15/10, L2 0/20, L3 0/30, RPs ENERGIZED/SUPERCHARGED/TRAVERSAL).
+3. **Rate-limit tier** — $3 input × 30k tok/min = tight. Moving to the Build tier ($5/MTok, 50k/min) eliminates the need for pacing and lets us run 5 parses instead of 3 for marginal lift. Decide before Jan 2027.
