@@ -1,11 +1,11 @@
 {
   "year": 2023,
   "label": "Charged Up",
-  "model": "claude-haiku-4-5",
+  "model": "claude-sonnet-4-5",
   "n_parses": 3,
-  "locked": 0,
-  "tentative": 23,
-  "ambiguous": 74,
+  "locked": 4,
+  "tentative": 12,
+  "ambiguous": 33,
   "accuracy": {
     "checks": [
       {
@@ -16,7 +16,7 @@
       {
         "name": "auto.mid_node=4",
         "ok": true,
-        "detail": "got points=4 from {'name': 'Cone on middle row (auto)', 'points': 4, 'location': 'grid_middle'}"
+        "detail": "got points=4 from {'name': 'GAME PIECE scored on middle ROW (auto)', 'points': 4, 'location': 'grid_middle_row'}"
       },
       {
         "name": "auto.high_node=6",
@@ -31,7 +31,7 @@
       {
         "name": "teleop.mid_node=3",
         "ok": true,
-        "detail": "got points=3 from {'name': 'Cone on middle row (teleop)', 'points': 3, 'location': 'grid_middle'}"
+        "detail": "got points=3 from {'name': 'GAME PIECE scored on middle ROW (teleop)', 'points': 3, 'location': 'grid_middle_row'}"
       },
       {
         "name": "teleop.high_node=5",
@@ -41,12 +41,12 @@
       {
         "name": "auto.mobility=3",
         "ok": true,
-        "detail": "got points=3 from {'name': 'MOBILITY (auto)', 'points': 3, 'location': 'community'}"
+        "detail": "got points=3 from {'name': 'MOBILITY', 'points': 3, 'location': 'community_exit'}"
       },
       {
         "name": "endgame.park=2",
         "ok": true,
-        "detail": "got points=2 from {'name': 'PARK (endgame)', 'points': 2, 'location': 'community'}"
+        "detail": "got points=2 from {'name': 'PARK', 'points': 2, 'location': 'community'}"
       },
       {
         "name": "endgame.dock=6",
@@ -71,17 +71,17 @@
       {
         "name": "possession.max=1",
         "ok": true,
-        "detail": "got {'max_simultaneous': 1, 'notes': 'ROBOTS completely outside LOADING ZONE or COMMUNITY may not have CONTROL of more than 1 GAME PIECE; exceptions in LOADING ZONE and COMMUNITY'}"
+        "detail": "got {'max_simultaneous': 1, 'notes': 'ROBOTS completely outside their LOADING ZONE or COMMUNITY may not have CONTROL of more than 1 GAME PIECE'}"
       },
       {
         "name": "rp.sustainability",
         "ok": true,
-        "detail": "got sustainability bonus coopertition bonus activation bonus win tie"
+        "detail": "got sustainability bonus activation bonus coopertition bonus tie win"
       },
       {
         "name": "rp.activation",
         "ok": true,
-        "detail": "got sustainability bonus coopertition bonus activation bonus win tie"
+        "detail": "got sustainability bonus activation bonus coopertition bonus tie win"
       },
       {
         "name": "weight=125lb",
@@ -95,21 +95,21 @@
   "usage": [
     {
       "input_tokens": 32886,
-      "output_tokens": 3015,
-      "elapsed_s": 23.549800872802734
+      "output_tokens": 1479,
+      "elapsed_s": 28.05319380760193
     },
     {
       "input_tokens": 32886,
-      "output_tokens": 3904,
-      "elapsed_s": 25.680289030075073
+      "output_tokens": 1435,
+      "elapsed_s": 81.46932816505432
     },
     {
       "input_tokens": 32886,
-      "output_tokens": 3597,
-      "elapsed_s": 55.68521285057068
+      "output_tokens": 1360,
+      "elapsed_s": 25.29333186149597
     }
   ],
   "total_input_tokens": 98658,
-  "total_output_tokens": 10516,
-  "cost_usd": 0.15123799999999998
+  "total_output_tokens": 4274,
+  "cost_usd": 0.36008399999999996
 }

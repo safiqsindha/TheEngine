@@ -1,27 +1,51 @@
 # Manual Parser Validation — FRC 2019 / 2023 / 2024
 
-**Status:** ✅ THREE-YEAR MATRIX COMPLETE (hardened prompt)
+**Status:** ✅ HAIKU + SONNET MATRIX COMPLETE
 **Date run:** 2026-04-15
 **Target module:** `blueprint/manual_parser.py`
 **Driver:** `blueprint/validate_manual.py` (year-agnostic, per-year ground truth)
 **Corpora:** `manuals/2019_deep_space.pdf`, `manuals/2023_charged_up.pdf`, `manuals/2024_crescendo.pdf` (all gitignored)
-**Configuration:** `n_parses=3`, `model="claude-haiku-4-5"`, hardened `PROMPT_TEMPLATE`
-**Summary data:** `design-intelligence/_{2019,2023,2024}_validation_summary.json`
+**Configuration:** `n_parses=3`, hardened `PROMPT_TEMPLATE`, models compared: `claude-haiku-4-5` vs `claude-sonnet-4-5`
+**Summary data:** `design-intelligence/_{2019,2023,2024}_validation_summary.json` (Sonnet overwrites — Haiku numbers preserved in this doc)
 
 ---
 
-## Three-year headline matrix
+## Headline matrix — Sonnet vs Haiku head-to-head
 
-| Year | Game | Accuracy | Cost | Input tok | Output tok | Locked | Tentative | Ambiguous |
-|---|---|---|---|---|---|---|---|---|
-| 2019 | Deep Space | **14 / 17 (82.4%)** | $0.1216 | 97,803 | 4,759 | 0 | 2 | 28 |
-| 2023 | Charged Up | **10 / 16 (62.5%)** | $0.1512 | 98,658 | 10,516 | 0 | 23 | 74 |
-| 2024 | Crescendo | **8 / 14 (57.1%)** | $0.1353 | 95,331 | 7,995 | 6 | 7 | 17 |
-| **Totals** | — | **32 / 47 (68.1%)** | **$0.4081** | 291,792 | 23,270 | 6 | 32 | 119 |
+| Year | Game | Haiku 4.5 | Sonnet 4.5 | Δ |
+|---|---|---|---|---|
+| 2019 | Deep Space | 14 / 17 (82.4%) | **15 / 17 (88.2%)** | +1 |
+| 2023 | Charged Up | 10 / 16 (62.5%) | 10 / 16 (62.5%) | 0 |
+| 2024 | Crescendo | 8 / 14 (57.1%) | **10 / 14 (71.4%)** | +2 |
+| **Totals** | — | 32 / 47 (68.1%) | **35 / 47 (74.5%)** | **+3 (+6.4%)** |
+| **Cost** | — | **$0.4081** | **$1.1021** | 2.7× |
 
-- Cost across 3 years landed at **$0.41 for 47 ground-truth checks** — Haiku 4.5 is the right cost point for kickoff automation.
-- No truncation issues across any of the three 263k–313k-char manuals. JSON parse succeeded on all 9 calls.
-- Wall-clock: 11–15 s per parse per year. Sequential runs needed because 50k input-tokens/min rate limit caps parallel launches at this corpus size.
+### Per-year detail (Haiku | Sonnet)
+
+| Year | Cost (H/S) | In tok | Out tok (H/S) | Locked (H/S) |
+|---|---|---|---|---|
+| 2019 | $0.12 / $0.36 | 97,803 | 4,759 / 4,144 | 0 / 0 |
+| 2023 | $0.15 / $0.36 | 98,658 | 10,516 / 4,274 | 0 / 4 |
+| 2024 | $0.14 / $0.39 | 95,331 | 7,995 / 6,695 | 6 / 4 |
+
+### Where Sonnet specifically wins
+
+- **2019**: correctly separated `CARGO in ROCKET (teleop) = 3` (Haiku dropped it into the HATCH PANEL aggregate)
+- **2024**: correctly enumerated `PARK = 1` and `ONSTAGE = 3` (Haiku emitted neither)
+- **Consistency**: Sonnet's scoring-entry names vary less parse-to-parse → locked rate jumped from 0 to 4 on 2023
+
+### Where Sonnet does NOT help
+
+- **2019**: both `cargo_in_cargo_ship` entries still missing (auto + teleop) — parser split Rocket cleanly but kept the Cargo Ship cells merged
+- **2023**: hybrid and high grid nodes completely missing across both phases; engage=10 still collapses to dock=6; weight still `None`
+- **2024**: spotlit=1 missed (merged with ONSTAGE); teleop amplified speaker=5 missed (merged with non-amp teleop=2); weight still `None`
+
+### Verdict
+
+Sonnet helps modestly at 2.7× cost. $1.10 for a once-a-year kickoff run is trivial. But **the core failure mode is unchanged**: multi-cell table collapse. Upgrading the model chips at the edges, it doesn't fix the root cause.
+
+- No truncation issues across any of the three 263k–313k-char manuals. JSON parse succeeded on all 18 calls (9 Haiku + 9 Sonnet).
+- Wall-clock: Haiku 11–15 s/parse, Sonnet 25–45 s/parse. Sequential runs required — 50k input-tokens/min rate limit caps parallel launches at this corpus size.
 
 ---
 
@@ -173,3 +197,36 @@ Sequential execution required due to 50k input-tokens/min Haiku rate limit — p
 5. Re-run 3-year matrix; target ≥ 80% mean accuracy — **blueprint/validate_manual.py**
 
 Target: 2027 kickoff-readiness. Estimated effort: 3 hours.
+
+---
+
+## The real fix — stop flattening tables before the LLM sees them
+
+The Haiku→Sonnet bump closed 6% of the gap. Prompt hardening closed none of the cargo-collapse gap. Every remaining failure is the same root cause: **`pypdf` destroys the 2D table structure of scoring rules before we hand the text to the LLM.** We're asking Haiku/Sonnet to reconstruct "hybrid / mid / high × cone / cube" from linear text with whitespace collapsed, and they can't.
+
+### Two candidate inputs that preserve table structure
+
+**Option A — HTML scrape from frcmanual.com**
+- Community-maintained HTML mirror of the manual
+- Tables are native `<table><tr><td>` — BeautifulSoup parses them in one line
+- Input token drop: 97k → ~35k (strip nav/css), cost ~60% lower
+- Risk: hosted by third party, may not have historical back-fill, need PDF as source-of-truth cross-check
+
+**Option B — MinerU (PDF + vision layout detection)**
+- opendatalab/MinerU emits markdown with proper `| col | col |` table syntax from PDF
+- Works offline, no third-party dependency, authoritative PDF as input
+- Tradeoff: 2–3 GB model download, 30–90 s inference per manual, AGPL-3.0 license
+
+**Lighter alternative — Docling (IBM, MIT license)**
+- Similar capability to MinerU, smaller footprint, permissive license
+- Best candidate if we want PDF-native without AGPL baggage
+
+### Right architecture
+
+- **Primary:** HTML scrape from frcmanual.com when the year is hosted (trivial + cheap)
+- **Fallback:** Docling (or MinerU) on the PDF when HTML isn't available
+- **Source of truth:** PDF always wins on disagreement — HTML is a structural hint, not an authority
+
+### Next spike
+
+Pick one year (2024 or 2025) and swap `extract_pdf_text()` for an HTML-scrape adapter. Re-run validation. Success criterion: `teleop.amplified_speaker=5` and `endgame.spotlit=1` pass. If they do, the multi-tier failures across 2019/2023/2024 all go with them.

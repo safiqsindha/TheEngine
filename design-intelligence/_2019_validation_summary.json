@@ -1,11 +1,11 @@
 {
   "year": 2019,
   "label": "Deep Space",
-  "model": "claude-haiku-4-5",
+  "model": "claude-sonnet-4-5",
   "n_parses": 3,
   "locked": 0,
-  "tentative": 2,
-  "ambiguous": 28,
+  "tentative": 13,
+  "ambiguous": 34,
   "accuracy": {
     "checks": [
       {
@@ -16,17 +16,17 @@
       {
         "name": "auto.hatch_on_cargo_ship=2",
         "ok": true,
-        "detail": "got points=2 from {'name': 'HATCH PANEL on ROCKET or CARGO SHIP', 'points': 2, 'location': 'rocket_or_cargo_ship'}"
+        "detail": "got points=2 from {'name': 'HATCH PANEL on CARGO SHIP (auto)', 'points': 2, 'location': 'cargo_ship'}"
       },
       {
         "name": "auto.hab_cross_l1=3",
         "ok": true,
-        "detail": "got points=3 from {'name': 'SANDSTORM Bonus (HAB Level 1)', 'points': 3, 'location': 'hab_level_1'}"
+        "detail": "got points=3 from {'name': 'SANDSTORM Bonus Level 1 (cross HAB LINE from Level 1)', 'points': 3, 'location': 'hab_line_cross'}"
       },
       {
         "name": "auto.hab_cross_l2=6",
         "ok": true,
-        "detail": "got points=6 from {'name': 'SANDSTORM Bonus (HAB Level 2)', 'points': 6, 'location': 'hab_level_2'}"
+        "detail": "got points=6 from {'name': 'SANDSTORM Bonus Level 2 (cross HAB LINE from Level 2)', 'points': 6, 'location': 'hab_line_cross'}"
       },
       {
         "name": "teleop.cargo_in_cargo_ship=3",
@@ -35,58 +35,58 @@
       },
       {
         "name": "teleop.cargo_in_rocket=3",
-        "ok": false,
-        "detail": "no entry matched (expected 3 pts)"
+        "ok": true,
+        "detail": "got points=3 from {'name': 'CARGO in ROCKET (teleop)', 'points': 3, 'location': 'rocket'}"
       },
       {
         "name": "teleop.hatch_in_rocket=2",
         "ok": true,
-        "detail": "got points=2 from {'name': 'HATCH PANEL on ROCKET or CARGO SHIP', 'points': 2, 'location': 'rocket_or_cargo_ship'}"
+        "detail": "got points=2 from {'name': 'HATCH PANEL on ROCKET (teleop)', 'points': 2, 'location': 'rocket'}"
       },
       {
         "name": "teleop.hatch_in_cargo_ship=2",
         "ok": true,
-        "detail": "got points=2 from {'name': 'HATCH PANEL on ROCKET or CARGO SHIP', 'points': 2, 'location': 'rocket_or_cargo_ship'}"
+        "detail": "got points=2 from {'name': 'HATCH PANEL on CARGO SHIP (teleop)', 'points': 2, 'location': 'cargo_ship'}"
       },
       {
         "name": "endgame.hab_climb_l3=12",
         "ok": true,
-        "detail": "got points=12 from {'name': 'HAB Climb Bonus (Level 3)', 'points': 12, 'location': 'hab_level_3'}"
+        "detail": "got points=12 from {'name': 'HAB Climb Level 3', 'points': 12, 'location': 'hab_platform_level_3'}"
       },
       {
         "name": "endgame.hab_climb_l2=6",
         "ok": true,
-        "detail": "got points=6 from {'name': 'HAB Climb Bonus (Level 2)', 'points': 6, 'location': 'hab_level_2'}"
+        "detail": "got points=6 from {'name': 'HAB Climb Level 2', 'points': 6, 'location': 'hab_platform_level_2'}"
       },
       {
         "name": "endgame.hab_climb_l1=3",
         "ok": true,
-        "detail": "got points=3 from {'name': 'HAB Climb Bonus (Level 1)', 'points': 3, 'location': 'hab_level_1'}"
+        "detail": "got points=3 from {'name': 'HAB Climb Level 1', 'points': 3, 'location': 'hab_platform_level_1'}"
       },
       {
         "name": "game_piece.cargo",
         "ok": true,
-        "detail": "got {'cargo', 'hatch panel'}"
+        "detail": "got {'hatch panel', 'cargo'}"
       },
       {
         "name": "game_piece.hatch",
         "ok": true,
-        "detail": "got {'cargo', 'hatch panel'}"
+        "detail": "got {'hatch panel', 'cargo'}"
       },
       {
         "name": "possession.max=1",
         "ok": true,
-        "detail": "got {'max_simultaneous': 1, 'notes': 'ROBOTS may not have greater-than-momentary or repeated control of more than one GAME PIECE at a time, either directly or transitively through other objects per G4'}"
+        "detail": "got {'max_simultaneous': 1, 'notes': 'ROBOTS may not have greater-than-momentary or repeated control of more than one (1) GAME PIECE at a time per G4'}"
       },
       {
         "name": "rp.rocket",
         "ok": true,
-        "detail": "got hab docking complete rocket tie win"
+        "detail": "got hab docking one (1) complete rocket tie win"
       },
       {
         "name": "rp.hab",
         "ok": true,
-        "detail": "got hab docking complete rocket tie win"
+        "detail": "got hab docking one (1) complete rocket tie win"
       },
       {
         "name": "weight=125lb",
@@ -94,27 +94,27 @@
         "detail": "got 125.0"
       }
     ],
-    "passed": 14,
+    "passed": 15,
     "total": 17
   },
   "usage": [
     {
       "input_tokens": 32601,
-      "output_tokens": 1794,
-      "elapsed_s": 15.397860050201416
+      "output_tokens": 1495,
+      "elapsed_s": 31.273008108139038
     },
     {
       "input_tokens": 32601,
-      "output_tokens": 1417,
-      "elapsed_s": 11.239522218704224
+      "output_tokens": 1132,
+      "elapsed_s": 23.83958387374878
     },
     {
       "input_tokens": 32601,
-      "output_tokens": 1548,
-      "elapsed_s": 41.29561805725098
+      "output_tokens": 1517,
+      "elapsed_s": 83.45877766609192
     }
   ],
   "total_input_tokens": 97803,
-  "total_output_tokens": 4759,
-  "cost_usd": 0.121598
+  "total_output_tokens": 4144,
+  "cost_usd": 0.355569
 }

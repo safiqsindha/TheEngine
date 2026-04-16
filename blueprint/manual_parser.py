@@ -222,7 +222,7 @@ def validate_parse_dict(data: dict) -> None:
 def parse_manual(
     pdf_path: str,
     n_parses: int = 3,
-    model: str = "claude-haiku-4-5",
+    model: str = "claude-sonnet-4-5",
     parse_fn: Optional[ParseFn] = None,
 ) -> list[ManualParse]:
     """Parse ``pdf_path`` through ``n_parses`` independent LLM calls.

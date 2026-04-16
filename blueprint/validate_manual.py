@@ -40,12 +40,13 @@ from blueprint.manual_parser import (  # noqa: E402
     _coerce_json,
 )
 
-MODEL = "claude-haiku-4-5"
+MODEL = "claude-sonnet-4-5"
 N_PARSES = 3
 
-# Haiku 4.5 pricing (USD per 1M tokens) — update if pricing changes.
-HAIKU_INPUT_PER_MTOK = 1.00
-HAIKU_OUTPUT_PER_MTOK = 5.00
+# Model pricing (USD per 1M tokens) — update if pricing changes.
+# Sonnet 4.5: $3 in / $15 out.  Haiku 4.5: $1 in / $5 out.
+INPUT_PER_MTOK = 3.00
+OUTPUT_PER_MTOK = 15.00
 
 
 # ---------------------------------------------------------------------------
@@ -448,7 +449,7 @@ def run(year: int, manual_path: Optional[str] = None) -> int:
 
     total_in = sum(u["input_tokens"] for u in usage_log)
     total_out = sum(u["output_tokens"] for u in usage_log)
-    cost = (total_in / 1e6) * HAIKU_INPUT_PER_MTOK + (total_out / 1e6) * HAIKU_OUTPUT_PER_MTOK
+    cost = (total_in / 1e6) * INPUT_PER_MTOK + (total_out / 1e6) * OUTPUT_PER_MTOK
     print(f"\n=== Tokens: in={total_in:,} out={total_out:,} === est cost ${cost:.4f}")
 
     summary: dict[str, Any] = {

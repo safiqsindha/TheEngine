@@ -1,27 +1,27 @@
 {
   "year": 2024,
   "label": "Crescendo",
-  "model": "claude-haiku-4-5",
+  "model": "claude-sonnet-4-5",
   "n_parses": 3,
-  "locked": 6,
-  "tentative": 7,
-  "ambiguous": 17,
+  "locked": 4,
+  "tentative": 10,
+  "ambiguous": 23,
   "accuracy": {
     "checks": [
       {
         "name": "auto.amp=2",
         "ok": true,
-        "detail": "got points=2 from {'name': 'Note in AMP (auto)', 'points': 2, 'location': 'amp'}"
+        "detail": "got points=2 from {'name': 'AMP NOTE (auto)', 'points': 2, 'location': 'amp'}"
       },
       {
         "name": "auto.speaker=5",
         "ok": true,
-        "detail": "got points=5 from {'name': 'Note in Speaker (auto)', 'points': 5, 'location': 'speaker'}"
+        "detail": "got points=5 from {'name': 'SPEAKER NOTE (auto)', 'points': 5, 'location': 'speaker'}"
       },
       {
         "name": "teleop.amp=1",
         "ok": true,
-        "detail": "got points=1 from {'name': 'Note in AMP (teleop)', 'points': 1, 'location': 'amp'}"
+        "detail": "got points=1 from {'name': 'AMP NOTE (teleop)', 'points': 1, 'location': 'amp'}"
       },
       {
         "name": "teleop.speaker=2",
@@ -31,27 +31,27 @@
       {
         "name": "teleop.amplified_speaker=5",
         "ok": false,
-        "detail": "got points=2 from {'name': 'Note in Speaker (teleop, not amplified)', 'points': 2, 'location': 'speaker'}"
+        "detail": "got points=2 from {'name': 'SPEAKER NOTE not AMPLIFIED (teleop)', 'points': 2, 'location': 'speaker'}"
       },
       {
         "name": "auto.leave=2",
         "ok": true,
-        "detail": "got points=2 from {'name': 'Leave', 'points': 2, 'location': 'robot_starting_zone'}"
+        "detail": "got points=2 from {'name': 'LEAVE', 'points': 2, 'location': 'robot_starting_zone'}"
       },
       {
         "name": "endgame.park=1",
-        "ok": false,
-        "detail": "no entry matched (expected 1 pts)"
+        "ok": true,
+        "detail": "got points=1 from {'name': 'PARK', 'points': 1, 'location': 'stage_zone'}"
       },
       {
         "name": "endgame.onstage=3",
-        "ok": false,
-        "detail": "no entry matched (expected 3 pts)"
+        "ok": true,
+        "detail": "got points=3 from {'name': 'ONSTAGE (not SPOTLIT)', 'points': 3, 'location': 'stage'}"
       },
       {
         "name": "endgame.spotlit=1",
         "ok": false,
-        "detail": "no entry matched (expected 1 pts)"
+        "detail": "got points=3 from {'name': 'ONSTAGE (not SPOTLIT)', 'points': 3, 'location': 'stage'}"
       },
       {
         "name": "game_piece.note",
@@ -61,17 +61,17 @@
       {
         "name": "possession.max=1",
         "ok": true,
-        "detail": "got {'max_simultaneous': 1, 'notes': 'In AUTO, robot may not control more than 1 note at a time. In TELEOP, robot may not leave source zone with control of more than 1 note, nor have greater-than-momentary control of more than 1 note outside source zone'}"
+        "detail": "got {'max_simultaneous': 1, 'notes': 'In AUTO: ROBOT may not CONTROL more than 1 NOTE at a time (G403). In TELEOP: ROBOT may not leave SOURCE ZONE with CONTROL of more than 1 NOTE, nor have greater-than-MOMENTARY CONTROL of more than 1 NOTE while outside SOURCE ZONE (G409)'}"
       },
       {
         "name": "rp.melody",
         "ok": true,
-        "detail": "got melody ensemble coopertition bonus tie win"
+        "detail": "got coopertition bonus melody ensemble tie win"
       },
       {
         "name": "rp.ensemble",
         "ok": true,
-        "detail": "got melody ensemble coopertition bonus tie win"
+        "detail": "got coopertition bonus melody ensemble tie win"
       },
       {
         "name": "weight=125lb",
@@ -79,27 +79,27 @@
         "detail": "got None"
       }
     ],
-    "passed": 8,
+    "passed": 10,
     "total": 14
   },
   "usage": [
     {
       "input_tokens": 31777,
-      "output_tokens": 2393,
-      "elapsed_s": 20.251346826553345
+      "output_tokens": 2928,
+      "elapsed_s": 110.07035684585571
     },
     {
       "input_tokens": 31777,
-      "output_tokens": 3181,
-      "elapsed_s": 85.13864278793335
+      "output_tokens": 1860,
+      "elapsed_s": 38.08649396896362
     },
     {
       "input_tokens": 31777,
-      "output_tokens": 2421,
-      "elapsed_s": 19.93053126335144
+      "output_tokens": 1907,
+      "elapsed_s": 37.7871732711792
     }
   ],
   "total_input_tokens": 95331,
-  "total_output_tokens": 7995,
-  "cost_usd": 0.135306
+  "total_output_tokens": 6695,
+  "cost_usd": 0.386418
 }
