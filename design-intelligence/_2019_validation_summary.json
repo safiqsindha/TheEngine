@@ -1,0 +1,118 @@
+{
+  "model": "claude-haiku-4-5",
+  "n_parses": 3,
+  "locked": 11,
+  "tentative": 7,
+  "ambiguous": 6,
+  "accuracy": {
+    "checks": [
+      {
+        "name": "auto.cargo_in_cargo_ship=3",
+        "ok": false,
+        "detail": "got {'name': 'HATCH PANEL', 'points': 2, 'location': 'ROCKET or CARGO SHIP'}"
+      },
+      {
+        "name": "auto.hatch_on_cargo_ship=2",
+        "ok": true,
+        "detail": "got {'name': 'HATCH PANEL', 'points': 2, 'location': 'ROCKET or CARGO SHIP'}"
+      },
+      {
+        "name": "auto.hab_cross_l1=3",
+        "ok": true,
+        "detail": "got {'name': 'HAB Climb Bonus: Level 1', 'points': 3, 'location': 'HAB PLATFORM Level 1'}"
+      },
+      {
+        "name": "auto.hab_cross_l2=6",
+        "ok": true,
+        "detail": "got {'name': 'HAB Climb Bonus: Level 2', 'points': 6, 'location': 'HAB PLATFORM Level 2'}"
+      },
+      {
+        "name": "teleop.cargo_in_cargo_ship=3",
+        "ok": false,
+        "detail": "got {'name': 'HATCH PANEL', 'points': 2, 'location': 'ROCKET or CARGO SHIP'}"
+      },
+      {
+        "name": "teleop.cargo_in_rocket=3",
+        "ok": false,
+        "detail": "got {'name': 'HATCH PANEL', 'points': 2, 'location': 'ROCKET or CARGO SHIP'}"
+      },
+      {
+        "name": "teleop.hatch_in_rocket=2",
+        "ok": true,
+        "detail": "got {'name': 'HATCH PANEL', 'points': 2, 'location': 'ROCKET or CARGO SHIP'}"
+      },
+      {
+        "name": "teleop.hatch_in_cargo_ship=2",
+        "ok": true,
+        "detail": "got {'name': 'HATCH PANEL', 'points': 2, 'location': 'ROCKET or CARGO SHIP'}"
+      },
+      {
+        "name": "endgame.hab_climb_l3=12",
+        "ok": true,
+        "detail": "got {'name': 'HAB Climb Bonus: Level 3', 'points': 12, 'location': 'HAB PLATFORM Level 3'}"
+      },
+      {
+        "name": "endgame.hab_climb_l2=6",
+        "ok": true,
+        "detail": "got {'name': 'HAB Climb Bonus: Level 2', 'points': 6, 'location': 'HAB PLATFORM Level 2'}"
+      },
+      {
+        "name": "endgame.hab_climb_l1=3",
+        "ok": true,
+        "detail": "got {'name': 'HAB Climb Bonus: Level 1', 'points': 3, 'location': 'HAB PLATFORM Level 1'}"
+      },
+      {
+        "name": "game_piece.cargo",
+        "ok": true,
+        "detail": "got {'cargo', 'hatch panel'}"
+      },
+      {
+        "name": "game_piece.hatch",
+        "ok": true,
+        "detail": "got {'cargo', 'hatch panel'}"
+      },
+      {
+        "name": "possession.max=1",
+        "ok": true,
+        "detail": "got {'max_simultaneous': 1, 'notes': 'ROBOTS may not have greater-than-momentary or repeated control of more than one GAME PIECE at a time'}"
+      },
+      {
+        "name": "rp.rocket",
+        "ok": true,
+        "detail": "got hab docking one complete rocket tie win"
+      },
+      {
+        "name": "rp.hab",
+        "ok": true,
+        "detail": "got hab docking one complete rocket tie win"
+      },
+      {
+        "name": "weight=125lb",
+        "ok": true,
+        "detail": "got 125.0"
+      }
+    ],
+    "passed": 14,
+    "total": 17
+  },
+  "usage": [
+    {
+      "input_tokens": 32228,
+      "output_tokens": 1382,
+      "elapsed_s": 11.969643115997314
+    },
+    {
+      "input_tokens": 32228,
+      "output_tokens": 1357,
+      "elapsed_s": 11.527621984481812
+    },
+    {
+      "input_tokens": 32228,
+      "output_tokens": 1643,
+      "elapsed_s": 13.728084087371826
+    }
+  ],
+  "total_input_tokens": 96684,
+  "total_output_tokens": 4382,
+  "cost_usd": 0.118594
+}
