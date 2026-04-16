@@ -402,4 +402,36 @@ open source libraries, Google Sheets, Discord webhooks.
 
 ---
 
+## Deferred — Oracle Data-Expansion Initiatives (added 2026-04-15)
+
+Three FRC-internal data-expansion items to queue for post-competition /
+off-season execution. Each grows Oracle's effective training-data
+density *without* venturing outside FRC (where structural differences
+— 2v2 vs 3v3, robot capability envelopes, match pacing — would pollute
+the signal). Discussed in-context 2026-04-15; pursue in listed order.
+
+| # | Item | Est. hours | Why it matters |
+|---|---|---|---|
+| DX-1 | **Per-phase β tuning across all seasons** | ~6h | 2019 Deep Space already has separate cycle β + climb β. Apply same pattern to every season where phases differ meaningfully (2014 truss vs ground, 2016 shooter vs crosser, 2018 vault vs switches, 2023 grid vs charge station, 2024 amp vs speaker vs stage, etc.). Doubles labeled β points per season without adding games. Feeds `blueprint/attribution_betas.py` and the rulebook β regression with richer training targets. |
+| DX-2 | **Playoff vs qual separation in β + Oracle tuning** | ~4h | Qual alliances are random; playoff alliances are strategically selected. The dynamics differ dramatically — playoff alliances have near-optimal role coverage, quals have random-role mismatches. Training them as separate populations gives 2× regimes per season and isolates strategic-selection effects from baseline coupling. Likely reveals that R18 complementarity weighting should differ between the two phases. |
+| DX-3 | **Monte Carlo synthetic validation of Oracle rules** | ~5h | We shipped `blueprint/monte_carlo.py` this session. Use it to generate synthetic matches with controlled parameters (known β, known carry deltas, known role mix), then confirm Oracle recovers the ground truth. Unlimited synthetic data orthogonal to real-world noise — best way to catch rule-calibration bugs. Should become part of CI, not just a one-off study. |
+| DX-4 (stretch) | **Cross-discipline β-linguistic validation (FTC + VEX)** | ~4h | Test whether `blueprint/rulebook_beta_prior.py` generalizes beyond FRC. Pull 5 FTC + 5 VEX manuals, run them through the existing 6-feature regressor, compare against empirical β tuned from FTC Scout / VEXDB match data. Goal is NOT to train Oracle on FTC/VEX — that would pollute — but to test if the linguistic-coupling signal is a general game-theory property vs an FRC idiosyncrasy. Either outcome is informative. |
+
+**Total: ~15h core (DX-1 through DX-3), +4h optional (DX-4).**
+
+Scheduling: pursue after 2027 kickoff prep is complete (manual parser
+hardening, `engine design-spec` end-to-end CLI, mechanism_advisor
+codification of Oracle's prompt-driven recommendation step). DX-1 and
+DX-2 are prerequisites for a proper 2027 kickoff because they improve
+the β lookup that everything else reads from. DX-3 is ongoing (add it
+to CI once built). DX-4 is exploratory and can slip.
+
+**Explicitly NOT in scope:** training Oracle on raw FTC or VEX match
+data. FTC and VEX have 2v2 alliances, different robot envelopes, and
+different match pacing — scaling fields/pieces/scoring would produce
+synthetic data that *looks* like FRC but carries 2v2 dynamics.
+Discussed and rejected 2026-04-15.
+
+---
+
 *Master Roadmap | THE ENGINE | Team 2950 The Devastators*
