@@ -1,0 +1,115 @@
+{
+  "year": 2023,
+  "label": "Charged Up",
+  "model": "claude-haiku-4-5",
+  "n_parses": 3,
+  "locked": 0,
+  "tentative": 23,
+  "ambiguous": 74,
+  "accuracy": {
+    "checks": [
+      {
+        "name": "auto.hybrid_node=3",
+        "ok": false,
+        "detail": "no entry matched (expected 3 pts)"
+      },
+      {
+        "name": "auto.mid_node=4",
+        "ok": true,
+        "detail": "got points=4 from {'name': 'Cone on middle row (auto)', 'points': 4, 'location': 'grid_middle'}"
+      },
+      {
+        "name": "auto.high_node=6",
+        "ok": false,
+        "detail": "no entry matched (expected 6 pts)"
+      },
+      {
+        "name": "teleop.hybrid_node=2",
+        "ok": false,
+        "detail": "no entry matched (expected 2 pts)"
+      },
+      {
+        "name": "teleop.mid_node=3",
+        "ok": true,
+        "detail": "got points=3 from {'name': 'Cone on middle row (teleop)', 'points': 3, 'location': 'grid_middle'}"
+      },
+      {
+        "name": "teleop.high_node=5",
+        "ok": false,
+        "detail": "no entry matched (expected 5 pts)"
+      },
+      {
+        "name": "auto.mobility=3",
+        "ok": true,
+        "detail": "got points=3 from {'name': 'MOBILITY (auto)', 'points': 3, 'location': 'community'}"
+      },
+      {
+        "name": "endgame.park=2",
+        "ok": true,
+        "detail": "got points=2 from {'name': 'PARK (endgame)', 'points': 2, 'location': 'community'}"
+      },
+      {
+        "name": "endgame.dock=6",
+        "ok": true,
+        "detail": "got points=6 from {'name': 'DOCKED and not ENGAGED (endgame)', 'points': 6, 'location': 'charge_station'}"
+      },
+      {
+        "name": "endgame.engage=10",
+        "ok": false,
+        "detail": "got points=6 from {'name': 'DOCKED and not ENGAGED (endgame)', 'points': 6, 'location': 'charge_station'}"
+      },
+      {
+        "name": "game_piece.cone",
+        "ok": true,
+        "detail": "got {'cone', 'cube'}"
+      },
+      {
+        "name": "game_piece.cube",
+        "ok": true,
+        "detail": "got {'cone', 'cube'}"
+      },
+      {
+        "name": "possession.max=1",
+        "ok": true,
+        "detail": "got {'max_simultaneous': 1, 'notes': 'ROBOTS completely outside LOADING ZONE or COMMUNITY may not have CONTROL of more than 1 GAME PIECE; exceptions in LOADING ZONE and COMMUNITY'}"
+      },
+      {
+        "name": "rp.sustainability",
+        "ok": true,
+        "detail": "got sustainability bonus coopertition bonus activation bonus win tie"
+      },
+      {
+        "name": "rp.activation",
+        "ok": true,
+        "detail": "got sustainability bonus coopertition bonus activation bonus win tie"
+      },
+      {
+        "name": "weight=125lb",
+        "ok": false,
+        "detail": "got None"
+      }
+    ],
+    "passed": 10,
+    "total": 16
+  },
+  "usage": [
+    {
+      "input_tokens": 32886,
+      "output_tokens": 3015,
+      "elapsed_s": 23.549800872802734
+    },
+    {
+      "input_tokens": 32886,
+      "output_tokens": 3904,
+      "elapsed_s": 25.680289030075073
+    },
+    {
+      "input_tokens": 32886,
+      "output_tokens": 3597,
+      "elapsed_s": 55.68521285057068
+    }
+  ],
+  "total_input_tokens": 98658,
+  "total_output_tokens": 10516,
+  "cost_usd": 0.15123799999999998
+}

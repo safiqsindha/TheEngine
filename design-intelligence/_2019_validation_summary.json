@@ -1,65 +1,67 @@
 {
+  "year": 2019,
+  "label": "Deep Space",
   "model": "claude-haiku-4-5",
   "n_parses": 3,
-  "locked": 11,
-  "tentative": 7,
-  "ambiguous": 6,
+  "locked": 0,
+  "tentative": 2,
+  "ambiguous": 28,
   "accuracy": {
     "checks": [
       {
         "name": "auto.cargo_in_cargo_ship=3",
         "ok": false,
-        "detail": "got {'name': 'HATCH PANEL', 'points': 2, 'location': 'ROCKET or CARGO SHIP'}"
+        "detail": "no entry matched (expected 3 pts)"
       },
       {
         "name": "auto.hatch_on_cargo_ship=2",
         "ok": true,
-        "detail": "got {'name': 'HATCH PANEL', 'points': 2, 'location': 'ROCKET or CARGO SHIP'}"
+        "detail": "got points=2 from {'name': 'HATCH PANEL on ROCKET or CARGO SHIP', 'points': 2, 'location': 'rocket_or_cargo_ship'}"
       },
       {
         "name": "auto.hab_cross_l1=3",
         "ok": true,
-        "detail": "got {'name': 'HAB Climb Bonus: Level 1', 'points': 3, 'location': 'HAB PLATFORM Level 1'}"
+        "detail": "got points=3 from {'name': 'SANDSTORM Bonus (HAB Level 1)', 'points': 3, 'location': 'hab_level_1'}"
       },
       {
         "name": "auto.hab_cross_l2=6",
         "ok": true,
-        "detail": "got {'name': 'HAB Climb Bonus: Level 2', 'points': 6, 'location': 'HAB PLATFORM Level 2'}"
+        "detail": "got points=6 from {'name': 'SANDSTORM Bonus (HAB Level 2)', 'points': 6, 'location': 'hab_level_2'}"
       },
       {
         "name": "teleop.cargo_in_cargo_ship=3",
         "ok": false,
-        "detail": "got {'name': 'HATCH PANEL', 'points': 2, 'location': 'ROCKET or CARGO SHIP'}"
+        "detail": "no entry matched (expected 3 pts)"
       },
       {
         "name": "teleop.cargo_in_rocket=3",
         "ok": false,
-        "detail": "got {'name': 'HATCH PANEL', 'points': 2, 'location': 'ROCKET or CARGO SHIP'}"
+        "detail": "no entry matched (expected 3 pts)"
       },
       {
         "name": "teleop.hatch_in_rocket=2",
         "ok": true,
-        "detail": "got {'name': 'HATCH PANEL', 'points': 2, 'location': 'ROCKET or CARGO SHIP'}"
+        "detail": "got points=2 from {'name': 'HATCH PANEL on ROCKET or CARGO SHIP', 'points': 2, 'location': 'rocket_or_cargo_ship'}"
       },
       {
         "name": "teleop.hatch_in_cargo_ship=2",
         "ok": true,
-        "detail": "got {'name': 'HATCH PANEL', 'points': 2, 'location': 'ROCKET or CARGO SHIP'}"
+        "detail": "got points=2 from {'name': 'HATCH PANEL on ROCKET or CARGO SHIP', 'points': 2, 'location': 'rocket_or_cargo_ship'}"
       },
       {
         "name": "endgame.hab_climb_l3=12",
         "ok": true,
-        "detail": "got {'name': 'HAB Climb Bonus: Level 3', 'points': 12, 'location': 'HAB PLATFORM Level 3'}"
+        "detail": "got points=12 from {'name': 'HAB Climb Bonus (Level 3)', 'points': 12, 'location': 'hab_level_3'}"
       },
       {
         "name": "endgame.hab_climb_l2=6",
         "ok": true,
-        "detail": "got {'name': 'HAB Climb Bonus: Level 2', 'points': 6, 'location': 'HAB PLATFORM Level 2'}"
+        "detail": "got points=6 from {'name': 'HAB Climb Bonus (Level 2)', 'points': 6, 'location': 'hab_level_2'}"
       },
       {
         "name": "endgame.hab_climb_l1=3",
         "ok": true,
-        "detail": "got {'name': 'HAB Climb Bonus: Level 1', 'points': 3, 'location': 'HAB PLATFORM Level 1'}"
+        "detail": "got points=3 from {'name': 'HAB Climb Bonus (Level 1)', 'points': 3, 'location': 'hab_level_1'}"
       },
       {
         "name": "game_piece.cargo",
@@ -74,17 +76,17 @@
       {
         "name": "possession.max=1",
         "ok": true,
-        "detail": "got {'max_simultaneous': 1, 'notes': 'ROBOTS may not have greater-than-momentary or repeated control of more than one GAME PIECE at a time'}"
+        "detail": "got {'max_simultaneous': 1, 'notes': 'ROBOTS may not have greater-than-momentary or repeated control of more than one GAME PIECE at a time, either directly or transitively through other objects per G4'}"
       },
       {
         "name": "rp.rocket",
         "ok": true,
-        "detail": "got hab docking one complete rocket tie win"
+        "detail": "got hab docking complete rocket tie win"
       },
       {
         "name": "rp.hab",
         "ok": true,
-        "detail": "got hab docking one complete rocket tie win"
+        "detail": "got hab docking complete rocket tie win"
       },
       {
         "name": "weight=125lb",
@@ -97,22 +99,22 @@
   },
   "usage": [
     {
-      "input_tokens": 32228,
-      "output_tokens": 1382,
-      "elapsed_s": 11.969643115997314
+      "input_tokens": 32601,
+      "output_tokens": 1794,
+      "elapsed_s": 15.397860050201416
     },
     {
-      "input_tokens": 32228,
-      "output_tokens": 1357,
-      "elapsed_s": 11.527621984481812
+      "input_tokens": 32601,
+      "output_tokens": 1417,
+      "elapsed_s": 11.239522218704224
     },
     {
-      "input_tokens": 32228,
-      "output_tokens": 1643,
-      "elapsed_s": 13.728084087371826
+      "input_tokens": 32601,
+      "output_tokens": 1548,
+      "elapsed_s": 41.29561805725098
     }
   ],
-  "total_input_tokens": 96684,
-  "total_output_tokens": 4382,
-  "cost_usd": 0.118594
+  "total_input_tokens": 97803,
+  "total_output_tokens": 4759,
+  "cost_usd": 0.121598
 }
