@@ -108,6 +108,25 @@ Rules:
 - Use null for unknown numeric fields, empty list for unknown list fields.
 - `points` must be integers; `weight_lbs`, `max_height_in`, `frame_perimeter_in` are floats.
 - Extract every scoring action you can find; do not paraphrase names.
+- CRITICAL — emit ONE `scoring[]` entry for each distinct
+  (phase, game_piece, field_location) combination. Do NOT combine game
+  pieces into a single entry even if they share a row in a rulebook table.
+  If a location accepts multiple pieces with different point values,
+  emit one entry per piece. The `name` field MUST uniquely identify the
+  (piece, location) pair — e.g. "Cargo in Cargo Ship" and
+  "Hatch on Cargo Ship" are two separate entries, never merged into
+  "game piece on cargo ship".
+
+Worked example — 2-piece game (Reefscape 2025 has coral + algae):
+If the manual says auto coral scored on L1 trough = 3 pts, auto coral on
+L4 = 7 pts, auto algae in processor = 6 pts, auto algae in net = 4 pts,
+emit FOUR separate scoring.auto entries:
+  {{"name": "Coral on L1 (auto)", "points": 3, "location": "reef_l1"}}
+  {{"name": "Coral on L4 (auto)", "points": 7, "location": "reef_l4"}}
+  {{"name": "Algae in Processor (auto)", "points": 6, "location": "processor"}}
+  {{"name": "Algae in Net (auto)", "points": 4, "location": "barge_net"}}
+Never collapse these into a single "game piece scored" row. Do the same
+for teleop and endgame. When in doubt, split.
 
 Manual text:
 <<<
@@ -406,6 +425,62 @@ def _consensus_scoring(parses: list) -> tuple[dict, list, list, list]:
     return merged, locked_paths, tentative, ambiguous
 
 
+def _flag_phase_location_overlaps(
+    merged_scoring: dict, report: ConflictReport
+) -> None:
+    """Post-check: if two entries share (phase, location) but have different
+    ``points`` values, flag both as TENTATIVE (not locked).
+
+    This catches the dual-piece-game failure mode where Haiku collapsed
+    two pieces at the same location into a single entry with one piece's
+    points — the sibling entry with a different-points value reveals the
+    overlap. Any locked paths for the overlapping entries are demoted.
+    """
+    for phase, entries in (merged_scoring or {}).items():
+        # Group by normalized location
+        by_loc: dict = {}
+        for e in entries or []:
+            loc = str(e.get("location", "")).strip().lower()
+            if not loc:
+                continue
+            by_loc.setdefault(loc, []).append(e)
+
+        for loc, group in by_loc.items():
+            if len(group) < 2:
+                continue
+            pts = {e.get("points") for e in group if e.get("points") is not None}
+            if len(pts) < 2:
+                continue  # all agree on points — not an overlap conflict
+
+            names = sorted({str(e.get("name", "")) for e in group})
+            note = (
+                f"phase={phase} location={loc!r} has {len(group)} entries with "
+                f"differing points={sorted(pts, key=lambda x: (x is None, x))}; "
+                f"names={names}. Likely multi-piece scoring collision — review "
+                f"each (piece, location, points) triple."
+            )
+            for e in group:
+                name = str(e.get("name", "")).strip().lower()
+                pts_path = f"scoring.{phase}.{name}.points"
+                loc_path = f"scoring.{phase}.{name}.location"
+                # Demote from locked if present
+                for p in (pts_path, loc_path):
+                    if p in report.locked_fields:
+                        report.locked_fields.remove(p)
+                # Add tentative entry with the overlap note
+                if not any(
+                    t.get("path") == pts_path for t in report.tentative_fields
+                ):
+                    report.tentative_fields.append(
+                        {
+                            "path": pts_path,
+                            "chosen": e.get("points"),
+                            "alternatives": sorted(pts - {e.get("points")}),
+                            "note": note,
+                        }
+                    )
+
+
 def consensus(parses: list) -> tuple[ManualParse, ConflictReport]:
     """Merge ``parses`` via majority vote, return (merged, conflict_report)."""
     if not parses:
@@ -438,6 +513,9 @@ def consensus(parses: list) -> tuple[ManualParse, ConflictReport]:
             # Ambiguous — pick first parse's value as placeholder
             setattr(merged, fname, values[0])
             report.ambiguous_fields.append({"path": fname, "options": alts or values})
+
+    # Post-check: flag (phase, location) collisions as tentative.
+    _flag_phase_location_overlaps(merged.scoring, report)
 
     return merged, report
 

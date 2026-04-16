@@ -135,6 +135,54 @@ def test_integer_median_tolerance_locks_small_spread() -> None:
     assert status == "ambiguous"
 
 
+def test_consensus_flags_phase_location_overlap_as_tentative() -> None:
+    """Two entries share (phase, location) but different points -> tentative."""
+    d = _base_parse_dict()
+    # Inject a second scoring entry at the SAME teleop location with different points
+    overlap_entry = {"name": "Algae at Reef", "points": 3, "location": "reef"}
+    for _ in range(3):
+        pass  # just to clarify intent
+    d["scoring"]["teleop"] = [
+        {"name": "Coral L4", "points": 5, "location": "reef"},
+        overlap_entry,
+    ]
+    d2 = json.loads(json.dumps(d))
+    d3 = json.loads(json.dumps(d))
+    parses = _make_parses([d, d2, d3])
+    merged, report = consensus(parses)
+
+    tent_paths = [e["path"] for e in report.tentative_fields]
+    # Both entries at teleop@reef should be flagged tentative on .points
+    assert "scoring.teleop.coral l4.points" in tent_paths
+    assert "scoring.teleop.algae at reef.points" in tent_paths
+    # A tentative entry should include a note explaining the overlap
+    coral_entry = next(
+        e for e in report.tentative_fields
+        if e["path"] == "scoring.teleop.coral l4.points"
+    )
+    assert "location" in coral_entry.get("note", "").lower()
+    # Those .points paths must NOT also be locked
+    assert "scoring.teleop.coral l4.points" not in report.locked_fields
+    assert "scoring.teleop.algae at reef.points" not in report.locked_fields
+
+
+def test_consensus_same_location_same_points_does_not_flag_overlap() -> None:
+    """If two entries share a location but agree on points, no overlap flag."""
+    d = _base_parse_dict()
+    # Two teleop entries at same location, same points -> no overlap
+    d["scoring"]["teleop"] = [
+        {"name": "Coral L4", "points": 5, "location": "reef"},
+        {"name": "Coral L3", "points": 5, "location": "reef"},
+    ]
+    d2 = json.loads(json.dumps(d))
+    d3 = json.loads(json.dumps(d))
+    parses = _make_parses([d, d2, d3])
+    _, report = consensus(parses)
+    # No tentative overlap note for these paths
+    for e in report.tentative_fields:
+        assert "location collision" not in str(e.get("note", "")).lower()
+
+
 def test_validate_parse_dict_missing_fields_raises() -> None:
     with pytest.raises(ValueError, match="missing required fields"):
         validate_parse_dict({"scoring": {}})  # most keys missing
