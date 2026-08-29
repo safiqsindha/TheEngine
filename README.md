@@ -1,12 +1,37 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/banner-dark.svg">
+    <img src="assets/banner-light.svg" alt="The Engine" width="100%">
+  </picture>
+</p>
+
 # The Engine
 
-**The Engine — FRC meta-system for Team 2950: prediction, scouting, vision, alliance strategy.**
+**An FRC meta-system for Team 2950: predict the game, scout the event, watch the video, pick the alliance.**
 
-Maintained by Safiq Sindha, mentor for FRC Team 2950 (The Devastators). The Engine is a set of tightly-coupled Python subsystems plus a separate Java robot codebase. It covers the full competition lifecycle: predicting robot architecture at kickoff, scouting events, analyzing video, running alliance selection, and generating per-match game plans.
+The Engine is a set of tightly-coupled Python subsystems covering the full competition lifecycle — predicting robot architecture at kickoff, scouting events, analyzing match video, running alliance selection, and generating per-match game plans. Maintained by Safiq Sindha, mentor for FRC Team 2950 (The Devastators).
 
-Robot code lives at [safiqsindha/2950-robot](https://github.com/safiqsindha/2950-robot).
+- **Kickoff-day predictions that hold up** — an 18-rule game-to-architecture engine, 98% accurate against historical games 2016–2025
+- **Alliance selection that models coupling** — per-season power-curve attribution, so specialist pairings are credited correctly instead of ranked by raw EPA sum
+- **Match video into scouting data** — OCR match-boundary detection plus tiered model analysis, at roughly $10.50 for a 1,200-match season
+- **Built for a volunteer team** — Discord-native commands, 24/7 scans, and a six-module student onboarding curriculum
 
-Status as of 2026-04-14: 2026 competition season is over for 2950. The system is in off-season maintenance and research mode until the 2027 kickoff.
+![tests](https://img.shields.io/badge/tests-1%2C500%2B%20functions-22c55e?style=flat-square)
+![python](https://img.shields.io/badge/python-3.11%2B-0891b2?style=flat-square)
+![season](https://img.shields.io/badge/season-off--season-F59E0B?style=flat-square)
+![oracle](https://img.shields.io/badge/Oracle%20accuracy-98%25-22c55e?style=flat-square)
+
+**[Cross-season patterns](design-intelligence/CROSS_SEASON_PATTERNS.md)** · **[Architecture](ARCHITECTURE.md)** · **[Roadmap](design-intelligence/ENGINE_MASTER_ROADMAP.md)** · **[Mentor briefing](MENTOR_BRIEFING.md)** · **[What we built](WHAT_WE_BUILT.md)** · **[Playground](PLAYGROUND.md)**
+
+```bash
+pip install -r antenna/requirements.txt
+python3 scout/the_scout.py report 2026txbel --team 2950     # pre-event scouting report
+python3 engine_advisor.py "Who should 2950 pick at 2026txbel?"
+```
+
+Robot code lives at **[safiqsindha/2950-robot](https://github.com/safiqsindha/2950-robot)**. This repository persists across seasons; that one resets each year.
+
+> **Status (2026-04-14):** the 2026 competition season is over for 2950. The system is in off-season maintenance and research mode until the 2027 kickoff.
 
 ---
 
@@ -122,11 +147,25 @@ All under `design-intelligence/`.
 
 ---
 
-## Test / CI Status
+## Testing
 
-![tests](https://img.shields.io/badge/tests-passing-brightgreen) ![python](https://img.shields.io/badge/python-3.11%2B-blue) ![status](https://img.shields.io/badge/season-off--season-lightgrey)
+```bash
+pytest                    # 1,500+ test functions across 57 files
+```
 
-(Badge placeholders. No public CI wired yet — `pytest` is the source of truth locally.)
+`pytest` is the source of truth — **no public CI is wired yet.** Adding it is on the off-season roadmap, alongside consolidating the per-subsystem scripts into a single `engine` CLI.
+
+---
+
+## Scope
+
+The Engine is a team-specific meta-system, not a general-purpose FRC library. It assumes Team 2950's workflow, Discord server, and data sources. CAD generation was deliberately cut in the 2026-04-13 Blueprint postmortem — see [`design-intelligence/BLUEPRINT_REV2_POSTMORTEM.md`](design-intelligence/BLUEPRINT_REV2_POSTMORTEM.md) for why.
+
+---
+
+## License
+
+No license file is present in this repository. Contact the maintainer before reuse.
 
 ---
 
